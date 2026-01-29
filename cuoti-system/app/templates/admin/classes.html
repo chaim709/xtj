@@ -1,0 +1,59 @@
+{% extends "admin/base.html" %}
+
+{% block title %}班级管理 - 错题收集系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="bi bi-people-fill me-2"></i>班级管理</h1>
+    <a href="{{ url_for('admin.create_class') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> 创建班级
+    </a>
+</div>
+
+<div class="row g-4">
+    {% for class_obj in classes %}
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-mortarboard me-2"></i>{{ class_obj.name }}
+                </h5>
+                <span class="badge bg-primary">{{ class_obj.students.count() }} 人</span>
+            </div>
+            <div class="card-body">
+                {% if class_obj.teacher %}
+                <p class="mb-2"><i class="bi bi-person me-2"></i>老师：{{ class_obj.teacher }}</p>
+                {% endif %}
+                {% if class_obj.description %}
+                <p class="text-muted small">{{ class_obj.description }}</p>
+                {% endif %}
+                
+                <div class="d-flex gap-2 mt-3">
+                    <a href="{{ url_for('admin.view_class', id=class_obj.id) }}" class="btn btn-outline-primary btn-sm flex-grow-1">
+                        <i class="bi bi-eye"></i> 查看
+                    </a>
+                    <a href="{{ url_for('admin.edit_class', id=class_obj.id) }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="card-footer text-muted small">
+                创建于 {{ class_obj.created_at.strftime('%Y-%m-%d') }}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-people fs-1 text-muted mb-3 d-block"></i>
+                <p class="text-muted mb-3">还没有创建班级</p>
+                <a href="{{ url_for('admin.create_class') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg"></i> 创建第一个班级
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

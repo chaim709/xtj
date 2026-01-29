@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}数据统计 - 公考培训管理系统{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">数据统计</h1>
+        <p class="text-muted mb-0">错题数据分析与趋势</p>
+    </div>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+        <i data-lucide="arrow-left" class="me-1"></i> 返回
+    </a>
+</div>
+
+<!-- 概览卡片 -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <h6 class="opacity-75">错题总数</h6>
+                <h2 class="mb-0">{{ overview.total_mistakes }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h6 class="opacity-75">学员人数</h6>
+                <h2 class="mb-0">{{ overview.total_students }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h6 class="opacity-75">提交总数</h6>
+                <h2 class="mb-0">{{ overview.total_submissions }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <h6 class="opacity-75">人均错题</h6>
+                <h2 class="mb-0">{{ overview.avg_mistakes }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- 分类错题分布 -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">分类错题分布</h5>
+            </div>
+            <div class="card-body">
+                <div id="categoryChart" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 难度分布 -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">难度分布</h5>
+            </div>
+            <div class="card-body">
+                <div id="difficultyChart" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 趋势图 -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">近30天错题趋势</h5>
+    </div>
+    <div class="card-body">
+        <div id="trendChart" style="height: 300px;"></div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- 高频错题 -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">高频错题 TOP 20</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="50">排名</th>
+                            <th>题目</th>
+                            <th>分类</th>
+                            <th width="80">错误次数</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for q, count in top_mistakes %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>
+                                <a href="{{ url_for('questions.view', id=q.id) }}">
+                                    {{ q.stem[:50] }}{% if q.stem|length > 50 %}...{% endif %}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ q.category or '-' }}</span>
+                            </td>
+                            <td><span class="text-danger fw-bold">{{ count }}</span></td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-3">暂无数据</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 侧边统计 -->
+    <div class="col-md-4">
+        <!-- 题册错题统计 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">题册错题分布</h5>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for name, count in workbook_stats %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ name }}
+                    <span class="badge bg-danger">{{ count }}</span>
+                </li>
+                {% else %}
+                <li class="list-group-item text-center text-muted">暂无数据</li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <!-- 学员错题排行 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">学员错题排行</h5>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for item in student_ranking %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ item.name }}
+                    <span class="badge bg-warning text-dark">{{ item.mistake_count }}题</span>
+                </li>
+                {% else %}
+                <li class="list-group-item text-center text-muted">暂无数据</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 分类错题饼图
+    var categoryChart = echarts.init(document.getElementById('categoryChart'));
+    categoryChart.setOption({
+        tooltip: { trigger: 'item' },
+        series: [{
+            type: 'pie',
+            radius: ['40%', '70%'],
+            data: {{ category_stats_json|safe }},
+            emphasis: {
+                itemStyle: {
+                    shadowBlur: 10,
+                    shadowOffsetX: 0,
+                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                }
+            }
+        }]
+    });
+    
+    // 难度分布饼图
+    var difficultyChart = echarts.init(document.getElementById('difficultyChart'));
+    difficultyChart.setOption({
+        tooltip: { trigger: 'item' },
+        series: [{
+            type: 'pie',
+            radius: '60%',
+            data: {{ difficulty_stats_json|safe }}
+        }]
+    });
+    
+    // 趋势图
+    var trendData = {{ trend_data_json|safe }};
+    var trendChart = echarts.init(document.getElementById('trendChart'));
+    trendChart.setOption({
+        tooltip: { trigger: 'axis' },
+        xAxis: {
+            type: 'category',
+            data: trendData.dates
+        },
+        yAxis: {
+            type: 'value'
+        },
+        series: [{
+            name: '错题数',
+            type: 'line',
+            smooth: true,
+            data: trendData.counts,
+            areaStyle: {
+                color: 'rgba(220, 38, 38, 0.1)'
+            },
+            lineStyle: {
+                color: '#dc2626'
+            },
+            itemStyle: {
+                color: '#dc2626'
+            }
+        }]
+    });
+    
+    // 响应式
+    window.addEventListener('resize', function() {
+        categoryChart.resize();
+        difficultyChart.resize();
+        trendChart.resize();
+    });
+});
+</script>
+{% endblock %}

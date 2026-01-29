@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}班级管理 - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">班级管理</h1>
+        <p class="text-muted mb-0">管理学员分班和班级信息</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('admin.create_class') }}" class="btn btn-primary">
+            <i data-lucide="plus" class="me-1"></i> 新建班级
+        </a>
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+            <i data-lucide="arrow-left" class="me-1"></i> 返回
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    {% for cls in classes %}
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">{{ cls.name }}</h5>
+                <span class="badge bg-primary">{{ cls.students.count() }}人</span>
+            </div>
+            <div class="card-body">
+                {% if cls.description %}
+                <p class="text-muted">{{ cls.description }}</p>
+                {% endif %}
+                
+                <table class="table table-sm table-borderless mb-0">
+                    {% if cls.teacher %}
+                    <tr>
+                        <td class="text-muted" width="30%">负责老师</td>
+                        <td>{{ cls.teacher }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if cls.start_date %}
+                    <tr>
+                        <td class="text-muted">开班日期</td>
+                        <td>{{ cls.start_date.strftime('%Y-%m-%d') }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <td class="text-muted">创建时间</td>
+                        <td>{{ cls.created_at.strftime('%Y-%m-%d') if cls.created_at else '-' }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="card-footer bg-transparent d-flex justify-content-between">
+                <a href="{{ url_for('admin.view_class', id=cls.id) }}" class="btn btn-sm btn-outline-primary">
+                    <i data-lucide="eye" class="me-1"></i> 查看详情
+                </a>
+                <div class="btn-group btn-group-sm">
+                    <a href="{{ url_for('admin.edit_class', id=cls.id) }}" class="btn btn-outline-secondary">
+                        <i data-lucide="edit-2"></i>
+                    </a>
+                    <form action="{{ url_for('admin.delete_class', id=cls.id) }}" method="POST" class="d-inline"
+                          onsubmit="return confirm('确定删除此班级？')">
+                        <button type="submit" class="btn btn-outline-danger">
+                            <i data-lucide="trash-2"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i data-lucide="users" style="width: 64px; height: 64px;" class="text-muted mb-3"></i>
+                <h5>暂无班级</h5>
+                <p class="text-muted">点击"新建班级"创建第一个班级</p>
+                <a href="{{ url_for('admin.create_class') }}" class="btn btn-primary">
+                    <i data-lucide="plus" class="me-1"></i> 新建班级
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

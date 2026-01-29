@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}{{ '编辑班级' if class_obj else '新建班级' }} - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">{{ '编辑班级' if class_obj else '新建班级' }}</h1>
+    <a href="{{ url_for('admin.classes') }}" class="btn btn-outline-secondary">
+        <i data-lucide="arrow-left" class="me-1"></i> 返回
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <form action="{{ url_for('admin.edit_class', id=class_obj.id) if class_obj else url_for('admin.create_class') }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">班级名称 <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" required
+                               value="{{ class_obj.name if class_obj else '' }}"
+                               placeholder="如：2026国考冲刺班">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">班级描述</label>
+                        <textarea name="description" class="form-control" rows="3"
+                                  placeholder="班级简介...">{{ class_obj.description if class_obj else '' }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">负责老师</label>
+                        <input type="text" name="teacher" class="form-control"
+                               value="{{ class_obj.teacher if class_obj else '' }}"
+                               placeholder="老师姓名">
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i data-lucide="save" class="me-1"></i> {{ '保存修改' if class_obj else '创建班级' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

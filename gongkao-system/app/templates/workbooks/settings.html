@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}机构设置 - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">机构设置</h1>
+        <p class="text-muted mb-0">配置题册PDF中显示的机构信息</p>
+    </div>
+    <a href="{{ url_for('workbooks.index') }}" class="btn btn-outline-secondary">
+        <i data-lucide="arrow-left" class="me-1"></i> 返回题册
+    </a>
+</div>
+
+<form action="{{ url_for('workbooks.settings') }}" method="POST">
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">基本信息</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">机构名称</label>
+                        <input type="text" name="name" class="form-control"
+                               value="{{ institution.name or '' }}" placeholder="如：新途径公考">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">机构标语</label>
+                        <input type="text" name="slogan" class="form-control"
+                               value="{{ institution.slogan or '' }}" placeholder="如：专注公考培训">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">联系电话</label>
+                        <input type="text" name="phone" class="form-control"
+                               value="{{ institution.phone or '' }}" placeholder="如：400-xxx-xxxx">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">微信号</label>
+                        <input type="text" name="wechat" class="form-control"
+                               value="{{ institution.wechat or '' }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">地址</label>
+                        <input type="text" name="address" class="form-control"
+                               value="{{ institution.address or '' }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">网站</label>
+                        <input type="text" name="website" class="form-control"
+                               value="{{ institution.website or '' }}" placeholder="如：www.example.com">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">品牌配色</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">主色调</label>
+                            <div class="input-group">
+                                <input type="color" name="primary_color" class="form-control form-control-color"
+                                       value="{{ institution.primary_color or '#1a73e8' }}">
+                                <input type="text" class="form-control" 
+                                       value="{{ institution.primary_color or '#1a73e8' }}" disabled>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">辅助色</label>
+                            <div class="input-group">
+                                <input type="color" name="secondary_color" class="form-control form-control-color"
+                                       value="{{ institution.secondary_color or '#34a853' }}">
+                                <input type="text" class="form-control"
+                                       value="{{ institution.secondary_color or '#34a853' }}" disabled>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">页眉页脚</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">页眉文字</label>
+                        <input type="text" name="header_text" class="form-control"
+                               value="{{ institution.header_text or '' }}" placeholder="显示在PDF页眉的文字">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">页脚文字</label>
+                        <input type="text" name="footer_text" class="form-control"
+                               value="{{ institution.footer_text or '' }}" placeholder="显示在PDF页脚的文字">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i data-lucide="save" class="me-1"></i> 保存设置
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}

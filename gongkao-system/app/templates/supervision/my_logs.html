@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}我的督学记录 - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<!-- 页面标题 -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="font-heading mb-1">我的督学记录</h4>
+        <p class="text-muted mb-0">查看您所有的督学日志记录</p>
+    </div>
+    <a href="{{ url_for('supervision.log_form') }}" class="btn btn-primary" style="border-radius:10px;">
+        <i data-lucide="clipboard-plus" style="width:18px;height:18px;margin-right:6px;"></i>
+        记录督学
+    </a>
+</div>
+
+<!-- 筛选 -->
+<div class="card mb-4" style="border-radius:16px;border:none;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+    <div class="card-body">
+        <form method="GET" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small text-muted">开始日期</label>
+                <input type="date" class="form-control" name="start_date" 
+                       value="{{ start_date.strftime('%Y-%m-%d') if start_date else '' }}" style="border-radius:8px;">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted">结束日期</label>
+                <input type="date" class="form-control" name="end_date" 
+                       value="{{ end_date.strftime('%Y-%m-%d') if end_date else '' }}" style="border-radius:8px;">
+            </div>
+            <div class="col-md-6">
+                <button type="submit" class="btn btn-primary" style="border-radius:8px;">
+                    <i data-lucide="search" style="width:16px;height:16px;margin-right:4px;"></i> 筛选
+                </button>
+                <a href="{{ url_for('supervision.my_logs') }}" class="btn btn-outline-secondary" style="border-radius:8px;">重置</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 记录列表 -->
+<div class="card" style="border-radius:16px;border:none;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center" style="border-radius:16px 16px 0 0;border-bottom:1px solid #F1F5F9;">
+        <span class="font-heading" style="font-weight:600;">
+            <i data-lucide="clipboard-list" style="width:18px;height:18px;margin-right:8px;color:var(--primary);"></i>
+            督学记录
+        </span>
+        <span class="badge" style="background:#EFF6FF;color:var(--primary);font-weight:500;">共 {{ logs.total }} 条</span>
+    </div>
+    <div class="card-body p-4">
+        {% if logs.items %}
+        {% for log in logs.items %}
+        <div class="card mb-3" style="border-radius:12px;border:1px solid #E2E8F0;transition:all 0.2s;cursor:pointer;"
+             onclick="location.href='{{ url_for('students.detail', id=log.student_id) }}'"
+             onmouseover="this.style.borderColor='var(--primary)';this.style.boxShadow='0 4px 12px rgba(37,99,235,0.1)';"
+             onmouseout="this.style.borderColor='#E2E8F0';this.style.boxShadow='none';">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="d-flex align-items-center">
+                        <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#3B82F6,#8B5CF6);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:0.9rem;margin-right:12px;">
+                            {{ log.student.name[0] if log.student else '?' }}
+                        </div>
+                        <div>
+                            <h6 class="mb-0" style="font-weight:600;">
+                                {{ log.student.name if log.student else '未知学员' }}
+                                <span style="color:#94A3B8;font-size:0.85rem;font-weight:400;margin-left:8px;">
+                                    {{ log.log_date.strftime('%Y-%m-%d') if log.log_date else '' }}
+                                </span>
+                            </h6>
+                            {% if log.contact_type %}
+                            <span class="badge" style="background:#F1F5F9;color:#64748B;font-size:0.75rem;margin-top:4px;">{{ log.contact_type }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        {% if log.student_mood %}
+                        <span class="badge" style="
+                            {% if log.student_mood == '积极' %}background:#DCFCE7;color:#16A34A;
+                            {% elif log.student_mood == '平稳' %}background:#DBEAFE;color:#2563EB;
+                            {% elif log.student_mood == '焦虑' %}background:#FEF3C7;color:#D97706;
+                            {% else %}background:#FEE2E2;color:#DC2626;{% endif %}">
+                            {{ log.student_mood }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if log.content %}
+                <p class="mt-2 mb-0" style="color:#64748B;font-size:0.9rem;">{{ log.content[:100] }}{% if log.content|length > 100 %}...{% endif %}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        
+        <!-- 分页 -->
+        {% if logs.pages > 1 %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center mb-0">
+                <li class="page-item {% if not logs.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('supervision.my_logs', page=logs.prev_num, start_date=start_date, end_date=end_date) }}" style="border-radius:8px;">上一页</a>
+                </li>
+                {% for p in logs.iter_pages() %}
+                    {% if p %}
+                    <li class="page-item {% if p == logs.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('supervision.my_logs', page=p, start_date=start_date, end_date=end_date) }}" style="border-radius:8px;">{{ p }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                <li class="page-item {% if not logs.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('supervision.my_logs', page=logs.next_num, start_date=start_date, end_date=end_date) }}" style="border-radius:8px;">下一页</a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i data-lucide="inbox" style="width:64px;height:64px;color:#CBD5E1;"></i>
+            <p class="text-muted mt-3 mb-4">暂无督学记录</p>
+            <a href="{{ url_for('supervision.log_form') }}" class="btn btn-primary" style="border-radius:10px;">
+                <i data-lucide="clipboard-plus" style="width:16px;height:16px;margin-right:6px;"></i> 记录第一条
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    lucide.createIcons();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "admin/base.html" %}
+
+{% block title %}题册管理 - 错题收集系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">题册管理</h1>
+    <a href="{{ url_for('admin.create_workbook') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> 创建题册
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>题册名称</th>
+                    <th width="100">分类</th>
+                    <th width="100">题目数</th>
+                    <th width="80">页数</th>
+                    <th width="100">PDF</th>
+                    <th width="150">创建时间</th>
+                    <th width="150">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for wb in pagination.items %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('admin.view_workbook', id=wb.id) }}" class="text-decoration-none fw-bold">
+                            {{ wb.name }}
+                        </a>
+                    </td>
+                    <td><span class="badge badge-category">{{ wb.category or '未分类' }}</span></td>
+                    <td>{{ wb.total_questions }}</td>
+                    <td>{{ wb.total_pages }}</td>
+                    <td>
+                        {% if wb.pdf_path %}
+                        <span class="badge bg-success"><i class="bi bi-check"></i> 已生成</span>
+                        {% else %}
+                        <span class="badge bg-secondary">未生成</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ wb.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                        <a href="{{ url_for('admin.edit_workbook', id=wb.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        {% if wb.pdf_path %}
+                        <a href="{{ url_for('admin.download_workbook', id=wb.id) }}" class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-download"></i>
+                        </a>
+                        {% endif %}
+                        <form action="{{ url_for('admin.delete_workbook', id=wb.id) }}" method="POST" class="d-inline" onsubmit="return confirm('确定删除？')">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">
+                        <i class="bi bi-book" style="font-size: 3rem;"></i>
+                        <p class="mt-2">暂无题册</p>
+                        <a href="{{ url_for('admin.create_workbook') }}" class="btn btn-primary">创建第一个题册</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

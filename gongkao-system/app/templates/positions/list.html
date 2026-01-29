@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}岗位查询 - 智能选岗{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- 页面标题和统计 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-1">
+                        <i data-lucide="search" style="width:20px;height:20px;display:inline-block;vertical-align:middle;margin-right:8px;color:var(--primary);"></i>岗位查询
+                    </h4>
+                    <p class="text-muted mb-0">
+                        {{ filters.year }}年{{ filters.exam_type }} | 共 {{ stats.total_positions }} 个岗位，招录 {{ stats.total_recruit }} 人
+                    </p>
+                </div>
+                <div>
+                    <a href="{{ url_for('positions.import_data') }}" class="btn btn-outline-primary">
+                        <i data-lucide="upload" style="width:16px;height:16px;"></i>
+                        <span class="ms-1">导入数据</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 筛选区域 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" id="searchForm">
+                <!-- 第一行：基础筛选 -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-2">
+                        <label class="form-label">年份</label>
+                        <select name="year" class="form-select" id="yearSelect">
+                            {% for y in range(2026, 2018, -1) %}
+                            <option value="{{ y }}" {{ 'selected' if filters.year == y }}>{{ y }}年</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">考试类型</label>
+                        <select name="exam_type" class="form-select" id="examTypeSelect">
+                            <option value="省考" {{ 'selected' if filters.exam_type == '省考' }}>江苏省考</option>
+                            <option value="国考" {{ 'selected' if filters.exam_type == '国考' }}>国考</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">系统类型</label>
+                        <select name="system_type" class="form-select">
+                            <option value="">全部类型</option>
+                            {% for st in system_types %}
+                            <option value="{{ st }}" {{ 'selected' if filters.system_type == st }}>{{ st }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">城市/地区</label>
+                        <select name="city" class="form-select">
+                            <option value="">全部城市</option>
+                            {% for city in cities %}
+                            <option value="{{ city }}" {{ 'selected' if filters.city == city }}>{{ city }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">学历要求</label>
+                        <select name="education" class="form-select">
+                            <option value="">全部学历</option>
+                            <option value="本科及以上" {{ 'selected' if filters.education == '本科及以上' }}>本科及以上</option>
+                            <option value="研究生及以上" {{ 'selected' if filters.education == '研究生及以上' }}>研究生及以上</option>
+                            <option value="大专及以上" {{ 'selected' if filters.education == '大专及以上' }}>大专及以上</option>
+                            <option value="仅限本科" {{ 'selected' if filters.education == '仅限本科' }}>仅限本科</option>
+                            <option value="仅限研究生" {{ 'selected' if filters.education == '仅限研究生' }}>仅限研究生</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">排序方式</label>
+                        <select name="sort_by" class="form-select">
+                            <option value="competition_ratio" {{ 'selected' if filters.sort_by == 'competition_ratio' }}>竞争比↑</option>
+                            <option value="min_entry_score" {{ 'selected' if filters.sort_by == 'min_entry_score' }}>进面分↑</option>
+                            <option value="recruit_count" {{ 'selected' if filters.sort_by == 'recruit_count' }}>招录人数↓</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- 第二行：关键词搜索 -->
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">
+                            <i data-lucide="building-2" style="width:14px;height:14px;"></i> 单位名称
+                        </label>
+                        <input type="text" name="department_name" class="form-control" 
+                               placeholder="如：税务局、法院、公安局..." value="{{ filters.department_name }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">
+                            <i data-lucide="briefcase" style="width:14px;height:14px;"></i> 职位名称
+                        </label>
+                        <input type="text" name="position_name" class="form-control" 
+                               placeholder="如：综合管理、执法、科员..." value="{{ filters.position_name }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">
+                            <i data-lucide="graduation-cap" style="width:14px;height:14px;"></i> 专业搜索
+                        </label>
+                        <input type="text" name="major" class="form-control" 
+                               placeholder="如：法学、会计、计算机..." value="{{ filters.major }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">
+                            <i data-lucide="text" style="width:14px;height:14px;"></i> 关键词
+                        </label>
+                        <input type="text" name="keyword" class="form-control" 
+                               placeholder="任意关键词" value="{{ filters.keyword }}">
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100" style="height:38px;">
+                            <i data-lucide="search" style="width:18px;height:18px;"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 快捷搜索标签 -->
+                <div class="mt-3">
+                    <span class="text-muted small me-2">热门搜索：</span>
+                    <a href="?year={{ filters.year }}&exam_type={{ filters.exam_type }}&major=法学" class="badge bg-light text-dark me-1 text-decoration-none">法学类</a>
+                    <a href="?year={{ filters.year }}&exam_type={{ filters.exam_type }}&major=会计" class="badge bg-light text-dark me-1 text-decoration-none">财会类</a>
+                    <a href="?year={{ filters.year }}&exam_type={{ filters.exam_type }}&major=计算机" class="badge bg-light text-dark me-1 text-decoration-none">计算机类</a>
+                    <a href="?year={{ filters.year }}&exam_type={{ filters.exam_type }}&major=汉语言" class="badge bg-light text-dark me-1 text-decoration-none">中文类</a>
+                    <a href="?year={{ filters.year }}&exam_type={{ filters.exam_type }}&department_name=税务" class="badge bg-light text-dark me-1 text-decoration-none">税务局</a>
+                    <a href="?year={{ filters.year }}&exam_type={{ filters.exam_type }}&department_name=法院" class="badge bg-light text-dark me-1 text-decoration-none">法院</a>
+                    <a href="?year={{ filters.year }}&exam_type={{ filters.exam_type }}&department_name=公安" class="badge bg-light text-dark me-1 text-decoration-none">公安</a>
+                    <a href="?year={{ filters.year }}&exam_type={{ filters.exam_type }}&major=不限" class="badge bg-success text-white me-1 text-decoration-none">专业不限</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 岗位列表 -->
+    <div class="card">
+        <div class="card-header">
+            <span class="fw-bold">搜索结果</span>
+            <span class="text-muted ms-2">共 {{ total }} 个岗位</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>系统/城市</th>
+                        <th>单位名称</th>
+                        <th>职位名称</th>
+                        <th>学历</th>
+                        <th>专业</th>
+                        <th class="text-center">招录</th>
+                        <th class="text-center">竞争比</th>
+                        <th class="text-center">进面分</th>
+                        <th>难度</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for position in positions %}
+                    <tr>
+                        <td>
+                            <span class="badge {% if position.system_type == '省级机关' %}bg-primary{% elif position.system_type == '监狱戒毒系统' %}bg-warning text-dark{% elif position.system_type == '统计系统' %}bg-info{% else %}bg-secondary{% endif %}">
+                                {{ position.system_type or '其他' }}
+                            </span>
+                            <br><small class="text-muted">{{ position.city or '' }}</small>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('positions.detail', id=position.id) }}" class="text-decoration-none">
+                                {{ position.department_name }}
+                            </a>
+                        </td>
+                        <td>
+                            <small>{{ position.position_name }}</small>
+                        </td>
+                        <td>
+                            <small>{{ position.education }}</small>
+                        </td>
+                        <td>
+                            <small class="text-muted" title="{{ position.major_requirement or '不限' }}">
+                                {% if position.major_requirement %}{{ position.major_requirement[:20] }}{{ '...' if position.major_requirement|length > 20 }}{% else %}不限{% endif %}
+                            </small>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-primary">{{ position.recruit_count }}人</span>
+                        </td>
+                        <td class="text-center">
+                            {% if position.competition_ratio %}
+                            <span class="{% if position.competition_ratio > 50 %}text-danger{% elif position.competition_ratio > 20 %}text-warning{% else %}text-success{% endif %}">
+                                {{ position.competition_ratio|round(1) }}:1
+                            </span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if position.min_entry_score %}
+                            <span>{{ position.min_entry_score|round(1) }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% set level = position.difficulty_level %}
+                            {% if level == 'hard' %}
+                            <span class="badge bg-danger">难</span>
+                            {% elif level == 'medium' %}
+                            <span class="badge bg-warning">中</span>
+                            {% elif level == 'easy' %}
+                            <span class="badge bg-success">易</span>
+                            {% else %}
+                            <span class="badge bg-secondary">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            <i data-lucide="inbox" style="width:48px;height:48px;margin-bottom:12px;"></i>
+                            <p>暂无数据</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 分页 -->
+        {% if total_pages > 1 %}
+        <div class="card-footer">
+            {% set query_params = 'year=' ~ filters.year ~ '&exam_type=' ~ filters.exam_type ~ '&system_type=' ~ filters.system_type ~ '&city=' ~ filters.city ~ '&department_name=' ~ filters.department_name ~ '&position_name=' ~ filters.position_name ~ '&education=' ~ filters.education ~ '&major=' ~ filters.major ~ '&keyword=' ~ filters.keyword ~ '&sort_by=' ~ filters.sort_by %}
+            <nav>
+                <ul class="pagination mb-0 justify-content-center">
+                    {% if page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page - 1 }}&{{ query_params }}">上一页</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for p in range(1, total_pages + 1) %}
+                    {% if p == page %}
+                    <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+                    {% elif p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ p }}&{{ query_params }}">{{ p }}</a>
+                    </li>
+                    {% elif p == page - 3 or p == page + 3 %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if page < total_pages %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page + 1 }}&{{ query_params }}">下一页</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 初始化Lucide图标
+    lucide.createIcons();
+</script>
+{% endblock %}

@@ -1,0 +1,149 @@
+openapi: 3.0.0
+info:
+  title: 公考督学API
+  version: 1.0.0
+  description: 公考培训学生管理系统API
+
+servers:
+  - url: https://gongkao.chaim.top
+
+paths:
+  /api/v1/students/search:
+    get:
+      operationId: searchStudents
+      summary: 查询学员
+      description: 根据姓名或手机号查询学员信息
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 学员姓名或手机号
+        - name: include_logs
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: 是否包含督学记录
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/v1/supervision/logs:
+    post:
+      operationId: createSupervisionLog
+      summary: 创建督学记录
+      description: 为学员创建督学记录
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - student_name
+                - content
+              properties:
+                student_name:
+                  type: string
+                  description: 学员姓名
+                content:
+                  type: string
+                  description: 督学内容
+                mood:
+                  type: string
+                  description: 情绪状态
+                  enum: [积极, 一般, 消极]
+                study_status:
+                  type: string
+                  description: 学习状态
+                  enum: [优秀, 良好, 一般, 较差]
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/v1/reminders/pending:
+    get:
+      operationId: getPendingReminders
+      summary: 获取待办事项
+      description: 查看待跟进学员和未完成作业
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/v1/reports/weekly:
+    get:
+      operationId: getWeeklyReport
+      summary: 生成周报
+      description: 生成本周督学工作报告
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/v1/homework/batch-push:
+    post:
+      operationId: batchPushHomework
+      summary: 批量推送作业
+      description: 将作业推送给班次学员
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - content
+              properties:
+                title:
+                  type: string
+                  description: 作业标题
+                content:
+                  type: string
+                  description: 作业内容
+                batch_name:
+                  type: string
+                  description: 班次名称
+                student_ids:
+                  type: array
+                  items:
+                    type: integer
+                  description: 学员ID列表
+                due_date:
+                  type: string
+                  description: 截止日期
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+security:
+  - ApiKeyAuth: []

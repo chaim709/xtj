@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}{{ '编辑题册' if workbook else '创建题册' }} - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">{{ '编辑题册' if workbook else '创建题册' }}</h1>
+    </div>
+    <a href="{{ url_for('workbooks.index') }}" class="btn btn-outline-secondary">
+        <i data-lucide="arrow-left" class="me-1"></i> 返回
+    </a>
+</div>
+
+<form action="{{ url_for('workbooks.edit', id=workbook.id) if workbook else url_for('workbooks.create') }}" method="POST">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">基本信息</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">题册名称 <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" required
+                               value="{{ workbook.name if workbook else '' }}"
+                               placeholder="如：言语理解专项练习">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">描述</label>
+                        <textarea name="description" class="form-control" rows="3"
+                                  placeholder="题册简介...">{{ workbook.description if workbook else '' }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">分类</label>
+                        <input type="text" name="category" class="form-control" list="categoryList"
+                               value="{{ workbook.category if workbook else '' }}">
+                        <datalist id="categoryList">
+                            {% for cat in categories %}
+                            <option value="{{ cat }}">
+                            {% endfor %}
+                        </datalist>
+                    </div>
+                </div>
+            </div>
+            
+            {% if not workbook %}
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">选择题目</h5>
+                    <span class="badge bg-primary" id="selectedCount">已选 0 题</span>
+                </div>
+                <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                    {% for question in questions %}
+                    <div class="form-check border-bottom py-2">
+                        <input class="form-check-input question-checkbox" type="checkbox" 
+                               name="question_ids" value="{{ question.id }}" id="q_{{ question.id }}">
+                        <label class="form-check-label" for="q_{{ question.id }}">
+                            <strong>#{{ question.id }}</strong>
+                            {{ question.stem[:80] }}{% if question.stem|length > 80 %}...{% endif %}
+                            <br>
+                            <small class="text-muted">
+                                {{ question.category or '-' }} / {{ question.subcategory or '-' }}
+                            </small>
+                        </label>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-3">暂无题目，请先添加题目</p>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-body">
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i data-lucide="save" class="me-1"></i> {{ '保存修改' if workbook else '创建题册' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+document.querySelectorAll('.question-checkbox').forEach(function(checkbox) {
+    checkbox.addEventListener('change', function() {
+        var count = document.querySelectorAll('.question-checkbox:checked').length;
+        document.getElementById('selectedCount').textContent = '已选 ' + count + ' 题';
+    });
+});
+</script>
+{% endblock %}

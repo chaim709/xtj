@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}学员管理 - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<!-- 页面标题 -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="font-heading mb-1">学员管理</h4>
+        <p class="text-muted mb-0">管理所有学员档案信息</p>
+    </div>
+    <a href="{{ url_for('students.create') }}" class="btn btn-primary" style="border-radius:10px;">
+        <i data-lucide="user-plus" style="width:18px;height:18px;margin-right:6px;"></i>
+        新增学员
+    </a>
+</div>
+
+<!-- 搜索和筛选 -->
+<div class="card mb-4" style="border-radius:16px;border:none;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('students.list') }}" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small text-muted">搜索</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i data-lucide="search" style="width:16px;height:16px;color:#94A3B8;"></i>
+                    </span>
+                    <input type="text" class="form-control border-start-0" name="search" 
+                           placeholder="姓名/电话" value="{{ filters.search }}" style="border-radius:0 8px 8px 0;">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted">班次</label>
+                <select class="form-select" name="class_name" style="border-radius:8px;">
+                    <option value="">全部班次</option>
+                    {% for c in class_options %}
+                    <option value="{{ c }}" {% if filters.class_name == c %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted">报考类型</label>
+                <select class="form-select" name="exam_type" style="border-radius:8px;">
+                    <option value="">全部类型</option>
+                    <option value="国省考" {% if '国省考' in filters.exam_type %}selected{% endif %}>国省考</option>
+                    <option value="事业编" {% if '事业编' in filters.exam_type %}selected{% endif %}>事业编</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <div class="form-check" style="margin-top:28px;">
+                    <input class="form-check-input" type="checkbox" name="need_attention" value="1" 
+                           id="needAttention" {% if filters.need_attention %}checked{% endif %}>
+                    <label class="form-check-label" for="needAttention">仅显示需关注</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary" style="border-radius:8px;">
+                    <i data-lucide="search" style="width:16px;height:16px;margin-right:4px;"></i> 搜索
+                </button>
+                <a href="{{ url_for('students.list') }}" class="btn btn-outline-secondary" style="border-radius:8px;">重置</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 学员列表 -->
+<div class="card" style="border-radius:16px;border:none;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center" style="border-radius:16px 16px 0 0;border-bottom:1px solid #F1F5F9;">
+        <span class="font-heading" style="font-weight:600;">
+            <i data-lucide="users" style="width:18px;height:18px;margin-right:8px;color:var(--primary);"></i>
+            学员列表
+        </span>
+        <span class="badge" style="background:#EFF6FF;color:var(--primary);font-weight:500;">共 {{ pagination.total }} 人</span>
+    </div>
+    <div class="card-body p-0">
+        {% if students %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead style="background:#F8FAFC;">
+                    <tr>
+                        <th style="padding:1rem;font-weight:500;color:#64748B;font-size:0.85rem;">姓名</th>
+                        <th style="padding:1rem;font-weight:500;color:#64748B;font-size:0.85rem;">电话</th>
+                        <th style="padding:1rem;font-weight:500;color:#64748B;font-size:0.85rem;">班次</th>
+                        <th style="padding:1rem;font-weight:500;color:#64748B;font-size:0.85rem;">报考类型</th>
+                        <th style="padding:1rem;font-weight:500;color:#64748B;font-size:0.85rem;">基础</th>
+                        <th style="padding:1rem;font-weight:500;color:#64748B;font-size:0.85rem;">协议班</th>
+                        <th style="padding:1rem;font-weight:500;color:#64748B;font-size:0.85rem;">入学日期</th>
+                        <th style="padding:1rem;font-weight:500;color:#64748B;font-size:0.85rem;">状态</th>
+                        <th style="padding:1rem;font-weight:500;color:#64748B;font-size:0.85rem;">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr style="cursor:pointer;" onclick="if(event.target.tagName !== 'BUTTON' && event.target.tagName !== 'A' && event.target.tagName !== 'I') location.href='{{ url_for('students.detail', id=student.id) }}'">
+                        <td style="padding:1rem;">
+                            <div class="d-flex align-items-center">
+                                <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#3B82F6,#8B5CF6);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:0.85rem;margin-right:10px;">
+                                    {{ student.name[0] }}
+                                </div>
+                                <span style="font-weight:500;color:#1E293B;">{{ student.name }}</span>
+                            </div>
+                        </td>
+                        <td style="padding:1rem;color:#64748B;">{{ student.phone or '-' }}</td>
+                        <td style="padding:1rem;color:#64748B;">{{ student.class_name or '-' }}</td>
+                        <td style="padding:1rem;">
+                            {% if student.exam_type %}
+                            <span style="font-size:0.85rem;color:#64748B;">{{ student.exam_type[:15] }}{% if student.exam_type|length > 15 %}...{% endif %}</span>
+                            {% else %}
+                            <span style="color:#94A3B8;">-</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding:1rem;">
+                            {% if student.has_basic %}
+                            <span class="badge" style="background:#DCFCE7;color:#16A34A;font-weight:500;">有基础</span>
+                            {% else %}
+                            <span class="badge" style="background:#F1F5F9;color:#64748B;font-weight:500;">无基础</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding:1rem;">
+                            {% if student.is_agreement %}
+                            <span class="badge" style="background:#DBEAFE;color:#2563EB;font-weight:500;">协议班</span>
+                            {% else %}
+                            <span class="badge" style="background:#F1F5F9;color:#94A3B8;font-weight:500;">普通班</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding:1rem;color:#64748B;font-size:0.9rem;">
+                            {% if student.enrollment_date %}
+                            {{ student.enrollment_date.strftime('%Y-%m-%d') }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td style="padding:1rem;">
+                            <button class="btn btn-sm p-1 toggle-attention" 
+                                    data-id="{{ student.id }}"
+                                    style="background:none;border:none;cursor:pointer;">
+                                {% if student.need_attention %}
+                                <i data-lucide="star" style="width:18px;height:18px;fill:#F59E0B;color:#F59E0B;"></i>
+                                {% else %}
+                                <i data-lucide="star" style="width:18px;height:18px;color:#CBD5E1;"></i>
+                                {% endif %}
+                            </button>
+                        </td>
+                        <td style="padding:1rem;">
+                            <a href="{{ url_for('students.detail', id=student.id) }}" 
+                               class="btn btn-sm" style="background:#EFF6FF;color:#2563EB;border-radius:6px;margin-right:4px;" title="查看">
+                                <i data-lucide="eye" style="width:14px;height:14px;"></i>
+                            </a>
+                            <a href="{{ url_for('students.edit', id=student.id) }}" 
+                               class="btn btn-sm" style="background:#F1F5F9;color:#64748B;border-radius:6px;margin-right:4px;" title="编辑">
+                                <i data-lucide="pencil" style="width:14px;height:14px;"></i>
+                            </a>
+                            {% if current_user.is_admin() %}
+                            <form action="{{ url_for('students.delete', id=student.id) }}" 
+                                  method="POST" class="d-inline" 
+                                  onsubmit="return confirm('确定要删除学员 {{ student.name }} 吗？');">
+                                <button type="submit" class="btn btn-sm" style="background:#FEF2F2;color:#DC2626;border-radius:6px;" title="删除">
+                                    <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 分页 -->
+        {% if pagination.pages > 1 %}
+        <nav class="p-3 border-top">
+            <ul class="pagination mb-0 justify-content-center">
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('students.list', page=pagination.prev_num, **filters) }}" style="border-radius:8px;">上一页</a>
+                </li>
+                {% for p in pagination.iter_pages() %}
+                    {% if p %}
+                    <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('students.list', page=p, **filters) }}" style="border-radius:8px;">{{ p }}</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('students.list', page=pagination.next_num, **filters) }}" style="border-radius:8px;">下一页</a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i data-lucide="inbox" style="width:64px;height:64px;color:#CBD5E1;"></i>
+            <p class="text-muted mt-3 mb-4">暂无学员数据</p>
+            <a href="{{ url_for('students.create') }}" class="btn btn-primary" style="border-radius:10px;">
+                <i data-lucide="user-plus" style="width:16px;height:16px;margin-right:6px;"></i>
+                添加第一个学员
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    lucide.createIcons();
+    
+    // 切换关注状态
+    $('.toggle-attention').click(function(e) {
+        e.stopPropagation();
+        var btn = $(this);
+        var studentId = btn.data('id');
+        
+        $.post('/students/' + studentId + '/toggle-attention', function(response) {
+            if (response.success) {
+                location.reload();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

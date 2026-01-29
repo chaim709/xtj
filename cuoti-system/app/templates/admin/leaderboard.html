@@ -1,0 +1,153 @@
+{% extends "admin/base.html" %}
+
+{% block title %}学员排行榜 - 错题收集系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="bi bi-trophy me-2"></i>学员排行榜</h1>
+    <div class="d-flex gap-2">
+        <!-- 时间范围 -->
+        <div class="btn-group">
+            <a href="{{ url_for('admin.leaderboard', sort=sort_by, period='7d') }}" 
+               class="btn btn-outline-secondary {% if period == '7d' %}active{% endif %}">7天</a>
+            <a href="{{ url_for('admin.leaderboard', sort=sort_by, period='30d') }}" 
+               class="btn btn-outline-secondary {% if period == '30d' %}active{% endif %}">30天</a>
+            <a href="{{ url_for('admin.leaderboard', sort=sort_by, period='all') }}" 
+               class="btn btn-outline-secondary {% if period == 'all' %}active{% endif %}">全部</a>
+        </div>
+        
+        <!-- 排序方式 -->
+        <div class="btn-group">
+            <a href="{{ url_for('admin.leaderboard', sort='accuracy', period=period) }}" 
+               class="btn btn-outline-primary {% if sort_by == 'accuracy' %}active{% endif %}">
+                <i class="bi bi-percent"></i> 按正确率
+            </a>
+            <a href="{{ url_for('admin.leaderboard', sort='total', period=period) }}" 
+               class="btn btn-outline-primary {% if sort_by == 'total' %}active{% endif %}">
+                <i class="bi bi-123"></i> 按刷题量
+            </a>
+            <a href="{{ url_for('admin.leaderboard', sort='submissions', period=period) }}" 
+               class="btn btn-outline-primary {% if sort_by == 'submissions' %}active{% endif %}">
+                <i class="bi bi-check2-all"></i> 按提交数
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- TOP3 卡片 -->
+{% if leaderboard|length >= 3 %}
+<div class="row g-4 mb-4">
+    <!-- 第二名 -->
+    <div class="col-md-4">
+        <div class="card text-center" style="border-top: 4px solid #C0C0C0;">
+            <div class="card-body">
+                <div class="fs-1 mb-2">🥈</div>
+                <h5>{{ leaderboard[1].name }}</h5>
+                <div class="text-muted small mb-2">{{ leaderboard[1].phone }}</div>
+                <div class="fs-2 fw-bold text-primary">{{ leaderboard[1].accuracy_rate }}%</div>
+                <div class="small text-muted">刷题 {{ leaderboard[1].total_attempted }} | 正确 {{ leaderboard[1].total_correct }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 第一名 -->
+    <div class="col-md-4">
+        <div class="card text-center" style="border-top: 4px solid #FFD700; transform: scale(1.05);">
+            <div class="card-body py-4">
+                <div class="fs-1 mb-2">🥇</div>
+                <h4>{{ leaderboard[0].name }}</h4>
+                <div class="text-muted small mb-2">{{ leaderboard[0].phone }}</div>
+                <div class="fs-1 fw-bold text-warning">{{ leaderboard[0].accuracy_rate }}%</div>
+                <div class="small text-muted">刷题 {{ leaderboard[0].total_attempted }} | 正确 {{ leaderboard[0].total_correct }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 第三名 -->
+    <div class="col-md-4">
+        <div class="card text-center" style="border-top: 4px solid #CD7F32;">
+            <div class="card-body">
+                <div class="fs-1 mb-2">🥉</div>
+                <h5>{{ leaderboard[2].name }}</h5>
+                <div class="text-muted small mb-2">{{ leaderboard[2].phone }}</div>
+                <div class="fs-2 fw-bold text-primary">{{ leaderboard[2].accuracy_rate }}%</div>
+                <div class="small text-muted">刷题 {{ leaderboard[2].total_attempted }} | 正确 {{ leaderboard[2].total_correct }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- 完整排行榜 -->
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-list-ol me-2"></i>完整排行榜
+        <span class="badge bg-secondary ms-2">共 {{ leaderboard|length }} 人</span>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th width="60" class="text-center">排名</th>
+                    <th>学员</th>
+                    <th width="100" class="text-center">刷题数</th>
+                    <th width="100" class="text-center">正确数</th>
+                    <th width="100" class="text-center">错题数</th>
+                    <th width="120" class="text-center">正确率</th>
+                    <th width="80" class="text-center">提交次数</th>
+                    <th width="80"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in leaderboard %}
+                <tr {% if loop.index <= 3 %}style="background: linear-gradient(90deg, rgba(255,215,0,0.1) 0%, transparent 100%);"{% endif %}>
+                    <td class="text-center">
+                        {% if item.rank == 1 %}
+                        <span class="fs-5">🥇</span>
+                        {% elif item.rank == 2 %}
+                        <span class="fs-5">🥈</span>
+                        {% elif item.rank == 3 %}
+                        <span class="fs-5">🥉</span>
+                        {% else %}
+                        <span class="fw-bold text-muted">{{ item.rank }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('admin.view_student', id=item.id) }}" class="fw-bold text-decoration-none">
+                            {{ item.name }}
+                        </a>
+                        <small class="text-muted d-block">{{ item.phone }}</small>
+                    </td>
+                    <td class="text-center">{{ item.total_attempted }}</td>
+                    <td class="text-center text-success">{{ item.total_correct }}</td>
+                    <td class="text-center text-danger">{{ item.total_mistakes }}</td>
+                    <td class="text-center">
+                        {% if item.accuracy_rate >= 85 %}
+                        <span class="badge bg-success fs-6">{{ item.accuracy_rate }}%</span>
+                        {% elif item.accuracy_rate >= 70 %}
+                        <span class="badge bg-warning text-dark fs-6">{{ item.accuracy_rate }}%</span>
+                        {% elif item.accuracy_rate > 0 %}
+                        <span class="badge bg-danger fs-6">{{ item.accuracy_rate }}%</span>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">{{ item.submission_count }}</td>
+                    <td>
+                        <a href="{{ url_for('admin.view_student', id=item.id) }}" class="btn btn-sm btn-outline-primary">
+                            详情
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">
+                        暂无数据，请先导入学员做题记录
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,89 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+.venv/
+
+# ===== Flask =====
+instance/
+.webassets-cache
+
+# ===== 数据库 =====
+*.db
+*.sqlite
+*.sqlite3
+
+# ===== 环境变量 =====
+.env
+.env.local
+.env.*.local
+
+# ===== IDE =====
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-*
+
+# ===== macOS =====
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# ===== Node.js =====
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn
+
+# ===== 日志 =====
+*.log
+logs/
+
+# ===== 测试 =====
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+.nox/
+
+# ===== 临时文件 =====
+*.tmp
+*.temp
+*.bak
+*~
+
+# ===== 构建产物 =====
+dist/
+build/
+*.egg-info/
+
+# ===== VitePress =====
+gongkao-zhishiku/docs/.vitepress/cache/
+gongkao-zhishiku/docs/.vitepress/dist/
+
+# ===== 题库大文件 (存放在服务器 /data/gongkao/ 目录) =====
+# 原始题库文件
+*.pdf
+*.doc
+*.docx
+*.xls
+*.xlsx
+
+# 解析后的数据目录
+cuoti-system/data/
+gongkao-system/data/
+
+# 原始数据目录
+公考培训机构管理系统/
+
+# ===== 保留目录结构的占位文件 =====
+!**/.gitkeep

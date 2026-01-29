@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>答案解析 - {{ workbook.name }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f7fb;
+            min-height: 100vh;
+            padding-bottom: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 { font-size: 18px; margin-bottom: 8px; }
+        .header p { font-size: 14px; opacity: 0.9; }
+        
+        .container { padding: 15px; }
+        
+        .question-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .question-num {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            line-height: 32px;
+            text-align: center;
+            background: #16a34a;
+            color: white;
+            border-radius: 50%;
+            font-weight: 600;
+        }
+        
+        .question-category {
+            font-size: 12px;
+            color: #666;
+            background: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .question-stem {
+            font-size: 15px;
+            line-height: 1.8;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .options { margin-bottom: 15px; }
+        
+        .option {
+            display: flex;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .option.correct {
+            background: #dcfce7;
+            border: 1px solid #16a34a;
+        }
+        
+        .option-letter {
+            font-weight: 600;
+            margin-right: 10px;
+            color: #666;
+        }
+        
+        .option.correct .option-letter {
+            color: #16a34a;
+        }
+        
+        .answer-section {
+            background: #f0fdf4;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        
+        .answer-label {
+            font-weight: 600;
+            color: #16a34a;
+            margin-bottom: 10px;
+        }
+        
+        .answer-text {
+            font-size: 14px;
+            line-height: 1.8;
+            color: #333;
+        }
+        
+        .back-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: #16a34a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+            text-decoration: none;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ workbook.name }}</h1>
+        <p>第{{ page.page_num }}页 答案解析</p>
+    </div>
+    
+    <div class="container">
+        {% for q in questions %}
+        <div class="question-card">
+            <div class="question-header">
+                <span class="question-num">{{ q.order }}</span>
+                {% if q.category %}
+                <span class="question-category">{{ q.category }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="question-stem">{{ q.stem }}</div>
+            
+            <div class="options">
+                {% for letter in ['A', 'B', 'C', 'D'] %}
+                {% if q.options[letter] %}
+                <div class="option {% if q.answer and letter in q.answer %}correct{% endif %}">
+                    <span class="option-letter">{{ letter }}.</span>
+                    <span>{{ q.options[letter] }}</span>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+            
+            <div class="answer-section">
+                <div class="answer-label">正确答案：{{ q.answer or '未知' }}</div>
+                {% if q.analysis %}
+                <div class="answer-text">{{ q.analysis }}</div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        
+        <a href="javascript:history.back()" class="back-btn">返回</a>
+    </div>
+</body>
+</html>

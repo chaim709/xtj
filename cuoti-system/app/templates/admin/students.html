@@ -1,0 +1,94 @@
+{% extends "admin/base.html" %}
+
+{% block title %}学员管理 - 错题收集系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">学员管理</h1>
+    <button class="btn btn-primary" onclick="syncStudents()">
+        <i class="bi bi-arrow-repeat"></i> 同步督学系统学员
+    </button>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>姓名</th>
+                    <th>错题数</th>
+                    <th>提交次数</th>
+                    <th>最近习题册</th>
+                    <th>最后提交</th>
+                    <th width="100">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in pagination.items %}
+                {% set last_sub = student_last_subs.get(s.id) %}
+                <tr>
+                    <td><strong>{{ s.name }}</strong></td>
+                    <td><span class="badge bg-danger">{{ s.mistakes.count() }}</span></td>
+                    <td>{{ s.submissions.count() }}</td>
+                    <td>
+                        {% if last_sub and last_sub.workbook %}
+                        <small>{{ last_sub.workbook.name[:20] }}{% if last_sub.workbook.name|length > 20 %}...{% endif %}</small>
+                        {% else %}
+                        <small class="text-muted">-</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if last_sub %}
+                        {{ last_sub.created_at.strftime('%m-%d %H:%M') }}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('admin.view_student', id=s.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i> 查看
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-muted">
+                        <i class="bi bi-people" style="font-size: 3rem;"></i>
+                        <p class="mt-2">暂无学员</p>
+                        <button class="btn btn-primary btn-sm" onclick="syncStudents()">同步督学系统学员</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function syncStudents() {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> 同步中...';
+    
+    fetch('/api/sync_students')
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('同步失败: ' + data.message);
+            }
+        })
+        .catch(err => {
+            alert('同步失败: ' + err);
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> 同步督学系统学员';
+        });
+}
+</script>
+{% endblock %}

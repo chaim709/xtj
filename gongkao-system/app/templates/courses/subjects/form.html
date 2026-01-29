@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ '编辑' if subject else '新增' }}科目 - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<!-- 页面标题 -->
+<div class="d-flex align-items-center mb-4">
+    <a href="{{ url_for('courses.subject_list') }}" class="btn btn-outline-secondary me-3">
+        <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+    </a>
+    <div>
+        <h4 class="mb-1 font-heading">{{ '编辑' if subject else '新增' }}科目</h4>
+        <p class="text-muted mb-0">{{ '修改科目信息' if subject else '添加新的考试科目' }}</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">科目名称 <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" value="{{ subject.name if subject else '' }}" required placeholder="如：言语理解与表达">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">简称</label>
+                        <input type="text" name="short_name" class="form-control" value="{{ subject.short_name if subject else '' }}" placeholder="如：言语">
+                        <div class="form-text">用于课表等场景的简洁显示</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">考试类型 <span class="text-danger">*</span></label>
+                        <select name="exam_type" class="form-select">
+                            <option value="civil" {{ 'selected' if subject and subject.exam_type == 'civil' else '' }}>国省考</option>
+                            <option value="career" {{ 'selected' if subject and subject.exam_type == 'career' else '' }}>事业编</option>
+                            <option value="common" {{ 'selected' if subject and subject.exam_type == 'common' or not subject else '' }}>通用/自定义</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">排序</label>
+                        <input type="number" name="sort_order" class="form-control" value="{{ subject.sort_order if subject else 0 }}" min="0">
+                        <div class="form-text">数字越小排序越靠前</div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i data-lucide="save" style="width:18px;height:18px;"></i> 保存
+                        </button>
+                        <a href="{{ url_for('courses.subject_list') }}" class="btn btn-outline-secondary">取消</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h6 class="card-title"><i data-lucide="info" style="width:16px;height:16px;"></i> 使用说明</h6>
+                <ul class="mb-0 text-muted" style="font-size: 0.9rem;">
+                    <li class="mb-2">系统预设了常用的国省考和事业编科目，预设科目无法删除</li>
+                    <li class="mb-2">可以新增自定义科目以适应特殊课程需求</li>
+                    <li class="mb-2">简称将在课表等空间有限的场景中显示</li>
+                    <li>停用的科目在新建课表时不会出现在选项中</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}

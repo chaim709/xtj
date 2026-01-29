@@ -1,0 +1,720 @@
+{% extends "base.html" %}
+
+{% block title %}宿迁市选岗指南 - 公考培训管理系统{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* 紧凑页头 */
+    .page-header {
+        background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%);
+        border-radius: var(--radius-lg);
+        padding: 1.25rem 1.5rem;
+        color: white;
+        margin-bottom: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .page-header-left {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .page-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0;
+        color: white !important;
+    }
+    
+    .page-subtitle {
+        opacity: 0.9;
+        font-size: 0.8rem;
+        margin-top: 0.25rem;
+        color: rgba(255, 255, 255, 0.9) !important;
+    }
+    
+    .header-stats {
+        display: flex;
+        gap: 1.5rem;
+    }
+    
+    .header-stat {
+        text-align: center;
+    }
+    
+    .header-stat-value {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+    
+    .header-stat-label {
+        font-size: 0.7rem;
+        opacity: 0.85;
+    }
+    
+    /* 快速导航 */
+    .quick-nav {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .quick-nav-btn {
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius-md);
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        transition: all var(--transition-fast);
+    }
+    
+    .quick-nav-btn.outline {
+        background: white;
+        border: 1px solid var(--border-default);
+        color: var(--text-secondary);
+    }
+    
+    .quick-nav-btn.outline:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+    
+    .quick-nav-btn.primary {
+        background: var(--primary);
+        color: white;
+    }
+    
+    .quick-nav-btn.primary:hover {
+        background: #1D4ED8;
+    }
+    
+    /* 卡片通用 */
+    .card {
+        background: var(--card-bg);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-card);
+        border: 1px solid var(--border-light);
+        margin-bottom: 1rem;
+        overflow: hidden;
+    }
+    
+    .card-header {
+        padding: 0.875rem 1rem;
+        border-bottom: 1px solid var(--border-light);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--background);
+    }
+    
+    .card-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    /* 区县卡片网格 */
+    .district-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+    
+    @media (max-width: 992px) {
+        .district-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    .district-card {
+        background: var(--card-bg);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        border: 1px solid var(--border-light);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+    }
+    
+    .district-card:hover {
+        border-color: var(--primary);
+        box-shadow: var(--shadow-sm);
+        transform: translateY(-2px);
+    }
+    
+    .district-card.recommended {
+        background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);
+        border-color: var(--primary);
+    }
+    
+    .district-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+    
+    .district-name {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .district-badge {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: var(--radius-sm);
+        font-weight: 500;
+    }
+    
+    .district-badge.low { background: #DBEAFE; color: #1E40AF; }
+    .district-badge.medium { background: #FEF3C7; color: #92400E; }
+    .district-badge.high { background: #FEE2E2; color: #991B1B; }
+    
+    .district-stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+        font-size: 0.8rem;
+    }
+    
+    .district-stat {
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .district-stat-label {
+        color: var(--text-muted);
+    }
+    
+    .district-stat-value {
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    /* 数据表格 */
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+    
+    .data-table thead th {
+        background: var(--background);
+        font-weight: 600;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        padding: 0.625rem 0.5rem;
+        border-bottom: 2px solid var(--border-light);
+        text-align: center;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+    
+    .data-table thead th:first-child {
+        text-align: left;
+        padding-left: 1rem;
+    }
+    
+    .data-table tbody td {
+        padding: 0.625rem 0.5rem;
+        border-bottom: 1px solid var(--border-light);
+        text-align: center;
+    }
+    
+    .data-table tbody td:first-child {
+        text-align: left;
+        padding-left: 1rem;
+        font-weight: 600;
+    }
+    
+    .data-table tbody tr {
+        cursor: pointer;
+        transition: background var(--transition-fast);
+    }
+    
+    .data-table tbody tr:hover {
+        background: var(--card-bg-hover);
+    }
+    
+    .table-scroll {
+        max-height: 280px;
+        overflow-y: auto;
+    }
+    
+    .table-scroll::-webkit-scrollbar {
+        width: 5px;
+    }
+    
+    .table-scroll::-webkit-scrollbar-thumb {
+        background: var(--border-default);
+        border-radius: 3px;
+    }
+    
+    /* 图表容器 */
+    .chart-container {
+        height: 220px;
+    }
+    
+    .map-container {
+        height: 280px;
+    }
+    
+    /* 建议卡片 */
+    .tips-card {
+        background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);
+        border: none;
+    }
+    
+    .tips-card .card-header {
+        background: transparent;
+        border-bottom-color: rgba(0,0,0,0.1);
+    }
+    
+    .tips-card .card-title {
+        color: #1E40AF;
+    }
+    
+    .tip-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 0.5rem 0;
+        font-size: 0.85rem;
+        color: #1E3A8A;
+        line-height: 1.4;
+    }
+    
+    .tip-icon {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #3B82F6;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+    
+    /* 链接卡片 */
+    .link-card {
+        background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        color: white;
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        text-decoration: none;
+        display: block;
+    }
+    
+    .link-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        color: white;
+    }
+    
+    .link-card-title {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .link-card-desc {
+        font-size: 0.8rem;
+        opacity: 0.9;
+    }
+    
+    /* 导出按钮 */
+    .btn-export {
+        padding: 0.375rem 0.75rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.8rem;
+        background: white;
+        border: 1px solid var(--border-default);
+        color: var(--text-secondary);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .btn-export:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- 紧凑页头 -->
+<div class="page-header">
+    <div class="page-header-left">
+        <div>
+            <h1 class="page-title">
+                <i data-lucide="map-pin" style="width:22px;height:22px;display:inline;vertical-align:middle;margin-right:6px;"></i>
+                宿迁市选岗指南
+            </h1>
+            <div class="page-subtitle">{{ year }}年{{ exam_type }} · 各区县招录分析</div>
+        </div>
+    </div>
+    <div class="header-stats">
+        <div class="header-stat">
+            <div class="header-stat-value">{{ overview.total_positions }}</div>
+            <div class="header-stat-label">岗位数</div>
+        </div>
+        <div class="header-stat">
+            <div class="header-stat-value">{{ overview.total_recruit }}</div>
+            <div class="header-stat-label">招录人数</div>
+        </div>
+        <div class="header-stat">
+            <div class="header-stat-value">{{ overview.avg_competition }}:1</div>
+            <div class="header-stat-label">竞争比</div>
+        </div>
+        <div class="header-stat">
+            <div class="header-stat-value">{{ overview.avg_entry_score }}</div>
+            <div class="header-stat-label">进面分</div>
+        </div>
+    </div>
+</div>
+
+<!-- 快速导航 -->
+<div class="quick-nav">
+    <a href="{{ url_for('positions.dashboard') }}?year={{ year }}&exam_type={{ exam_type }}" class="quick-nav-btn outline">
+        <i data-lucide="arrow-left" style="width:14px;height:14px;"></i>
+        总仪表盘
+    </a>
+    <a href="{{ url_for('positions.sihong_dashboard') }}?year={{ year }}&exam_type={{ exam_type }}" class="quick-nav-btn primary">
+        <i data-lucide="home" style="width:14px;height:14px;"></i>
+        泗洪县详情
+    </a>
+</div>
+
+<!-- 区县卡片 -->
+<div class="district-grid">
+    {% for district in district_stats %}
+    <div class="district-card {% if district.difficulty_level == 'low' %}recommended{% endif %}"
+         onclick="location.href='{{ url_for('positions.list') }}?year={{ year }}&exam_type={{ exam_type }}&keyword={{ district.district }}'">
+        <div class="district-header">
+            <span class="district-name">{{ district.district }}</span>
+            <span class="district-badge {{ district.difficulty_level }}">
+                {% if district.difficulty_level == 'low' %}推荐
+                {% elif district.difficulty_level == 'medium' %}中等
+                {% else %}竞争大{% endif %}
+            </span>
+        </div>
+        <div class="district-stats">
+            <div class="district-stat">
+                <span class="district-stat-label">岗位</span>
+                <span class="district-stat-value">{{ district.position_count }}</span>
+            </div>
+            <div class="district-stat">
+                <span class="district-stat-label">人数</span>
+                <span class="district-stat-value">{{ district.recruit_count }}</span>
+            </div>
+            <div class="district-stat">
+                <span class="district-stat-label">竞争</span>
+                <span class="district-stat-value">{{ district.avg_competition or '-' }}:1</span>
+            </div>
+            <div class="district-stat">
+                <span class="district-stat-label">分数</span>
+                <span class="district-stat-value">{{ district.avg_entry_score or '-' }}</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="row">
+    <!-- 左侧 -->
+    <div class="col-lg-5">
+        <!-- 地图 -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i data-lucide="map" style="width:16px;height:16px;color:var(--primary);"></i>
+                    区县分布图
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="map-container" id="suqianMap"></div>
+            </div>
+        </div>
+        
+        <!-- 泗洪入口 -->
+        <a href="{{ url_for('positions.sihong_dashboard') }}?year={{ year }}&exam_type={{ exam_type }}" class="link-card">
+            <div class="link-card-title">
+                <i data-lucide="home" style="width:18px;height:18px;"></i>
+                泗洪县专项分析
+            </div>
+            <div class="link-card-desc">查看乡镇岗位和本地选岗策略</div>
+        </a>
+    </div>
+    
+    <!-- 右侧 -->
+    <div class="col-lg-7">
+        <!-- 近三年数据表格 -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i data-lucide="calendar" style="width:16px;height:16px;color:var(--primary);"></i>
+                    各区县近三年招录
+                </h3>
+                <button class="btn-export" onclick="exportYearData()">
+                    <i data-lucide="download" style="width:12px;height:12px;"></i>
+                    导出
+                </button>
+            </div>
+            <div class="table-scroll">
+                <table class="data-table" id="yearCompareTable">
+                    <thead>
+                        <tr>
+                            <th>区县</th>
+                            <th colspan="2">2024年</th>
+                            <th colspan="2">2025年</th>
+                            <th colspan="2">2026年</th>
+                            <th>合计</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for d in district_year_stats %}
+                        <tr>
+                            <td>{{ d.district }}</td>
+                            <td>{% if d.years[2024].positions > 0 %}{{ d.years[2024].positions }}{% else %}-{% endif %}</td>
+                            <td><strong>{% if d.years[2024].recruit > 0 %}{{ d.years[2024].recruit }}{% else %}-{% endif %}</strong></td>
+                            <td>{% if d.years[2025].positions > 0 %}{{ d.years[2025].positions }}{% else %}-{% endif %}</td>
+                            <td><strong>{% if d.years[2025].recruit > 0 %}{{ d.years[2025].recruit }}{% else %}-{% endif %}</strong></td>
+                            <td>{% if d.years[2026].positions > 0 %}{{ d.years[2026].positions }}{% else %}-{% endif %}</td>
+                            <td><strong>{% if d.years[2026].recruit > 0 %}{{ d.years[2026].recruit }}{% else %}-{% endif %}</strong></td>
+                            <td><strong class="text-primary">{{ d.total_recruit }}</strong></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- 竞争对比图 -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i data-lucide="bar-chart-2" style="width:16px;height:16px;color:var(--warning);"></i>
+                    区县竞争对比
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" id="competitionChart"></div>
+            </div>
+        </div>
+        
+        <!-- 选岗建议 -->
+        {% if suggestions %}
+        <div class="card tips-card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i data-lucide="lightbulb" style="width:16px;height:16px;"></i>
+                    选岗建议
+                </h3>
+            </div>
+            <div class="card-body" style="padding:0.75rem 1rem;">
+                {% for suggestion in suggestions %}
+                <div class="tip-item">
+                    <span class="tip-icon">
+                        <i data-lucide="check" style="width:10px;height:10px;"></i>
+                    </span>
+                    <span>{{ suggestion }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    lucide.createIcons();
+    
+    const districtStats = {{ district_stats | tojson | safe }};
+    const districtYearStats = {{ district_year_stats | tojson | safe }};
+    
+    initSuqianMap();
+    initCompetitionChart();
+    
+    function initSuqianMap() {
+        const container = document.getElementById('suqianMap');
+        
+        fetch('https://geo.datav.aliyun.com/areas_v3/bound/321300_full.json')
+            .then(r => {
+                if (!r.ok) throw new Error('地图加载失败');
+                return r.json();
+            })
+            .then(geoJson => {
+                const chart = echarts.init(container);
+                echarts.registerMap('suqian', geoJson);
+                
+                const mapData = districtStats.map(d => ({
+                    name: d.district,
+                    value: d.recruit_count,
+                    positionCount: d.position_count,
+                    avgCompetition: d.avg_competition
+                }));
+                
+                const option = {
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: function(params) {
+                            const data = params.data || {};
+                            return `<strong>${params.name}</strong><br/>
+                                    招录: ${data.value || 0}人<br/>
+                                    岗位: ${data.positionCount || 0}个<br/>
+                                    竞争: ${data.avgCompetition || '-'}:1`;
+                        }
+                    },
+                    visualMap: {
+                        min: 0,
+                        max: Math.max(...mapData.map(d => d.value || 0)) || 100,
+                        left: 'left',
+                        bottom: 0,
+                        text: ['高', '低'],
+                        textStyle: { fontSize: 10 },
+                        itemHeight: 80,
+                        calculable: true,
+                        inRange: { color: ['#DBEAFE', '#3B82F6', '#1E40AF'] }
+                    },
+                    series: [{
+                        name: '招录人数',
+                        type: 'map',
+                        map: 'suqian',
+                        roam: true,
+                        label: { show: true, fontSize: 10 },
+                        emphasis: {
+                            label: { show: true, fontSize: 12, fontWeight: 'bold' },
+                            itemStyle: { areaColor: '#F97316' }
+                        },
+                        data: mapData
+                    }]
+                };
+                
+                chart.setOption(option);
+                window.addEventListener('resize', () => chart.resize());
+            })
+            .catch(() => {
+                // 地图加载失败，显示柱状图
+                showBarChartFallback(container);
+            });
+    }
+    
+    function showBarChartFallback(container) {
+        const chart = echarts.init(container);
+        const option = {
+            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+            grid: { left: '3%', right: '4%', bottom: '3%', top: '8%', containLabel: true },
+            xAxis: { type: 'category', data: districtStats.map(d => d.district), axisLabel: { fontSize: 10 } },
+            yAxis: { type: 'value', name: '招录人数' },
+            series: [{
+                type: 'bar',
+                data: districtStats.map(d => ({
+                    value: d.recruit_count,
+                    itemStyle: {
+                        color: d.difficulty_level === 'low' ? '#3B82F6' : 
+                               (d.difficulty_level === 'medium' ? '#F59E0B' : '#EF4444')
+                    }
+                })),
+                label: { show: true, position: 'top', fontSize: 10 }
+            }]
+        };
+        chart.setOption(option);
+    }
+    
+    function initCompetitionChart() {
+        const container = document.getElementById('competitionChart');
+        const chart = echarts.init(container);
+        
+        const sortedData = [...districtStats].sort((a, b) => (a.avg_competition || 999) - (b.avg_competition || 999));
+        
+        const option = {
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: { type: 'shadow' },
+                formatter: function(params) {
+                    const data = sortedData[params[0].dataIndex];
+                    return `<strong>${data.district}</strong><br/>
+                            竞争比: ${data.avg_competition || '-'}:1<br/>
+                            进面分: ${data.avg_entry_score || '-'}分`;
+                }
+            },
+            grid: { left: '3%', right: '8%', bottom: '3%', top: '8%', containLabel: true },
+            xAxis: { type: 'value', name: '竞争比' },
+            yAxis: {
+                type: 'category',
+                data: sortedData.map(d => d.district),
+                axisLabel: { fontSize: 11 }
+            },
+            series: [{
+                type: 'bar',
+                data: sortedData.map(d => ({
+                    value: d.avg_competition || 0,
+                    itemStyle: {
+                        color: d.difficulty_level === 'low' ? '#3B82F6' : 
+                               (d.difficulty_level === 'medium' ? '#F59E0B' : '#EF4444')
+                    }
+                })),
+                label: { show: true, position: 'right', formatter: '{c}:1', fontSize: 10 }
+            }]
+        };
+        
+        chart.setOption(option);
+        window.addEventListener('resize', () => chart.resize());
+    }
+    
+    window.exportYearData = function() {
+        let csv = '\uFEFF区县,2024岗位,2024人数,2025岗位,2025人数,2026岗位,2026人数,合计人数\n';
+        
+        districtYearStats.forEach(d => {
+            csv += `"${d.district}",`;
+            csv += `${d.years[2024].positions || 0},${d.years[2024].recruit || 0},`;
+            csv += `${d.years[2025].positions || 0},${d.years[2025].recruit || 0},`;
+            csv += `${d.years[2026].positions || 0},${d.years[2026].recruit || 0},`;
+            csv += `${d.total_recruit}\n`;
+        });
+        
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = '宿迁各区县近三年招录数据.csv';
+        link.click();
+    };
+});
+</script>
+{% endblock %}

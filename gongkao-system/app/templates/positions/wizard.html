@@ -1,0 +1,444 @@
+{% extends "base.html" %}
+
+{% block title %}智能选岗向导 - 智能选岗{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4 class="mb-1">
+                <i data-lucide="wand-2" style="width:24px;height:24px;display:inline-block;vertical-align:middle;margin-right:8px;color:var(--primary);"></i>
+                智能选岗向导
+            </h4>
+            <p class="text-muted mb-0">按照专业选岗方法，五步帮你找到最适合的岗位</p>
+        </div>
+    </div>
+    
+    <!-- 步骤指示器 -->
+    <div class="card mb-4">
+        <div class="card-body py-3">
+            <div class="d-flex justify-content-between position-relative">
+                <div class="progress position-absolute" style="height:4px;top:15px;left:10%;right:10%;z-index:0;">
+                    <div class="progress-bar" role="progressbar" id="progressBar" style="width:0%"></div>
+                </div>
+                {% for step in ['学历筛选', '硬性条件', '地域筛选', '专业匹配', '查看结果'] %}
+                <div class="text-center step-item {% if loop.index == 1 %}active{% endif %}" data-step="{{ loop.index }}" style="z-index:1;">
+                    <div class="step-circle bg-white border border-2 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2" 
+                         style="width:32px;height:32px;{% if loop.index == 1 %}border-color:var(--primary)!important;color:var(--primary);{% endif %}">
+                        {{ loop.index }}
+                    </div>
+                    <small class="{% if loop.index == 1 %}text-primary fw-bold{% else %}text-muted{% endif %}">{{ step }}</small>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- 筛选表单 -->
+    <form id="wizardForm" method="get" action="{{ url_for('positions.wizard_result') }}">
+        <!-- Step 1: 学历筛选 -->
+        <div class="card mb-4 step-panel" id="step1">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i data-lucide="graduation-cap" style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;"></i>
+                    第一步：学历筛选
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">选择您的最高学历，系统将自动匹配您可以报考的所有学历要求</p>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">您的最高学历 <span class="text-danger">*</span></label>
+                        <div class="btn-group-vertical w-100" role="group">
+                            {% for edu in ['专科', '本科', '硕士研究生', '博士研究生'] %}
+                            <input type="radio" class="btn-check" name="my_education" id="edu_{{ loop.index }}" value="{{ edu }}" {% if loop.index == 2 %}checked{% endif %}>
+                            <label class="btn btn-outline-primary text-start py-3" for="edu_{{ loop.index }}">
+                                <i data-lucide="check-circle" style="width:16px;height:16px;display:none;" class="check-icon me-2"></i>
+                                {{ edu }}
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light h-100">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i data-lucide="lightbulb" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:4px;color:#ffc107;"></i>
+                                    就高不就低原则
+                                </h6>
+                                <p class="card-text small text-muted">
+                                    本科生优先选「仅限本科」的岗位，硕士生优先选「仅限硕士」或「硕士及以上」的岗位。
+                                </p>
+                                <p class="card-text small text-muted mb-0">
+                                    <strong>目的：</strong>排除低学历竞争者，减少竞争压力。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer text-end">
+                <button type="button" class="btn btn-primary" onclick="nextStep(2)">
+                    下一步 <i data-lucide="arrow-right" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-left:4px;"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Step 2: 硬性条件 -->
+        <div class="card mb-4 step-panel d-none" id="step2">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i data-lucide="shield-check" style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;"></i>
+                    第二步：硬性条件排除
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">勾选您符合的硬性条件，不符合的条件将被排除</p>
+                
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">政治面貌</label>
+                        <select name="political_status" class="form-select">
+                            <option value="">不限（所有岗位）</option>
+                            <option value="党员">中共党员（含预备党员）</option>
+                            <option value="团员">共青团员</option>
+                            <option value="群众">群众</option>
+                        </select>
+                        <small class="text-muted">非党员选择"不限"或"群众"</small>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">基层工作经历</label>
+                        <select name="work_years" class="form-select">
+                            <option value="0">无基层工作经历</option>
+                            <option value="2">2年及以上</option>
+                            <option value="3">3年及以上</option>
+                            <option value="5">5年及以上</option>
+                        </select>
+                        <small class="text-muted">应届生一般选"无基层工作经历"</small>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">性别要求</label>
+                        <select name="gender" class="form-select">
+                            <option value="">不限</option>
+                            <option value="男">男</option>
+                            <option value="女">女</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">年龄（周岁）</label>
+                        <input type="number" name="age" class="form-control" placeholder="如：25" min="18" max="45">
+                        <small class="text-muted">一般要求35周岁以下，研究生可放宽至40岁</small>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning mt-4 mb-0">
+                    <i data-lucide="alert-triangle" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:6px;"></i>
+                    <strong>提示：</strong>限制条件越多的岗位，符合条件的人越少，竞争越小。建议如实填写您符合的条件。
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary" onclick="prevStep(1)">
+                    <i data-lucide="arrow-left" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> 上一步
+                </button>
+                <button type="button" class="btn btn-primary" onclick="nextStep(3)">
+                    下一步 <i data-lucide="arrow-right" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-left:4px;"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Step 3: 地域筛选 -->
+        <div class="card mb-4 step-panel d-none" id="step3">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i data-lucide="map-pin" style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;"></i>
+                    第三步：地域筛选
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">选择您期望的工作地点，可多选</p>
+                
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">考试类型</label>
+                        <select name="exam_type" class="form-select" id="examType">
+                            <option value="省考">江苏省考</option>
+                            <option value="国考">国考</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">年份</label>
+                        <select name="year" class="form-select">
+                            {% for y in range(2026, 2018, -1) %}
+                            <option value="{{ y }}" {% if y == 2026 %}selected{% endif %}>{{ y }}年</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-12">
+                        <label class="form-label fw-bold">期望工作城市（可多选）</label>
+                        <div class="row g-2" id="cityCheckboxes">
+                            {% for city in cities %}
+                            <div class="col-md-3 col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="cities" value="{{ city }}" id="city_{{ loop.index }}">
+                                    <label class="form-check-label" for="city_{{ loop.index }}">{{ city }}</label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="selectAllCities()">全选</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearAllCities()">清空</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary" onclick="prevStep(2)">
+                    <i data-lucide="arrow-left" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> 上一步
+                </button>
+                <button type="button" class="btn btn-primary" onclick="nextStep(4)">
+                    下一步 <i data-lucide="arrow-right" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-left:4px;"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Step 4: 专业匹配 -->
+        <div class="card mb-4 step-panel d-none" id="step4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i data-lucide="book-open" style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;"></i>
+                    第四步：专业匹配
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">输入您的专业，系统将匹配所有可报考的岗位</p>
+                
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">您的专业名称</label>
+                        <input type="text" name="my_major" class="form-control" placeholder="如：法学、会计学、计算机科学与技术">
+                        <small class="text-muted">输入您毕业证上的专业名称</small>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">是否接受"专业不限"岗位</label>
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" name="include_unlimited" id="includeUnlimited" checked>
+                            <label class="form-check-label" for="includeUnlimited">
+                                包含"专业不限"岗位（三不限岗位竞争较大）
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card bg-light mt-4">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i data-lucide="info" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:4px;color:var(--primary);"></i>
+                            专业匹配说明
+                        </h6>
+                        <ul class="small text-muted mb-0">
+                            <li>系统会匹配专业要求中包含您专业名称的岗位</li>
+                            <li>同时会匹配您专业所属的<strong>专业大类</strong>（如"法学"属于"法律类"）</li>
+                            <li>如对专业要求不确定，建议<strong>致电招录单位确认</strong>（岗位详情中有咨询电话）</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary" onclick="prevStep(3)">
+                    <i data-lucide="arrow-left" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> 上一步
+                </button>
+                <button type="button" class="btn btn-primary" onclick="nextStep(5)">
+                    下一步 <i data-lucide="arrow-right" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-left:4px;"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Step 5: 确认并查看结果 -->
+        <div class="card mb-4 step-panel d-none" id="step5">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i data-lucide="check-circle" style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;"></i>
+                    第五步：确认筛选条件
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">请确认以下筛选条件，点击"开始筛选"查看符合条件的岗位</p>
+                
+                <div class="table-responsive">
+                    <table class="table table-bordered mb-0">
+                        <tbody>
+                            <tr>
+                                <td class="bg-light fw-bold" width="150">学历</td>
+                                <td id="summaryEducation">-</td>
+                            </tr>
+                            <tr>
+                                <td class="bg-light fw-bold">政治面貌</td>
+                                <td id="summaryPolitical">-</td>
+                            </tr>
+                            <tr>
+                                <td class="bg-light fw-bold">基层工作经历</td>
+                                <td id="summaryWorkYears">-</td>
+                            </tr>
+                            <tr>
+                                <td class="bg-light fw-bold">考试类型</td>
+                                <td id="summaryExamType">-</td>
+                            </tr>
+                            <tr>
+                                <td class="bg-light fw-bold">期望城市</td>
+                                <td id="summaryCities">-</td>
+                            </tr>
+                            <tr>
+                                <td class="bg-light fw-bold">专业</td>
+                                <td id="summaryMajor">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="alert alert-info mt-4 mb-0">
+                    <i data-lucide="info" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:6px;"></i>
+                    <strong>建议：</strong>准备3-5个备选岗位，报名期间根据实时竞争比灵活选择，避开"神仙打架"的热门岗位。
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary" onclick="prevStep(4)">
+                    <i data-lucide="arrow-left" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> 上一步
+                </button>
+                <button type="submit" class="btn btn-success btn-lg">
+                    <i data-lucide="search" style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;"></i>
+                    开始筛选岗位
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    lucide.createIcons();
+    
+    let currentStep = 1;
+    const totalSteps = 5;
+    
+    function nextStep(step) {
+        showStep(step);
+    }
+    
+    function prevStep(step) {
+        showStep(step);
+    }
+    
+    function showStep(step) {
+        // 隐藏所有步骤
+        document.querySelectorAll('.step-panel').forEach(panel => {
+            panel.classList.add('d-none');
+        });
+        
+        // 显示当前步骤
+        document.getElementById('step' + step).classList.remove('d-none');
+        
+        // 更新步骤指示器
+        document.querySelectorAll('.step-item').forEach((item, index) => {
+            const circle = item.querySelector('.step-circle');
+            const label = item.querySelector('small');
+            
+            if (index + 1 < step) {
+                // 已完成
+                circle.style.borderColor = 'var(--primary)';
+                circle.style.backgroundColor = 'var(--primary)';
+                circle.style.color = 'white';
+                label.classList.remove('text-muted');
+                label.classList.add('text-primary');
+            } else if (index + 1 === step) {
+                // 当前
+                circle.style.borderColor = 'var(--primary)';
+                circle.style.backgroundColor = 'white';
+                circle.style.color = 'var(--primary)';
+                label.classList.remove('text-muted');
+                label.classList.add('text-primary', 'fw-bold');
+            } else {
+                // 未完成
+                circle.style.borderColor = '#dee2e6';
+                circle.style.backgroundColor = 'white';
+                circle.style.color = '#6c757d';
+                label.classList.remove('text-primary', 'fw-bold');
+                label.classList.add('text-muted');
+            }
+        });
+        
+        // 更新进度条
+        const progress = ((step - 1) / (totalSteps - 1)) * 100;
+        document.getElementById('progressBar').style.width = progress + '%';
+        
+        currentStep = step;
+        
+        // 如果是最后一步，更新汇总信息
+        if (step === 5) {
+            updateSummary();
+        }
+        
+        // 滚动到顶部
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
+    function updateSummary() {
+        // 学历
+        const eduRadio = document.querySelector('input[name="my_education"]:checked');
+        document.getElementById('summaryEducation').textContent = eduRadio ? eduRadio.value : '-';
+        
+        // 政治面貌
+        const political = document.querySelector('select[name="political_status"]').value;
+        document.getElementById('summaryPolitical').textContent = political || '不限';
+        
+        // 基层工作经历
+        const workYears = document.querySelector('select[name="work_years"]').value;
+        document.getElementById('summaryWorkYears').textContent = workYears === '0' ? '无' : workYears + '年及以上';
+        
+        // 考试类型
+        const examType = document.querySelector('select[name="exam_type"]').value;
+        const year = document.querySelector('select[name="year"]').value;
+        document.getElementById('summaryExamType').textContent = year + '年' + examType;
+        
+        // 城市
+        const cities = Array.from(document.querySelectorAll('input[name="cities"]:checked')).map(cb => cb.value);
+        document.getElementById('summaryCities').textContent = cities.length > 0 ? cities.join('、') : '全部城市';
+        
+        // 专业
+        const major = document.querySelector('input[name="my_major"]').value;
+        const includeUnlimited = document.getElementById('includeUnlimited').checked;
+        let majorText = major || '不限';
+        if (includeUnlimited) {
+            majorText += '（含专业不限岗位）';
+        }
+        document.getElementById('summaryMajor').textContent = majorText;
+    }
+    
+    function selectAllCities() {
+        document.querySelectorAll('input[name="cities"]').forEach(cb => cb.checked = true);
+    }
+    
+    function clearAllCities() {
+        document.querySelectorAll('input[name="cities"]').forEach(cb => cb.checked = false);
+    }
+    
+    // 学历选择时显示勾选图标
+    document.querySelectorAll('input[name="my_education"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            document.querySelectorAll('.check-icon').forEach(icon => icon.style.display = 'none');
+            if (this.checked) {
+                this.nextElementSibling.querySelector('.check-icon').style.display = 'inline-block';
+            }
+        });
+    });
+</script>
+{% endblock %}

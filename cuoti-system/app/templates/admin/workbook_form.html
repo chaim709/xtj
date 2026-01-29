@@ -1,0 +1,89 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ '编辑' if workbook else '创建' }}题册 - 错题收集系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">{{ '编辑' if workbook else '创建' }}题册</h1>
+    <a href="{{ url_for('admin.workbooks') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> 返回
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">题册名称 <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" required 
+                               value="{{ workbook.name if workbook else '' }}"
+                               placeholder="如：2026江苏省考-常识判断专项100题">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">描述</label>
+                        <textarea name="description" class="form-control" rows="2">{{ workbook.description if workbook else '' }}</textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">分类</label>
+                            <select name="category" class="form-select">
+                                {% for cat in ['专项练习', '模拟套卷', '真题', '课堂练习', '课后作业', '其他'] %}
+                                <option value="{{ cat }}" {{ 'selected' if workbook and workbook.category == cat }}>{{ cat }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">PDF模板</label>
+                            <select name="template_id" class="form-select">
+                                {% for t in templates %}
+                                <option value="{{ t.id }}" 
+                                    {{ 'selected' if (workbook and workbook.template_id == t.id) or (not workbook and t.is_default) }}>
+                                    {{ t.name }}
+                                    {% if t.is_default %}(默认){% endif %}
+                                    - {{ '答案隐藏' if t.answer_mode == 'hidden' else ('答案分离' if t.answer_mode == 'separated' else '答案显示') }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                选择PDF生成样式 <a href="{{ url_for('admin.templates') }}">管理模板</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg"></i> {{ '保存' if workbook else '创建并添加题目' }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-info-circle"></i> 模板说明
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6>答案模式</h6>
+                    <ul class="small text-muted mb-0">
+                        <li><strong>隐藏</strong>：扫码查看答案</li>
+                        <li><strong>分离</strong>：答案在最后</li>
+                        <li><strong>显示</strong>：每题附答案</li>
+                    </ul>
+                </div>
+                <div>
+                    <h6>其他配置</h6>
+                    <p class="small text-muted mb-0">
+                        每页题数、是否显示分类/难度、品牌设置等可在模板中配置
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

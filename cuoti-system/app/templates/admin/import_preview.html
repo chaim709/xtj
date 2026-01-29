@@ -1,0 +1,214 @@
+{% extends "admin/base.html" %}
+
+{% block title %}预览导入 - 错题收集系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">预览导入结果</h1>
+    <a href="{{ url_for('admin.import_questions') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> 重新上传
+    </a>
+</div>
+
+<!-- 统计 -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-value">{{ result.total_questions }}</div>
+            <div class="stat-label">识别题目</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-value text-success">{{ validation.valid }}</div>
+            <div class="stat-label">解析成功</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-value text-warning">{{ validation.warning }}</div>
+            <div class="stat-label">需检查</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-value text-danger">{{ validation.error }}</div>
+            <div class="stat-label">解析失败</div>
+        </div>
+    </div>
+</div>
+
+<form method="post" action="{{ url_for('admin.confirm_import') }}">
+    <input type="hidden" name="result_file" value="{{ result_file }}">
+    
+    <!-- 默认设置 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="bi bi-gear"></i> 导入设置
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <label class="form-label">默认分类</label>
+                    <select name="default_category" class="form-select">
+                        <option value="">不设置</option>
+                        <option value="常识判断">常识判断</option>
+                        <option value="言语理解与表达">言语理解与表达</option>
+                        <option value="判断推理">判断推理</option>
+                        <option value="数量关系">数量关系</option>
+                        <option value="资料分析">资料分析</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">来源标记</label>
+                    <input type="text" name="default_source" class="form-control" 
+                           value="{{ result.source_file }}" placeholder="如：2026年模拟题">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">操作</label>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-secondary" onclick="selectAll()">全选</button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="selectNone()">全不选</button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="selectValid()">仅选成功</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 题目列表 -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-list-check"></i> 题目列表</span>
+            <span class="badge bg-primary" id="selectedCount">已选 {{ result.total_questions }} 题</span>
+        </div>
+        <div class="card-body p-0" style="max-height: 500px; overflow-y: auto;">
+            <table class="table table-hover mb-0">
+                    <thead style="position: sticky; top: 0; background: white; z-index: 10;">
+                        <tr>
+                            <th width="40">
+                                <input type="checkbox" id="checkAll" checked onchange="toggleAll(this)">
+                            </th>
+                            <th width="50">序号</th>
+                            <th>题干</th>
+                            <th width="80">选项</th>
+                            <th width="60">答案</th>
+                            <th width="120">分类</th>
+                            <th width="80">难度</th>
+                            <th width="60">状态</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for q in result.questions %}
+                        <tr class="{% if q.parse_status == 'error' %}table-danger{% elif q.parse_status == 'warning' %}table-warning{% endif %}">
+                            <td>
+                                <input type="checkbox" name="selected" value="{{ loop.index0 }}" 
+                                       class="question-check" checked 
+                                       {% if q.parse_status == 'error' %}disabled{% endif %}>
+                            </td>
+                            <td>{{ q.number }}</td>
+                            <td>
+                                <div class="text-truncate" style="max-width: 350px;" title="{{ q.stem }}">
+                                    {{ q.stem[:60] }}{% if q.stem|length > 60 %}...{% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                {% set opt_count = [q.options.A, q.options.B, q.options.C, q.options.D]|select|list|length %}
+                                <span class="badge {% if opt_count == 4 %}bg-success{% elif opt_count > 0 %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {{ opt_count }}/4
+                                </span>
+                            </td>
+                            <td>
+                                {% if q.answer %}
+                                <span class="badge bg-primary">{{ q.answer }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">无</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-primary">{{ q.category or '-' }}</small>
+                                {% if q.subcategory %}
+                                <br><small class="text-muted">{{ q.subcategory }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if q.difficulty == '简单' %}
+                                <span class="badge bg-success">简单</span>
+                                {% elif q.difficulty == '困难' %}
+                                <span class="badge bg-danger">困难</span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">中等</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if q.parse_status == 'success' %}
+                                <span class="badge bg-success"><i class="bi bi-check"></i></span>
+                                {% elif q.parse_status == 'warning' %}
+                                <span class="badge bg-warning" title="{{ q.parse_notes or '' }}">
+                                    <i class="bi bi-exclamation"></i>
+                                </span>
+                                {% else %}
+                                <span class="badge bg-danger" title="{{ q.parse_notes or '' }}">
+                                    <i class="bi bi-x"></i>
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="d-flex justify-content-end gap-2">
+        <a href="{{ url_for('admin.import_questions') }}" class="btn btn-outline-secondary">取消</a>
+        <button type="submit" class="btn btn-primary btn-lg">
+            <i class="bi bi-check-circle"></i> 确认导入选中题目
+        </button>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateCount() {
+    const count = document.querySelectorAll('.question-check:checked').length;
+    document.getElementById('selectedCount').textContent = `已选 ${count} 题`;
+}
+
+function toggleAll(el) {
+    document.querySelectorAll('.question-check:not(:disabled)').forEach(cb => {
+        cb.checked = el.checked;
+    });
+    updateCount();
+}
+
+function selectAll() {
+    document.querySelectorAll('.question-check:not(:disabled)').forEach(cb => {
+        cb.checked = true;
+    });
+    document.getElementById('checkAll').checked = true;
+    updateCount();
+}
+
+function selectNone() {
+    document.querySelectorAll('.question-check').forEach(cb => {
+        cb.checked = false;
+    });
+    document.getElementById('checkAll').checked = false;
+    updateCount();
+}
+
+function selectValid() {
+    document.querySelectorAll('.question-check').forEach(cb => {
+        const row = cb.closest('tr');
+        cb.checked = !row.classList.contains('table-danger') && !row.classList.contains('table-warning');
+    });
+    updateCount();
+}
+
+document.querySelectorAll('.question-check').forEach(cb => {
+    cb.addEventListener('change', updateCount);
+});
+</script>
+{% endblock %}

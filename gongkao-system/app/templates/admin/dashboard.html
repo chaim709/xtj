@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}错题系统管理 - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <h1 class="h3">错题系统管理</h1>
+    <p class="text-muted">题库、题册、学员错题数据概览</p>
+</div>
+
+<!-- 统计卡片 -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">题库总量</h6>
+                        <h2 class="mb-0">{{ stats.total_questions }}</h2>
+                    </div>
+                    <i data-lucide="file-question" style="width: 48px; height: 48px; opacity: 0.5;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">题册数量</h6>
+                        <h2 class="mb-0">{{ stats.total_workbooks }}</h2>
+                    </div>
+                    <i data-lucide="book-open" style="width: 48px; height: 48px; opacity: 0.5;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">学员人数</h6>
+                        <h2 class="mb-0">{{ stats.total_students }}</h2>
+                    </div>
+                    <i data-lucide="users" style="width: 48px; height: 48px; opacity: 0.5;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">错题总数</h6>
+                        <h2 class="mb-0">{{ stats.total_mistakes }}</h2>
+                    </div>
+                    <i data-lucide="alert-circle" style="width: 48px; height: 48px; opacity: 0.5;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 今日统计 -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <h3 class="text-primary mb-1">{{ today_stats.submissions }}</h3>
+                <p class="text-muted mb-0">今日提交</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <h3 class="text-success mb-1">{{ today_stats.students }}</h3>
+                <p class="text-muted mb-0">今日活跃学员</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <h3 class="text-danger mb-1">{{ today_stats.mistakes }}</h3>
+                <p class="text-muted mb-0">今日错题</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- 最近提交 -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">最近提交</h5>
+                <a href="{{ url_for('admin.statistics') }}" class="btn btn-sm btn-outline-primary">查看统计</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>学员</th>
+                                <th>题册</th>
+                                <th>做题数</th>
+                                <th>错题数</th>
+                                <th>正确率</th>
+                                <th>时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sub in recent_submissions %}
+                            <tr>
+                                <td>{{ sub.student.name if sub.student else '-' }}</td>
+                                <td>{{ sub.workbook.name if sub.workbook else '-' }}</td>
+                                <td>{{ sub.total_attempted }}</td>
+                                <td class="text-danger">{{ sub.mistake_count }}</td>
+                                <td>
+                                    <span class="badge {% if sub.accuracy_rate >= 85 %}bg-success{% elif sub.accuracy_rate >= 70 %}bg-warning{% else %}bg-danger{% endif %}">
+                                        {{ sub.accuracy_rate }}%
+                                    </span>
+                                </td>
+                                <td class="text-muted">{{ sub.created_at.strftime('%m-%d %H:%M') if sub.created_at else '-' }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">暂无提交记录</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 快捷操作 -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">快捷操作</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('questions.index') }}" class="btn btn-outline-primary">
+                        <i data-lucide="file-question" class="me-2"></i> 题库管理
+                    </a>
+                    <a href="{{ url_for('workbooks.index') }}" class="btn btn-outline-success">
+                        <i data-lucide="book-open" class="me-2"></i> 题册管理
+                    </a>
+                    <a href="{{ url_for('admin.leaderboard') }}" class="btn btn-outline-info">
+                        <i data-lucide="trophy" class="me-2"></i> 排行榜
+                    </a>
+                    <a href="{{ url_for('admin.data_import') }}" class="btn btn-outline-warning">
+                        <i data-lucide="upload" class="me-2"></i> 数据导入
+                    </a>
+                    <a href="{{ url_for('admin.classes') }}" class="btn btn-outline-secondary">
+                        <i data-lucide="users" class="me-2"></i> 班级管理
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 最近题册 -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">最近题册</h5>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for wb in recent_workbooks %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <a href="{{ url_for('workbooks.view', id=wb.id) }}">{{ wb.name }}</a>
+                    <span class="badge bg-secondary">{{ wb.total_questions }}题</span>
+                </li>
+                {% else %}
+                <li class="list-group-item text-center text-muted">暂无题册</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

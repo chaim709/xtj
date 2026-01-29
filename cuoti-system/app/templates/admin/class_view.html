@@ -1,0 +1,166 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ class_obj.name }} - 班级详情{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">
+        <i class="bi bi-mortarboard me-2"></i>{{ class_obj.name }}
+    </h1>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('admin.edit_class', id=class_obj.id) }}" class="btn btn-outline-primary">
+            <i class="bi bi-pencil"></i> 编辑
+        </a>
+        <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#addStudentsModal">
+            <i class="bi bi-person-plus"></i> 添加学员
+        </button>
+        <a href="{{ url_for('admin.classes') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> 返回
+        </a>
+    </div>
+</div>
+
+<!-- 班级统计 -->
+<div class="row g-4 mb-4">
+    <div class="col-md-2">
+        <div class="card stat-card text-center">
+            <div class="stat-value text-primary">{{ stats.student_count }}</div>
+            <div class="stat-label">学员数</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stat-card text-center">
+            <div class="stat-value text-success">{{ stats.total_attempted }}</div>
+            <div class="stat-label">总做题</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stat-card text-center">
+            <div class="stat-value text-info">{{ stats.total_correct }}</div>
+            <div class="stat-label">总正确</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stat-card text-center">
+            <div class="stat-value text-danger">{{ stats.total_mistakes }}</div>
+            <div class="stat-label">总错题</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stat-card text-center">
+            <div class="stat-value" style="color: {% if stats.accuracy_rate >= 85 %}#16a34a{% elif stats.accuracy_rate >= 70 %}#eab308{% else %}#dc2626{% endif %}">
+                {{ stats.accuracy_rate }}%
+            </div>
+            <div class="stat-label">正确率</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stat-card text-center">
+            <div class="stat-value text-secondary">{{ stats.submission_count }}</div>
+            <div class="stat-label">提交次数</div>
+        </div>
+    </div>
+</div>
+
+<!-- 学员列表 -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-people me-2"></i>班级学员</span>
+        {% if class_obj.teacher %}
+        <span class="badge bg-secondary"><i class="bi bi-person me-1"></i>{{ class_obj.teacher }}</span>
+        {% endif %}
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>姓名</th>
+                    <th>手机号</th>
+                    <th class="text-center">做题数</th>
+                    <th class="text-center">正确率</th>
+                    <th class="text-center">错题数</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                {% set sub_stats = student.submissions.with_entities(
+                    db.func.sum(student.submissions.entity.total_attempted),
+                    db.func.sum(student.submissions.entity.correct_count),
+                    db.func.sum(student.submissions.entity.mistake_count)
+                ).first() %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('admin.view_student', id=student.id) }}" class="fw-bold text-decoration-none">
+                            {{ student.name }}
+                        </a>
+                    </td>
+                    <td><code>{{ student.phone }}</code></td>
+                    <td class="text-center">{{ student.submissions.count() }}</td>
+                    <td class="text-center">
+                        {% set mistakes = student.mistakes.count() %}
+                        <span class="badge bg-danger">{{ mistakes }}</span>
+                    </td>
+                    <td class="text-center">{{ mistakes }}</td>
+                    <td>
+                        <form action="{{ url_for('admin.set_student_class', id=student.id) }}" method="POST" class="d-inline">
+                            <input type="hidden" name="class_id" value="0">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                    onclick="return confirm('确定将该学员移出班级？')">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">
+                        暂无学员，点击"添加学员"开始
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 添加学员模态框 -->
+<div class="modal fade" id="addStudentsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="{{ url_for('admin.add_students_to_class', id=class_obj.id) }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-person-plus me-2"></i>添加学员到班级</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-3">选择要添加到 <strong>{{ class_obj.name }}</strong> 的学员：</p>
+                    
+                    <div class="row g-2" style="max-height: 400px; overflow-y: auto;">
+                        {% for student in all_students %}
+                        {% if not student.class_id or student.class_id != class_obj.id %}
+                        <div class="col-md-6">
+                            <div class="form-check border rounded p-2">
+                                <input class="form-check-input" type="checkbox" name="student_ids" 
+                                       value="{{ student.id }}" id="student_{{ student.id }}">
+                                <label class="form-check-label" for="student_{{ student.id }}">
+                                    <strong>{{ student.name }}</strong>
+                                    <small class="text-muted d-block">{{ student.phone }}</small>
+                                </label>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i>添加选中学员
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

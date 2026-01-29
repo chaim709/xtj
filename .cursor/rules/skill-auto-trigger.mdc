@@ -1,0 +1,51 @@
+# 技能自动触发规则
+
+## 触发条件与执行
+
+当检测到以下场景时，**必须**先读取对应技能的 SKILL.md 并按其指南执行：
+
+### 高优先级触发
+
+| 场景 | 触发技能路径 |
+|------|-------------|
+| 设计、UI、界面、配色、字体、样式 | `/Users/chaim/.claude/skills/ui-ux-pro-max-skill-2.2.1/.claude/skills/ui-ux-pro-max/SKILL.md` |
+| 前端界面实现 | `/Users/chaim/.claude/skills/frontend-design/SKILL.md` |
+| Bug、错误、调试、失败、崩溃 | `/Users/chaim/.claude/skills/systematic-debugging/SKILL.md` |
+| Excel、xlsx、表格数据 | `/Users/chaim/.claude/skills/xlsx/SKILL.md` |
+| PDF、文档提取 | `/Users/chaim/.claude/skills/pdf-processing/SKILL.md` |
+| 浏览器、网页自动化、截图 | `/Users/chaim/.claude/skills/browser-use/SKILL.md` |
+
+### 关键时刻触发
+
+| 场景 | 触发技能路径 |
+|------|-------------|
+| 声称完成、修复、通过 | `/Users/chaim/.claude/skills/verification-before-completion/SKILL.md` |
+| 创意工作开始前 | `/Users/chaim/.claude/skills/brainstorming/SKILL.md` |
+| 多步骤任务规划 | `/Users/chaim/.claude/skills/writing-plans/SKILL.md` |
+
+### n8n 开发触发
+
+任何 n8n 相关开发，根据具体需求触发：
+- JavaScript 代码: `/Users/chaim/.claude/skills/n8n-code-javascript/SKILL.md`
+- Python 代码: `/Users/chaim/.claude/skills/n8n-code-python/SKILL.md`
+- 表达式: `/Users/chaim/.claude/skills/n8n-expression-syntax/SKILL.md`
+- 工作流模式: `/Users/chaim/.claude/skills/n8n-workflow-patterns/SKILL.md`
+
+## 强制执行规则
+
+1. **调试规则**: 遇到 Bug 时，禁止未调查就提出修复。必须完成 systematic-debugging 的四阶段流程。
+
+2. **验证规则**: 声称任何工作完成前，必须执行 verification-before-completion 的门控流程。
+
+3. **UI 规则**: 
+   - 禁止使用 emoji 作为图标
+   - 禁止使用 Inter、Roboto、Arial 等通用字体
+   - 所有可点击元素必须有 `cursor-pointer`
+
+4. **Excel 规则**: 禁止硬编码计算值，必须使用 Excel 公式。
+
+5. **浏览器规则**: 完成后必须执行 `browser-use close`。
+
+## 参考文档
+
+完整技能使用指南: `docs/SKILL_USAGE_GUIDE.md`

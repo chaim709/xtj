@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>错题重做 - {{ student.name }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f7fb;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header h1 { font-size: 18px; }
+        
+        .progress {
+            font-size: 14px;
+            background: rgba(255,255,255,0.2);
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+        
+        .question-container {
+            padding: 20px;
+            min-height: calc(100vh - 60px);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .question-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            flex: 1;
+        }
+        
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .question-num {
+            font-size: 14px;
+            color: #f59e0b;
+            font-weight: 600;
+        }
+        
+        .question-category {
+            font-size: 12px;
+            color: #666;
+            background: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .question-stem {
+            font-size: 16px;
+            line-height: 1.8;
+            margin-bottom: 25px;
+            color: #333;
+        }
+        
+        .options { margin-bottom: 20px; }
+        
+        .option {
+            display: flex;
+            padding: 15px;
+            margin-bottom: 12px;
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .option:active { transform: scale(0.98); }
+        
+        .option.selected {
+            border-color: #6366f1;
+            background: #eef2ff;
+        }
+        
+        .option.correct {
+            border-color: #16a34a;
+            background: #dcfce7;
+        }
+        
+        .option.wrong {
+            border-color: #ef4444;
+            background: #fee2e2;
+        }
+        
+        .option.disabled {
+            pointer-events: none;
+        }
+        
+        .option-letter {
+            width: 28px;
+            height: 28px;
+            line-height: 28px;
+            text-align: center;
+            background: #e0e0e0;
+            border-radius: 50%;
+            margin-right: 12px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        
+        .option.selected .option-letter { background: #6366f1; color: white; }
+        .option.correct .option-letter { background: #16a34a; color: white; }
+        .option.wrong .option-letter { background: #ef4444; color: white; }
+        
+        .option-text { flex: 1; line-height: 1.6; }
+        
+        .result-section {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 12px;
+            display: none;
+        }
+        
+        .result-section.show { display: block; }
+        
+        .result-section.correct {
+            background: #dcfce7;
+        }
+        
+        .result-section.wrong {
+            background: #fee2e2;
+        }
+        
+        .result-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .result-section.correct .result-title { color: #16a34a; }
+        .result-section.wrong .result-title { color: #ef4444; }
+        
+        .result-analysis {
+            font-size: 14px;
+            line-height: 1.8;
+            color: #333;
+        }
+        
+        .action-bar {
+            padding: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        
+        .complete-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .complete-modal.show { display: flex; }
+        
+        .complete-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            width: 100%;
+            max-width: 320px;
+        }
+        
+        .complete-icon { font-size: 60px; margin-bottom: 20px; }
+        .complete-title { font-size: 24px; font-weight: 700; margin-bottom: 10px; }
+        .complete-stats { color: #666; margin-bottom: 25px; }
+        .complete-stats strong { color: #16a34a; font-size: 24px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>错题重做</h1>
+        <div class="progress" id="progress">1/{{ questions|length }}</div>
+    </div>
+    
+    <div class="question-container">
+        {% for q in questions %}
+        <div class="question-card" id="q{{ loop.index }}" style="{% if not loop.first %}display: none;{% endif %}">
+            <div class="question-header">
+                <span class="question-num">第 {{ loop.index }} 题</span>
+                {% if q.category %}
+                <span class="question-category">{{ q.category }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="question-stem">{{ q.stem }}</div>
+            
+            <div class="options">
+                {% for letter in ['A', 'B', 'C', 'D'] %}
+                {% if q.options[letter] %}
+                <div class="option" data-question="{{ q.id }}" data-answer="{{ letter }}" data-correct="{{ q.answer }}" onclick="selectOption(this)">
+                    <span class="option-letter">{{ letter }}</span>
+                    <span class="option-text">{{ q.options[letter] }}</span>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+            
+            <div class="result-section" id="result{{ loop.index }}">
+                <div class="result-title">
+                    <span class="correct-text" style="display: none;">回答正确！</span>
+                    <span class="wrong-text" style="display: none;">回答错误，正确答案是 <span class="correct-answer"></span></span>
+                </div>
+                {% if q.analysis %}
+                <div class="result-analysis">{{ q.analysis }}</div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="action-bar">
+        <button class="btn btn-secondary" id="prevBtn" onclick="prevQuestion()" disabled>上一题</button>
+        <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()">下一题</button>
+    </div>
+    
+    <div class="complete-modal" id="completeModal">
+        <div class="complete-content">
+            <div class="complete-icon">🎉</div>
+            <div class="complete-title">练习完成</div>
+            <div class="complete-stats">
+                正确 <strong id="correctCount">0</strong> / {{ questions|length }} 题
+            </div>
+            <button class="btn btn-primary" style="width: 100%;" onclick="location.href='{{ url_for('h5.my_mistakes', student_id=student.id) }}'">
+                返回个人中心
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        const total = {{ questions|length }};
+        let current = 1;
+        let correctCount = 0;
+        let answered = {};
+        
+        function selectOption(el) {
+            if (el.classList.contains('disabled')) return;
+            
+            const questionId = el.dataset.question;
+            const answer = el.dataset.answer;
+            const correct = el.dataset.correct;
+            
+            // 标记已答
+            answered[current] = true;
+            
+            // 禁用所有选项
+            el.parentElement.querySelectorAll('.option').forEach(opt => {
+                opt.classList.add('disabled');
+                if (opt.dataset.answer === correct) {
+                    opt.classList.add('correct');
+                }
+            });
+            
+            // 判断对错
+            const isCorrect = answer === correct;
+            if (isCorrect) {
+                el.classList.add('correct');
+                correctCount++;
+            } else {
+                el.classList.add('wrong');
+            }
+            
+            // 显示解析
+            const resultEl = document.getElementById('result' + current);
+            resultEl.classList.add('show');
+            resultEl.classList.add(isCorrect ? 'correct' : 'wrong');
+            
+            if (isCorrect) {
+                resultEl.querySelector('.correct-text').style.display = 'block';
+            } else {
+                resultEl.querySelector('.wrong-text').style.display = 'block';
+                resultEl.querySelector('.correct-answer').textContent = correct;
+            }
+        }
+        
+        function showQuestion(index) {
+            for (let i = 1; i <= total; i++) {
+                document.getElementById('q' + i).style.display = i === index ? 'flex' : 'none';
+            }
+            current = index;
+            document.getElementById('progress').textContent = index + '/' + total;
+            
+            document.getElementById('prevBtn').disabled = index === 1;
+            document.getElementById('nextBtn').textContent = index === total ? '完成' : '下一题';
+        }
+        
+        function prevQuestion() {
+            if (current > 1) showQuestion(current - 1);
+        }
+        
+        function nextQuestion() {
+            if (current < total) {
+                showQuestion(current + 1);
+            } else {
+                // 完成
+                document.getElementById('correctCount').textContent = correctCount;
+                document.getElementById('completeModal').classList.add('show');
+            }
+        }
+    </script>
+</body>
+</html>

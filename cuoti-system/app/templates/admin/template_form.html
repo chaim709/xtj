@@ -1,0 +1,294 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ '编辑模板' if template else '新建模板' }} - 错题收集系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">{{ '编辑模板' if template else '新建模板' }}</h1>
+    <a href="{{ url_for('admin.templates') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> 返回
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <form method="post">
+            <!-- 基本信息 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-info-circle"></i> 基本信息
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">模板名称 <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" 
+                               value="{{ template.name if template else '' }}" 
+                               placeholder="例：标准练习册、模拟试卷" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">答案模式 <span class="text-danger">*</span></label>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="form-check card p-3 h-100">
+                                    <input class="form-check-input" type="radio" name="answer_mode" 
+                                           value="hidden" id="mode_hidden"
+                                           {{ 'checked' if not template or template.answer_mode == 'hidden' }}>
+                                    <label class="form-check-label" for="mode_hidden">
+                                        <strong>隐藏答案</strong>
+                                        <div class="small text-muted">扫码查看答案解析</div>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check card p-3 h-100">
+                                    <input class="form-check-input" type="radio" name="answer_mode" 
+                                           value="separated" id="mode_separated"
+                                           {{ 'checked' if template and template.answer_mode == 'separated' }}>
+                                    <label class="form-check-label" for="mode_separated">
+                                        <strong>答案分离</strong>
+                                        <div class="small text-muted">生成独立答案册</div>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check card p-3 h-100">
+                                    <input class="form-check-input" type="radio" name="answer_mode" 
+                                           value="inline" id="mode_inline"
+                                           {{ 'checked' if template and template.answer_mode == 'inline' }}>
+                                    <label class="form-check-label" for="mode_inline">
+                                        <strong>直接显示</strong>
+                                        <div class="small text-muted">每题附带答案解析</div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 排版设置 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-columns-gap"></i> 排版设置
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">每页题目数</label>
+                            <select name="questions_per_page" class="form-select">
+                                {% for n in [3, 4, 5, 6, 8, 10] %}
+                                <option value="{{ n }}" 
+                                    {{ 'selected' if template and template.questions_per_page == n else ('selected' if not template and n == 5) }}>
+                                    {{ n }} 题/页
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">标题字号</label>
+                            <select name="title_font_size" class="form-select">
+                                {% for s in [14, 16, 18, 20] %}
+                                <option value="{{ s }}" 
+                                    {{ 'selected' if template and template.title_font_size == s else ('selected' if not template and s == 16) }}>
+                                    {{ s }}pt
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">题干字号</label>
+                            <select name="stem_font_size" class="form-select">
+                                {% for s in [10, 11, 12, 14] %}
+                                <option value="{{ s }}" 
+                                    {{ 'selected' if template and template.stem_font_size == s else ('selected' if not template and s == 12) }}>
+                                    {{ s }}pt
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">选项字号</label>
+                            <select name="option_font_size" class="form-select">
+                                {% for s in [9, 10, 11, 12] %}
+                                <option value="{{ s }}" 
+                                    {{ 'selected' if template and template.option_font_size == s else ('selected' if not template and s == 11) }}>
+                                    {{ s }}pt
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 显示内容 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-eye"></i> 显示内容
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" name="show_category" id="show_category"
+                                       {{ 'checked' if not template or template.show_category }}>
+                                <label class="form-check-label" for="show_category">显示分类</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" name="show_difficulty" id="show_difficulty"
+                                       {{ 'checked' if template and template.show_difficulty }}>
+                                <label class="form-check-label" for="show_difficulty">显示难度</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" name="show_knowledge_point" id="show_knowledge_point"
+                                       {{ 'checked' if template and template.show_knowledge_point }}>
+                                <label class="form-check-label" for="show_knowledge_point">显示知识点</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 品牌设置 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-building"></i> 品牌设置
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" name="brand_enabled" id="brand_enabled"
+                                       {{ 'checked' if not template or template.brand_enabled }}>
+                                <label class="form-check-label" for="brand_enabled">显示机构品牌</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" name="show_cover" id="show_cover"
+                                       {{ 'checked' if not template or template.show_cover }}>
+                                <label class="form-check-label" for="show_cover">生成封面页</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" name="show_qrcode" id="show_qrcode"
+                                       {{ 'checked' if not template or template.show_qrcode }}>
+                                <label class="form-check-label" for="show_qrcode">生成二维码</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-text">
+                        品牌信息可在 <a href="{{ url_for('admin.settings') }}">机构设置</a> 中配置
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{{ url_for('admin.templates') }}" class="btn btn-outline-secondary">取消</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg"></i> 保存模板
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- 预览 -->
+        <div class="card sticky-top" style="top: 20px;">
+            <div class="card-header">
+                <i class="bi bi-file-earmark-pdf"></i> PDF预览示意
+            </div>
+            <div class="card-body p-2">
+                <div class="pdf-preview border rounded p-3" style="background: #f8f9fa; min-height: 400px;">
+                    <div class="text-center small text-muted mb-2" id="preview_header">
+                        [页眉：机构名称]
+                    </div>
+                    <hr class="my-2">
+                    
+                    <div class="preview-question mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <strong>1.</strong>
+                            <small class="text-muted" id="preview_meta">[分类] [难度]</small>
+                        </div>
+                        <div class="small">这是一道示例题目的题干内容...</div>
+                        <div class="small text-muted mt-1">
+                            A. 选项A<br>
+                            B. 选项B<br>
+                            C. 选项C<br>
+                            D. 选项D
+                        </div>
+                        <div class="small text-success mt-1" id="preview_answer" style="display: none;">
+                            答案：A<br>解析：...
+                        </div>
+                    </div>
+                    
+                    <div class="preview-question mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <strong>2.</strong>
+                            <small class="text-muted">[分类]</small>
+                        </div>
+                        <div class="small">另一道题目...</div>
+                    </div>
+                    
+                    <div class="text-center my-3" id="preview_qrcode">
+                        <div class="d-inline-block p-2 border rounded bg-white">
+                            <i class="bi bi-qr-code" style="font-size: 2rem;"></i>
+                        </div>
+                        <div class="small text-muted">扫码提交错题</div>
+                    </div>
+                    
+                    <hr class="my-2">
+                    <div class="text-center small text-muted" id="preview_footer">
+                        [页脚：联系方式] - 第1页
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 实时预览更新
+document.querySelectorAll('input, select').forEach(el => {
+    el.addEventListener('change', updatePreview);
+});
+
+function updatePreview() {
+    const answerMode = document.querySelector('input[name="answer_mode"]:checked').value;
+    const showCategory = document.getElementById('show_category').checked;
+    const showDifficulty = document.getElementById('show_difficulty').checked;
+    const brandEnabled = document.getElementById('brand_enabled').checked;
+    const showQrcode = document.getElementById('show_qrcode').checked;
+    
+    // 答案显示
+    document.getElementById('preview_answer').style.display = 
+        answerMode === 'inline' ? 'block' : 'none';
+    
+    // 元信息
+    let meta = [];
+    if (showCategory) meta.push('[分类]');
+    if (showDifficulty) meta.push('[难度]');
+    document.getElementById('preview_meta').textContent = meta.join(' ') || '';
+    
+    // 品牌
+    document.getElementById('preview_header').style.display = brandEnabled ? 'block' : 'none';
+    document.getElementById('preview_footer').style.display = brandEnabled ? 'block' : 'none';
+    
+    // 二维码
+    document.getElementById('preview_qrcode').style.display = showQrcode ? 'block' : 'none';
+}
+
+updatePreview();
+</script>
+{% endblock %}

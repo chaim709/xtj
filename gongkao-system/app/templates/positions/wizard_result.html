@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}选岗结果 - 智能选岗{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-1">
+                        <i data-lucide="list-checks" style="width:24px;height:24px;display:inline-block;vertical-align:middle;margin-right:8px;color:var(--primary);"></i>
+                        智能选岗结果
+                    </h4>
+                    <p class="text-muted mb-0">根据您的条件，共筛选出 <strong class="text-primary">{{ stats.total }}</strong> 个可报考岗位</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('positions.wizard') }}" class="btn btn-outline-primary">
+                        <i data-lucide="refresh-cw" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:4px;"></i>
+                        重新筛选
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 筛选条件摘要 -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h6 class="mb-0">
+                <i data-lucide="filter" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:6px;"></i>
+                您的筛选条件
+            </h6>
+        </div>
+        <div class="card-body py-2">
+            <div class="d-flex flex-wrap gap-2">
+                <span class="badge bg-primary">{{ filters.year }}年{{ filters.exam_type }}</span>
+                <span class="badge bg-info">学历：{{ filters.my_education }}</span>
+                <span class="badge bg-secondary">政治面貌：{{ filters.political_status }}</span>
+                <span class="badge bg-secondary">基层经历：{% if filters.work_years == 0 %}无{% else %}{{ filters.work_years }}年{% endif %}</span>
+                <span class="badge bg-secondary">性别：{{ filters.gender }}</span>
+                <span class="badge bg-warning text-dark">专业：{{ filters.my_major }}</span>
+                {% if filters.include_unlimited %}
+                <span class="badge bg-success">含专业不限</span>
+                {% endif %}
+                <span class="badge bg-dark">城市：{{ filters.cities|join('、') }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 统计卡片 -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="fs-2 fw-bold text-primary">{{ stats.total }}</div>
+                    <div class="text-muted">可报考岗位</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-success">
+                <div class="card-body">
+                    <div class="fs-2 fw-bold text-success">{{ stats.low_competition }}</div>
+                    <div class="text-muted">低竞争(&lt;20:1)</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-warning">
+                <div class="card-body">
+                    <div class="fs-2 fw-bold text-warning">{{ stats.medium_competition }}</div>
+                    <div class="text-muted">中竞争(20-50:1)</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-danger">
+                <div class="card-body">
+                    <div class="fs-2 fw-bold text-danger">{{ stats.high_competition }}</div>
+                    <div class="text-muted">高竞争(&gt;50:1)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 选岗建议 -->
+    <div class="alert alert-info mb-4">
+        <div class="d-flex">
+            <div class="me-3">
+                <i data-lucide="lightbulb" style="width:24px;height:24px;color:#0dcaf0;"></i>
+            </div>
+            <div>
+                <h6 class="alert-heading mb-1">选岗建议</h6>
+                <ul class="mb-0 small">
+                    <li><strong>准备3-5个备选岗位</strong>，报名期间根据实时竞争比灵活选择</li>
+                    <li>优先选择<span class="text-success fw-bold">限制条件多</span>的岗位（表格中绿色高亮），竞争更小</li>
+                    <li>避开"神仙打架"的热门岗位，关注<span class="text-info">进面分</span>历史数据</li>
+                    <li>报名建议在<strong>中后期提交</strong>，先观察各岗位竞争情况</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 岗位列表 -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">
+                <i data-lucide="table" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:6px;"></i>
+                符合条件的岗位（按推荐度排序）
+            </h6>
+            <small class="text-muted">绿色 = 限制条件多，推荐优先考虑</small>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover table-sm mb-0">
+                <thead class="table-light sticky-top">
+                    <tr>
+                        <th width="30">#</th>
+                        <th>城市</th>
+                        <th>单位名称</th>
+                        <th>职位名称</th>
+                        <th>学历</th>
+                        <th>专业要求</th>
+                        <th class="text-center">招录</th>
+                        <th class="text-center">竞争比</th>
+                        <th class="text-center">进面分</th>
+                        <th class="text-center">推荐</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in positions[:100] %}
+                    {% set p = item.position %}
+                    {% set score = item.restriction_score %}
+                    <tr class="{% if score >= 4 %}table-success{% elif score >= 2 %}table-light{% endif %}">
+                        <td class="text-muted">{{ loop.index }}</td>
+                        <td><small>{{ p.city or '-' }}</small></td>
+                        <td>
+                            <a href="{{ url_for('positions.detail', id=p.id) }}" class="text-decoration-none" target="_blank">
+                                <small>{{ p.department_name or '-' }}</small>
+                            </a>
+                        </td>
+                        <td><small>{{ p.position_name or '-' }}</small></td>
+                        <td>
+                            {% if p.education and '仅限' in p.education %}
+                            <span class="badge bg-success">{{ p.education }}</span>
+                            {% else %}
+                            <small>{{ p.education or '-' }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small class="text-muted" title="{{ p.major_requirement }}">
+                                {% if p.major_requirement %}
+                                    {% if '不限' in p.major_requirement %}
+                                    <span class="badge bg-warning text-dark">不限</span>
+                                    {% else %}
+                                    {{ p.major_requirement[:25] }}{{ '...' if p.major_requirement|length > 25 }}
+                                    {% endif %}
+                                {% else %}-{% endif %}
+                            </small>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-primary">{{ p.recruit_count or 1 }}</span>
+                        </td>
+                        <td class="text-center">
+                            {% if p.competition_ratio %}
+                            <span class="fw-bold {% if p.competition_ratio > 50 %}text-danger{% elif p.competition_ratio > 20 %}text-warning{% else %}text-success{% endif %}">
+                                {{ p.competition_ratio|round(1) }}:1
+                            </span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if p.min_entry_score %}
+                            <span class="text-info">{{ p.min_entry_score|round(1) }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if score >= 4 %}
+                            <span class="badge bg-success">强烈推荐</span>
+                            {% elif score >= 2 %}
+                            <span class="badge bg-info">推荐</span>
+                            {% else %}
+                            <span class="badge bg-secondary">一般</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('positions.detail', id=p.id) }}" class="btn btn-sm btn-outline-primary py-0" target="_blank">
+                                详情
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="11" class="text-center py-5 text-muted">
+                            <i data-lucide="inbox" style="width:48px;height:48px;margin-bottom:12px;"></i>
+                            <p>没有找到符合条件的岗位，请调整筛选条件</p>
+                            <a href="{{ url_for('positions.wizard') }}" class="btn btn-primary">重新筛选</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if positions|length > 100 %}
+        <div class="card-footer text-center">
+            <p class="text-muted mb-2">当前显示前100个岗位，共{{ positions|length }}个符合条件</p>
+            <a href="{{ url_for('positions.list', year=filters.year, exam_type=filters.exam_type, major=filters.my_major) }}" class="btn btn-outline-primary">
+                在岗位列表中查看全部
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- 底部操作 -->
+    <div class="mt-4 text-center">
+        <a href="{{ url_for('positions.wizard') }}" class="btn btn-outline-secondary me-2">
+            <i data-lucide="refresh-cw" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:4px;"></i>
+            重新筛选
+        </a>
+        <a href="{{ url_for('positions.list') }}" class="btn btn-outline-primary">
+            <i data-lucide="list" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:4px;"></i>
+            进入岗位列表
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}

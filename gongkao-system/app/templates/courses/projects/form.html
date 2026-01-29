@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ '编辑' if project else '新增' }}招生项目 - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<!-- 页面标题 -->
+<div class="d-flex align-items-center mb-4">
+    <a href="{{ url_for('courses.project_list') }}" class="btn btn-outline-secondary me-3">
+        <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+    </a>
+    <div>
+        <h4 class="mb-1 font-heading">{{ '编辑' if project else '新增' }}招生项目</h4>
+        <p class="text-muted mb-0">{{ '修改项目信息' if project else '创建新的招生项目' }}</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">项目名称 <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" value="{{ project.name if project else '' }}" required placeholder="如：2026国省考系统班">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">考试类型 <span class="text-danger">*</span></label>
+                            <select name="exam_type" class="form-select" required>
+                                <option value="">请选择</option>
+                                <option value="civil" {{ 'selected' if project and project.exam_type == 'civil' else '' }}>国省考</option>
+                                <option value="career" {{ 'selected' if project and project.exam_type == 'career' else '' }}>事业编</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">招生年份 <span class="text-danger">*</span></label>
+                            <input type="number" name="year" class="form-control" value="{{ project.year if project else 2026 }}" required min="2020" max="2030">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">项目开始日期</label>
+                            <input type="date" name="start_date" class="form-control" value="{{ project.start_date.strftime('%Y-%m-%d') if project and project.start_date else '' }}">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">项目结束日期</label>
+                            <input type="date" name="end_date" class="form-control" value="{{ project.end_date.strftime('%Y-%m-%d') if project and project.end_date else '' }}">
+                        </div>
+                        
+                        <div class="col-12">
+                            <label class="form-label">项目描述</label>
+                            <textarea name="description" class="form-control" rows="3" placeholder="项目简要说明...">{{ project.description if project else '' }}</textarea>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i data-lucide="save" style="width:18px;height:18px;"></i> 保存
+                        </button>
+                        <a href="{{ url_for('courses.project_list') }}" class="btn btn-outline-secondary">取消</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h6 class="card-title"><i data-lucide="info" style="width:16px;height:16px;"></i> 项目说明</h6>
+                <ul class="mb-0 text-muted" style="font-size: 0.9rem;">
+                    <li class="mb-2">招生项目是课程体系的顶层组织单元</li>
+                    <li class="mb-2">一个项目可以包含多个报名套餐（如全程班、暑假班）</li>
+                    <li class="mb-2">一个项目可以包含多个班型（如基础班、提高班）</li>
+                    <li class="mb-2">每个班型下可以开设多个班次（如一期、二期）</li>
+                    <li>项目创建后，可以在详情页配置套餐和班型</li>
+                </ul>
+            </div>
+        </div>
+        
+        {% if project %}
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6 class="card-title">项目状态</h6>
+                <div class="btn-group w-100" role="group">
+                    <button type="button" class="btn btn-sm btn-status {{ 'btn-warning' if project.status == 'preparing' else 'btn-outline-secondary' }}" data-status="preparing">筹备中</button>
+                    <button type="button" class="btn btn-sm btn-status {{ 'btn-success' if project.status == 'recruiting' else 'btn-outline-secondary' }}" data-status="recruiting">招生中</button>
+                    <button type="button" class="btn btn-sm btn-status {{ 'btn-secondary' if project.status == 'ended' else 'btn-outline-secondary' }}" data-status="ended">已结束</button>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    lucide.createIcons();
+    
+    {% if project %}
+    $('.btn-status').click(function() {
+        var status = $(this).data('status');
+        $.post('{{ url_for("courses.project_status", id=project.id) }}', {status: status}, function(data) {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        });
+    });
+    {% endif %}
+</script>
+{% endblock %}

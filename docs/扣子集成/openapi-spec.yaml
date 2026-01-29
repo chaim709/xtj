@@ -1,0 +1,339 @@
+openapi: 3.0.0
+info:
+  title: 公考培训管理系统 - 扣子集成API
+  description: 供扣子智能体调用的督学管理API
+  version: 1.0.0
+  
+servers:
+  - url: https://gongkao.chaim.top
+    description: Cloudflare Tunnel 公网地址（二级域名）
+  - url: http://localhost:5001
+    description: 本地开发环境
+
+security:
+  - ApiKeyAuth: []
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          
+    Student:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        phone:
+          type: string
+        class_name:
+          type: string
+        status:
+          type: string
+        need_attention:
+          type: boolean
+          
+    SupervisionLog:
+      type: object
+      properties:
+        student_name:
+          type: string
+          description: 学员姓名（用于智能匹配）
+        content:
+          type: string
+          description: 督学内容
+        mood:
+          type: string
+          enum: [积极, 平稳, 焦虑, 低落]
+          description: 学员情绪
+        study_status:
+          type: string
+          enum: [优秀, 良好, 一般, 较差]
+          description: 学习状态
+        contact_type:
+          type: string
+          description: 沟通方式
+        next_action:
+          type: string
+          description: 后续计划
+
+paths:
+  /api/v1/students/search:
+    get:
+      operationId: searchStudents
+      summary: 查询学员
+      description: 根据姓名或手机号模糊搜索学员
+      tags:
+        - 学员管理
+      parameters:
+        - name: query
+          in: query
+          required: true
+          description: 搜索关键词（学员姓名或手机号）
+          schema:
+            type: string
+          example: 张三
+        - name: include_logs
+          in: query
+          required: false
+          description: 是否包含最近督学记录
+          schema:
+            type: boolean
+            default: false
+        - name: include_homework
+          in: query
+          required: false
+          description: 是否包含作业完成情况
+          schema:
+            type: boolean
+            default: false
+        - name: limit
+          in: query
+          required: false
+          description: 返回数量限制
+          schema:
+            type: integer
+            default: 5
+            maximum: 20
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+                
+  /api/v1/supervision/logs:
+    post:
+      operationId: createSupervisionLog
+      summary: 创建督学记录
+      description: 为学员创建督学记录，支持通过姓名智能匹配学员
+      tags:
+        - 督学管理
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - student_name
+                - content
+              properties:
+                student_name:
+                  type: string
+                  description: 学员姓名（用于智能匹配）
+                  example: 张三
+                student_id:
+                  type: integer
+                  description: 学员ID（可选，优先使用）
+                content:
+                  type: string
+                  description: 督学内容
+                  example: 今天学习状态不错，正在复习行测
+                mood:
+                  type: string
+                  enum: [积极, 平稳, 焦虑, 低落]
+                  description: 学员情绪
+                  example: 积极
+                study_status:
+                  type: string
+                  enum: [优秀, 良好, 一般, 较差]
+                  description: 学习状态
+                  example: 良好
+                contact_type:
+                  type: string
+                  description: 沟通方式
+                  default: 语音录入
+                next_action:
+                  type: string
+                  description: 后续计划
+                next_follow_up_date:
+                  type: string
+                  format: date
+                  description: 下次跟进时间
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      log_id:
+                        type: integer
+                      student_id:
+                        type: integer
+                      student_name:
+                        type: string
+
+  /api/v1/homework/batch-push:
+    post:
+      operationId: batchPushHomework
+      summary: 推送作业
+      description: 将作业推送给指定班次或学员
+      tags:
+        - 作业管理
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - homework_id
+              properties:
+                homework_id:
+                  type: integer
+                  description: 作业ID
+                  example: 1
+                batch_id:
+                  type: integer
+                  description: 班次ID
+                batch_name:
+                  type: string
+                  description: 班次名称（用于智能匹配）
+                  example: A班
+                student_ids:
+                  type: array
+                  items:
+                    type: integer
+                  description: 学员ID列表（不传则推送给整个班次）
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /api/v1/reminders/pending:
+    get:
+      operationId: getPendingReminders
+      summary: 获取待办事项
+      description: 查看待跟进学员和未完成作业
+      tags:
+        - 提醒管理
+      parameters:
+        - name: type
+          in: query
+          required: false
+          description: 事项类型
+          schema:
+            type: string
+            enum: [follow_up, homework, all]
+            default: all
+        - name: days
+          in: query
+          required: false
+          description: 超期天数阈值
+          schema:
+            type: integer
+            default: 3
+        - name: limit
+          in: query
+          required: false
+          description: 返回数量限制
+          schema:
+            type: integer
+            default: 10
+            maximum: 50
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      follow_up_students:
+                        type: array
+                        items:
+                          type: object
+                      pending_homework:
+                        type: array
+                        items:
+                          type: object
+                      attention_students:
+                        type: array
+                        items:
+                          type: object
+                      summary:
+                        type: object
+
+  /api/v1/reports/weekly:
+    get:
+      operationId: getWeeklyReport
+      summary: 生成周报
+      description: 生成督学工作周报
+      tags:
+        - 报告管理
+      parameters:
+        - name: week
+          in: query
+          required: false
+          description: 周选择
+          schema:
+            type: string
+            enum: [current, last]
+            default: current
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      period:
+                        type: object
+                        properties:
+                          week:
+                            type: string
+                          start_date:
+                            type: string
+                          end_date:
+                            type: string
+                      supervision:
+                        type: object
+                      homework:
+                        type: object
+                      attention:
+                        type: object
+                      summary_text:
+                        type: string

@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ teacher.name }} - 老师详情 - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<!-- 页面标题 -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+        <a href="{{ url_for('courses.teacher_list') }}" class="btn btn-outline-secondary me-3">
+            <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+        </a>
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h4 class="mb-0 font-heading">{{ teacher.name }}</h4>
+                {% if teacher.status == 'active' %}
+                <span class="badge bg-success">在职</span>
+                {% else %}
+                <span class="badge bg-secondary">停用</span>
+                {% endif %}
+            </div>
+            <p class="text-muted mb-0">{{ teacher.subjects_display }}</p>
+        </div>
+    </div>
+    {% if current_user.is_admin() %}
+    <a href="{{ url_for('courses.teacher_edit', id=teacher.id) }}" class="btn btn-outline-primary">
+        <i data-lucide="edit-2" style="width:18px;height:18px;"></i> 编辑
+    </a>
+    {% endif %}
+</div>
+
+<div class="row g-4">
+    <!-- 基本信息 -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i data-lucide="user" style="width:16px;height:16px;"></i> 基本信息</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <td class="text-muted" style="width:100px;">联系电话</td>
+                        <td>{{ teacher.phone }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">日薪</td>
+                        <td>{% if teacher.daily_rate %}¥{{ "%.0f" | format(teacher.daily_rate) }}{% else %}-{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">课时费</td>
+                        <td>{% if teacher.hourly_rate %}¥{{ "%.0f" | format(teacher.hourly_rate) }}{% else %}-{% endif %}</td>
+                    </tr>
+                    {% if teacher.remark %}
+                    <tr>
+                        <td class="text-muted">备注</td>
+                        <td>{{ teacher.remark }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+        
+        <!-- 本月工作量 -->
+        <div class="card mt-4">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i data-lucide="bar-chart-2" style="width:16px;height:16px;"></i> 本月工作量</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center g-3">
+                    <div class="col-6">
+                        <div class="h3 mb-0 text-primary">{{ workload.total_days }}</div>
+                        <div class="text-muted small">授课天数</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="h3 mb-0 text-success">¥{{ "%.0f" | format(workload.total_amount) }}</div>
+                        <div class="text-muted small">预计薪资</div>
+                    </div>
+                </div>
+                <hr>
+                <div class="row text-center small text-muted">
+                    <div class="col-4">
+                        <div class="fw-medium">{{ workload.morning_count }}</div>
+                        <div>上午</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-medium">{{ workload.afternoon_count }}</div>
+                        <div>下午</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-medium">{{ workload.evening_count }}</div>
+                        <div>晚间</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 排课记录 -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i data-lucide="calendar" style="width:16px;height:16px;"></i> 排课记录</h6>
+            </div>
+            <div class="card-body p-0">
+                {% if schedules %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>日期</th>
+                                <th>班次</th>
+                                <th>科目</th>
+                                <th>时段</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for schedule in schedules %}
+                            <tr>
+                                <td>{{ schedule.schedule_date.strftime('%m/%d') }}</td>
+                                <td>
+                                    <a href="{{ url_for('courses.batch_detail', id=schedule.batch_id) }}" class="text-decoration-none">
+                                        {{ schedule.batch.name }}
+                                    </a>
+                                </td>
+                                <td>{{ schedule.subject.name if schedule.subject else '-' }}</td>
+                                <td>
+                                    {% if schedule.morning_teacher_id == teacher.id %}
+                                    <span class="badge bg-primary me-1">上午</span>
+                                    {% endif %}
+                                    {% if schedule.afternoon_teacher_id == teacher.id %}
+                                    <span class="badge bg-info me-1">下午</span>
+                                    {% endif %}
+                                    {% if schedule.evening_teacher_id == teacher.id %}
+                                    <span class="badge bg-secondary">晚间</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i data-lucide="calendar-x" style="width:32px;height:32px;" class="mb-2"></i>
+                    <p class="mb-0">暂无排课记录</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}

@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}记录督学日志 - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<!-- 页面标题 -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="font-heading mb-1">记录督学日志</h4>
+        <p class="text-muted mb-0">快速记录与学员的沟通内容</p>
+    </div>
+</div>
+
+<div class="card" style="border-radius:16px;border:none;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+    <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('supervision.log_form') }}">
+            <div class="row">
+                <!-- 左侧：基本信息 -->
+                <div class="col-lg-6">
+                    <h6 class="font-heading mb-3" style="color:var(--primary);">
+                        <i data-lucide="user" style="width:16px;height:16px;margin-right:8px;"></i>基本信息
+                    </h6>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">选择学员 <span class="text-danger">*</span></label>
+                        <select class="form-select" name="student_id" required style="border-radius:10px;">
+                            <option value="">请选择学员</option>
+                            {% for s in students %}
+                            <option value="{{ s.id }}" 
+                                    {% if selected_student and selected_student.id == s.id %}selected{% endif %}>
+                                {{ s.name }} {% if s.phone %}({{ s.phone }}){% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">沟通方式</label>
+                            <select class="form-select" name="contact_type" style="border-radius:10px;">
+                                <option value="">请选择</option>
+                                {% for c in contact_options %}
+                                <option value="{{ c }}">{{ c }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">沟通时长（分钟）</label>
+                            <input type="number" class="form-control" name="contact_duration" 
+                                   min="1" max="180" placeholder="如：15" style="border-radius:10px;">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">记录日期</label>
+                            <input type="date" class="form-control" name="log_date" style="border-radius:10px;">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">下次跟进日期</label>
+                            <input type="date" class="form-control" name="next_follow_up_date" style="border-radius:10px;">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">沟通内容</label>
+                        <textarea class="form-control" name="content" rows="4" 
+                                  placeholder="记录本次沟通的主要内容..." style="border-radius:10px;"></textarea>
+                        <!-- 常用短语 -->
+                        <div class="mt-2">
+                            <small class="text-muted">常用短语（点击插入）：</small>
+                            <div class="d-flex flex-wrap gap-1 mt-2">
+                                {% for phrase in common_phrases[:5] %}
+                                <button type="button" class="btn btn-sm phrase-btn" 
+                                        style="background:#F1F5F9;color:#64748B;border:none;border-radius:20px;font-size:0.8rem;">
+                                    {{ phrase }}
+                                </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 右侧：状态评估 -->
+                <div class="col-lg-6">
+                    <h6 class="font-heading mb-3" style="color:var(--primary);">
+                        <i data-lucide="smile" style="width:16px;height:16px;margin-right:8px;"></i>状态评估
+                    </h6>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">学生心态</label>
+                        <div class="d-flex gap-2 flex-wrap">
+                            {% for mood in mood_options %}
+                            <label class="mood-option" style="cursor:pointer;">
+                                <input type="radio" name="student_mood" value="{{ mood }}" class="d-none">
+                                <div class="mood-card p-3 text-center" style="border:2px solid #E2E8F0;border-radius:12px;min-width:80px;transition:all 0.2s;">
+                                    <div style="font-size:1.5rem;">
+                                        {% if mood == '积极' %}😊{% elif mood == '平稳' %}😐{% elif mood == '焦虑' %}😟{% else %}😢{% endif %}
+                                    </div>
+                                    <div style="font-size:0.85rem;margin-top:4px;">{{ mood }}</div>
+                                </div>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">学习状态</label>
+                        <div class="d-flex gap-2 flex-wrap">
+                            {% for status in status_options %}
+                            <label class="status-option" style="cursor:pointer;">
+                                <input type="radio" name="study_status" value="{{ status }}" class="d-none">
+                                <div class="status-card px-4 py-2" style="border:2px solid #E2E8F0;border-radius:20px;transition:all 0.2s;">
+                                    {{ status }}
+                                </div>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">自律性</label>
+                        <div class="d-flex gap-2">
+                            {% for d in ['强', '中', '弱'] %}
+                            <label class="discipline-option" style="cursor:pointer;">
+                                <input type="radio" name="self_discipline" value="{{ d }}" class="d-none">
+                                <div class="discipline-card px-4 py-2" style="border:2px solid #E2E8F0;border-radius:20px;transition:all 0.2s;">
+                                    {{ d }}
+                                </div>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">今日行动记录</label>
+                        <textarea class="form-control" name="actions" rows="2" 
+                                  placeholder="如：调整学习计划、增加沟通频率等..." style="border-radius:10px;"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">快速标签</label>
+                        <input type="text" class="form-control" name="tags" 
+                               placeholder="如：需鼓励,畏难情绪,进步明显（用逗号分隔）" style="border-radius:10px;">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 操作按钮 -->
+            <div class="d-flex justify-content-end gap-2 mt-4 pt-4 border-top">
+                <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline-secondary" style="border-radius:10px;padding:0.6rem 1.5rem;">
+                    取消
+                </a>
+                <button type="submit" class="btn btn-primary" style="border-radius:10px;padding:0.6rem 1.5rem;">
+                    <i data-lucide="check" style="width:16px;height:16px;margin-right:6px;"></i> 保存日志
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    lucide.createIcons();
+    
+    // 常用短语点击插入
+    $('.phrase-btn').click(function() {
+        var phrase = $(this).text().trim();
+        var textarea = $('textarea[name="content"]');
+        var current = textarea.val();
+        if (current) {
+            textarea.val(current + '\n' + phrase);
+        } else {
+            textarea.val(phrase);
+        }
+    });
+    
+    // 默认选择今天日期
+    if (!$('input[name="log_date"]').val()) {
+        var today = new Date().toISOString().split('T')[0];
+        $('input[name="log_date"]').val(today);
+    }
+    
+    // 心态选择样式
+    $('.mood-option input').change(function() {
+        $('.mood-card').css({'border-color': '#E2E8F0', 'background': 'white'});
+        $(this).siblings('.mood-card').css({'border-color': 'var(--primary)', 'background': '#EFF6FF'});
+    });
+    
+    // 学习状态选择样式
+    $('.status-option input').change(function() {
+        $('.status-card').css({'border-color': '#E2E8F0', 'background': 'white', 'color': '#64748B'});
+        $(this).siblings('.status-card').css({'border-color': 'var(--primary)', 'background': 'var(--primary)', 'color': 'white'});
+    });
+    
+    // 自律性选择样式
+    $('.discipline-option input').change(function() {
+        $('.discipline-card').css({'border-color': '#E2E8F0', 'background': 'white', 'color': '#64748B'});
+        $(this).siblings('.discipline-card').css({'border-color': 'var(--primary)', 'background': 'var(--primary)', 'color': 'white'});
+    });
+});
+</script>
+{% endblock %}

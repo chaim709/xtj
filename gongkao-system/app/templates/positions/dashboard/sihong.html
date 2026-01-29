@@ -1,0 +1,599 @@
+{% extends "base.html" %}
+
+{% block title %}泗洪县选岗指南 - 公考培训管理系统{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* 紧凑页头 */
+    .page-header {
+        background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+        border-radius: var(--radius-lg);
+        padding: 1.25rem 1.5rem;
+        color: white;
+        margin-bottom: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .page-header-left {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .page-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0;
+        color: white !important;
+    }
+    
+    .page-subtitle {
+        opacity: 0.9;
+        font-size: 0.8rem;
+        margin-top: 0.25rem;
+        color: rgba(255, 255, 255, 0.9) !important;
+    }
+    
+    .header-stats {
+        display: flex;
+        gap: 1.5rem;
+    }
+    
+    .header-stat {
+        text-align: center;
+    }
+    
+    .header-stat-value {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+    
+    .header-stat-label {
+        font-size: 0.7rem;
+        opacity: 0.85;
+    }
+    
+    /* 快速导航 */
+    .quick-nav {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .quick-nav-btn {
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius-md);
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        transition: all var(--transition-fast);
+    }
+    
+    .quick-nav-btn.outline {
+        background: white;
+        border: 1px solid var(--border-default);
+        color: var(--text-secondary);
+    }
+    
+    .quick-nav-btn.outline:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+    
+    .quick-nav-btn.primary {
+        background: var(--primary);
+        color: white;
+    }
+    
+    .quick-nav-btn.primary:hover {
+        background: #1D4ED8;
+    }
+    
+    /* 卡片通用 */
+    .card {
+        background: var(--card-bg);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-card);
+        border: 1px solid var(--border-light);
+        margin-bottom: 1rem;
+        overflow: hidden;
+    }
+    
+    .card-header {
+        padding: 0.875rem 1rem;
+        border-bottom: 1px solid var(--border-light);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--background);
+    }
+    
+    .card-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    /* 年度对比卡片 */
+    .year-cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+    
+    .year-card {
+        background: var(--card-bg);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        text-align: center;
+        border: 1px solid var(--border-light);
+        transition: all var(--transition-fast);
+    }
+    
+    .year-card:hover {
+        border-color: var(--success);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .year-card.current {
+        background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);
+        border-color: var(--primary);
+    }
+    
+    .year-card-year {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--primary);
+        margin-bottom: 0.5rem;
+    }
+    
+    .year-card-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.25rem;
+        font-size: 0.8rem;
+    }
+    
+    .year-card-stat-label {
+        color: var(--text-muted);
+        text-align: right;
+        padding-right: 0.25rem;
+    }
+    
+    .year-card-stat-value {
+        font-weight: 600;
+        color: var(--text-primary);
+        text-align: left;
+    }
+    
+    /* 数据表格 */
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+    
+    .data-table thead th {
+        background: var(--background);
+        font-weight: 600;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        padding: 0.625rem 0.5rem;
+        border-bottom: 2px solid var(--border-light);
+        text-align: center;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+    
+    .data-table thead th:first-child {
+        text-align: left;
+        padding-left: 1rem;
+    }
+    
+    .data-table tbody td {
+        padding: 0.625rem 0.5rem;
+        border-bottom: 1px solid var(--border-light);
+        text-align: center;
+    }
+    
+    .data-table tbody td:first-child {
+        text-align: left;
+        padding-left: 1rem;
+    }
+    
+    .data-table tbody tr {
+        cursor: pointer;
+        transition: background var(--transition-fast);
+    }
+    
+    .data-table tbody tr:hover {
+        background: var(--card-bg-hover);
+    }
+    
+    .dept-name {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+    }
+    
+    .table-scroll {
+        max-height: 380px;
+        overflow-y: auto;
+    }
+    
+    .table-scroll::-webkit-scrollbar {
+        width: 5px;
+    }
+    
+    .table-scroll::-webkit-scrollbar-thumb {
+        background: var(--border-default);
+        border-radius: 3px;
+    }
+    
+    /* 趋势指示 */
+    .trend-up { color: #22C55E; }
+    .trend-down { color: var(--danger); }
+    
+    /* 图表容器 */
+    .chart-container {
+        height: 200px;
+    }
+    
+    /* 建议卡片 */
+    .tips-card {
+        background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);
+        border: none;
+    }
+    
+    .tips-card .card-header {
+        background: transparent;
+        border-bottom-color: rgba(0,0,0,0.1);
+    }
+    
+    .tips-card .card-title {
+        color: #1E40AF;
+    }
+    
+    .tip-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 0.5rem 0;
+        font-size: 0.85rem;
+        color: #1E3A8A;
+        line-height: 1.4;
+    }
+    
+    .tip-icon {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #3B82F6;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+    
+    /* 导出按钮 */
+    .btn-export {
+        padding: 0.375rem 0.75rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.8rem;
+        background: white;
+        border: 1px solid var(--border-default);
+        color: var(--text-secondary);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .btn-export:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+    
+    /* 排行标签 */
+    .rank-badge {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        line-height: 20px;
+        text-align: center;
+        border-radius: 50%;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    
+    .rank-badge.gold { background: #FEF3C7; color: #D97706; }
+    .rank-badge.silver { background: #E5E7EB; color: #4B5563; }
+    .rank-badge.bronze { background: #FED7AA; color: #C2410C; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- 紧凑页头 -->
+<div class="page-header">
+    <div class="page-header-left">
+        <div>
+            <h1 class="page-title">
+                <i data-lucide="home" style="width:22px;height:22px;display:inline;vertical-align:middle;margin-right:6px;"></i>
+                泗洪县选岗指南
+            </h1>
+            <div class="page-subtitle">{{ year }}年{{ exam_type }} · 乡镇岗位分析</div>
+        </div>
+    </div>
+    <div class="header-stats">
+        <div class="header-stat">
+            <div class="header-stat-value">{{ overview.total_positions }}</div>
+            <div class="header-stat-label">岗位数</div>
+        </div>
+        <div class="header-stat">
+            <div class="header-stat-value">{{ overview.total_recruit }}</div>
+            <div class="header-stat-label">招录人数</div>
+        </div>
+        <div class="header-stat">
+            <div class="header-stat-value">{{ overview.avg_competition }}:1</div>
+            <div class="header-stat-label">竞争比</div>
+        </div>
+        <div class="header-stat">
+            <div class="header-stat-value">{{ overview.avg_entry_score }}</div>
+            <div class="header-stat-label">进面分</div>
+        </div>
+    </div>
+</div>
+
+<!-- 快速导航 -->
+<div class="quick-nav">
+    <a href="{{ url_for('positions.dashboard') }}?year={{ year }}&exam_type={{ exam_type }}" class="quick-nav-btn outline">
+        <i data-lucide="arrow-left" style="width:14px;height:14px;"></i>
+        总仪表盘
+    </a>
+    <a href="{{ url_for('positions.suqian_dashboard') }}?year={{ year }}&exam_type={{ exam_type }}" class="quick-nav-btn outline">
+        <i data-lucide="map-pin" style="width:14px;height:14px;"></i>
+        宿迁概览
+    </a>
+    <a href="{{ url_for('positions.list') }}?year={{ year }}&exam_type={{ exam_type }}&keyword=泗洪" class="quick-nav-btn primary">
+        <i data-lucide="search" style="width:14px;height:14px;"></i>
+        查看全部岗位
+    </a>
+</div>
+
+<div class="row">
+    <!-- 左侧：数据表格 -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i data-lucide="building-2" style="width:16px;height:16px;color:var(--primary);"></i>
+                    各单位近三年招录数据
+                </h3>
+                <button class="btn-export" onclick="exportDeptYearData()">
+                    <i data-lucide="download" style="width:12px;height:12px;"></i>
+                    导出
+                </button>
+            </div>
+            <div class="table-scroll">
+                <table class="data-table" id="deptYearTable">
+                    <thead>
+                        <tr>
+                            <th style="width:25%;">单位名称</th>
+                            <th colspan="2">2024年</th>
+                            <th colspan="2">2025年</th>
+                            <th colspan="2">2026年</th>
+                            <th>合计</th>
+                            <th>趋势</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for d in dept_year_stats %}
+                        <tr onclick="location.href='{{ url_for('positions.list') }}?exam_type={{ exam_type }}&department_name={{ d.department_name }}'">
+                            <td>
+                                {% if loop.index <= 3 %}
+                                <span class="rank-badge {% if loop.index == 1 %}gold{% elif loop.index == 2 %}silver{% else %}bronze{% endif %}">{{ loop.index }}</span>
+                                {% endif %}
+                                <span class="dept-name">{{ d.department_name }}</span>
+                            </td>
+                            <td>{% if d.years[2024].positions > 0 %}{{ d.years[2024].positions }}{% else %}-{% endif %}</td>
+                            <td><strong>{% if d.years[2024].recruit > 0 %}{{ d.years[2024].recruit }}{% else %}-{% endif %}</strong></td>
+                            <td>{% if d.years[2025].positions > 0 %}{{ d.years[2025].positions }}{% else %}-{% endif %}</td>
+                            <td><strong>{% if d.years[2025].recruit > 0 %}{{ d.years[2025].recruit }}{% else %}-{% endif %}</strong></td>
+                            <td>{% if d.years[2026].positions > 0 %}{{ d.years[2026].positions }}{% else %}-{% endif %}</td>
+                            <td><strong>{% if d.years[2026].recruit > 0 %}{{ d.years[2026].recruit }}{% else %}-{% endif %}</strong></td>
+                            <td><strong class="text-success">{{ d.total_recruit }}</strong></td>
+                            <td>
+                                {% if d.years[2026].recruit > d.years[2025].recruit %}
+                                <span class="trend-up"><i data-lucide="trending-up" style="width:14px;height:14px;"></i></span>
+                                {% elif d.years[2026].recruit < d.years[2025].recruit %}
+                                <span class="trend-down"><i data-lucide="trending-down" style="width:14px;height:14px;"></i></span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 右侧：统计和建议 -->
+    <div class="col-lg-4">
+        <!-- 年度卡片 -->
+        <div class="year-cards">
+            {% for trend in year_trend %}
+            <div class="year-card {% if trend.year == year %}current{% endif %}">
+                <div class="year-card-year">{{ trend.year }}年</div>
+                <div class="year-card-stats">
+                    <span class="year-card-stat-label">岗位</span>
+                    <span class="year-card-stat-value">{{ trend.total_positions }}</span>
+                    <span class="year-card-stat-label">人数</span>
+                    <span class="year-card-stat-value">{{ trend.total_recruit }}</span>
+                    <span class="year-card-stat-label">竞争</span>
+                    <span class="year-card-stat-value">{{ trend.avg_competition }}:1</span>
+                    <span class="year-card-stat-label">分数</span>
+                    <span class="year-card-stat-value">{{ trend.avg_entry_score or '-' }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- 招录趋势图 -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i data-lucide="bar-chart-2" style="width:16px;height:16px;color:var(--primary);"></i>
+                    招录趋势
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" id="deptTrendChart"></div>
+            </div>
+        </div>
+        
+        <!-- 选岗建议 -->
+        {% if suggestions %}
+        <div class="card tips-card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i data-lucide="lightbulb" style="width:16px;height:16px;"></i>
+                    选岗策略
+                </h3>
+            </div>
+            <div class="card-body" style="padding:0.75rem 1rem;">
+                {% for suggestion in suggestions %}
+                <div class="tip-item">
+                    <span class="tip-icon">
+                        <i data-lucide="check" style="width:10px;height:10px;"></i>
+                    </span>
+                    <span>{{ suggestion }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    lucide.createIcons();
+    
+    const deptYearStats = {{ dept_year_stats | tojson | safe }};
+    initDeptTrendChart();
+    
+    function initDeptTrendChart() {
+        const container = document.getElementById('deptTrendChart');
+        if (!container || !deptYearStats || deptYearStats.length === 0) return;
+        
+        const chart = echarts.init(container);
+        const years = ['2024', '2025', '2026'];
+        
+        // 取前6个单位
+        const topDepts = deptYearStats.slice(0, 6);
+        
+        const series = topDepts.map((d, i) => ({
+            name: d.department_name.length > 5 ? d.department_name.substring(0, 5) + '..' : d.department_name,
+            type: 'bar',
+            stack: 'total',
+            emphasis: { focus: 'series' },
+            data: [d.years[2024].recruit, d.years[2025].recruit, d.years[2026].recruit]
+        }));
+        
+        const option = {
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: { type: 'shadow' },
+                formatter: function(params) {
+                    let result = params[0].axisValue + '年<br/>';
+                    let total = 0;
+                    params.forEach(p => {
+                        if (p.value > 0) {
+                            result += `${p.marker} ${p.seriesName}: ${p.value}人<br/>`;
+                            total += p.value;
+                        }
+                    });
+                    result += `<strong>合计: ${total}人</strong>`;
+                    return result;
+                }
+            },
+            legend: {
+                type: 'scroll',
+                bottom: 0,
+                textStyle: { fontSize: 9 },
+                itemWidth: 10,
+                itemHeight: 8
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '18%',
+                top: '8%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                data: years,
+                axisLabel: { fontSize: 11 }
+            },
+            yAxis: {
+                type: 'value',
+                axisLabel: { fontSize: 10 }
+            },
+            series: series
+        };
+        
+        chart.setOption(option);
+        window.addEventListener('resize', () => chart.resize());
+    }
+    
+    window.exportDeptYearData = function() {
+        let csv = '\uFEFF单位名称,2024岗位,2024人数,2025岗位,2025人数,2026岗位,2026人数,合计人数\n';
+        
+        deptYearStats.forEach(d => {
+            csv += `"${d.department_name}",`;
+            csv += `${d.years[2024].positions || 0},${d.years[2024].recruit || 0},`;
+            csv += `${d.years[2025].positions || 0},${d.years[2025].recruit || 0},`;
+            csv += `${d.years[2026].positions || 0},${d.years[2026].recruit || 0},`;
+            csv += `${d.total_recruit}\n`;
+        });
+        
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = '泗洪县各单位近三年招录数据.csv';
+        link.click();
+    };
+});
+</script>
+{% endblock %}

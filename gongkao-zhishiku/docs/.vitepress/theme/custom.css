@@ -1,0 +1,122 @@
+/**
+ * 公考知识库 - 自定义样式
+ */
+
+:root {
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: -webkit-linear-gradient(120deg, #3eaf7c 30%, #42b983);
+  --vp-home-hero-image-background-image: linear-gradient(-45deg, #3eaf7c 50%, #42b983 50%);
+  --vp-home-hero-image-filter: blur(44px);
+}
+
+/* 题库iframe容器 */
+.tiku-frame-container {
+  width: 100%;
+  min-height: calc(100vh - 64px);
+  border: none;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tiku-frame {
+  width: 100%;
+  height: calc(100vh - 100px);
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 题库页面布局 */
+.tiku-page {
+  max-width: 100% !important;
+  padding: 0 !important;
+}
+
+.tiku-page .VPDoc {
+  padding: 0 !important;
+}
+
+.tiku-page .content-container {
+  max-width: 100% !important;
+}
+
+/* 题库导航标签 */
+.tiku-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+
+.tiku-tab {
+  padding: 8px 16px;
+  border-radius: 6px;
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-1);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.tiku-tab:hover {
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+}
+
+.tiku-tab.active {
+  background: var(--vp-c-brand-1);
+  color: white;
+}
+
+/* 加载状态 */
+.tiku-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  color: var(--vp-c-text-2);
+}
+
+.tiku-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--vp-c-divider);
+  border-top-color: var(--vp-c-brand-1);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 错误提示 */
+.tiku-error {
+  text-align: center;
+  padding: 40px;
+  background: var(--vp-c-bg-soft);
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.tiku-error-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.tiku-error-message {
+  color: var(--vp-c-text-2);
+  margin-bottom: 16px;
+}
+
+.tiku-error-btn {
+  display: inline-block;
+  padding: 8px 24px;
+  background: var(--vp-c-brand-1);
+  color: white;
+  border-radius: 6px;
+  text-decoration: none;
+}

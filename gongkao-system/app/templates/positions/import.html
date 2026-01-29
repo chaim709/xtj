@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}数据导入 - 智能选岗{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-8">
+            <!-- 导入表单 -->
+            <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i data-lucide="upload" style="width:20px;height:20px;display:inline-block;vertical-align:middle;margin-right:8px;"></i>数据导入</h5>
+            </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label class="form-label">导入类型</label>
+                            <select name="import_type" class="form-select" required>
+                                <option value="positions">岗位数据（Excel）</option>
+                                <option value="majors" disabled>专业目录（PDF）- 暂不支持</option>
+                            </select>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">年份</label>
+                                <select name="year" class="form-select" required>
+                                    <option value="2026">2026年</option>
+                                    <option value="2025">2025年</option>
+                                    <option value="2024">2024年</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">考试类型</label>
+                                <select name="exam_type" class="form-select" required>
+                                    <option value="省考">省考</option>
+                                    <option value="国考">国考</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">选择文件</label>
+                            <input type="file" name="file" class="form-control" accept=".xls,.xlsx" required>
+                            <small class="text-muted">支持 .xls, .xlsx 格式</small>
+                        </div>
+                <button type="submit" class="btn btn-primary">
+                    <i data-lucide="upload" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:4px;"></i>开始导入
+                </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- 导入说明 -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">导入说明</h6>
+                </div>
+                <div class="card-body">
+                    <h6>岗位数据格式要求：</h6>
+                    <p class="small text-muted">Excel文件应包含以下列（列名可以有空格）：</p>
+                    <ul class="small">
+                        <li>隶属关系、地区代码、地区名称</li>
+                        <li>单位代码、单位名称</li>
+                        <li>职位代码、职位名称、职位简介</li>
+                        <li>考试类别、开考比例、招考人数</li>
+                        <li>学历、专业、其它（其他条件）</li>
+                        <li>报名人数、竞争比、最低进面分、最高进面分（可选）</li>
+                    </ul>
+                    
+                    <div class="alert alert-info small mb-0">
+                        <i data-lucide="info" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:4px;"></i>
+                        导入时会自动检测重复数据，相同年份+考试类型+地区代码+单位代码+职位代码的数据会被更新而非重复插入。
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- 当前数据统计 -->
+            <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i data-lucide="bar-chart-3" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:8px;"></i>当前数据统计</h6>
+            </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>岗位总数</span>
+                        <span class="fw-bold text-primary">{{ stats.positions }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>专业大类</span>
+                        <span class="fw-bold">{{ stats.categories }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>具体专业</span>
+                        <span class="fw-bold">{{ stats.majors }}</span>
+                    </div>
+                    
+                    <hr>
+                    <h6 class="text-muted small">按年份分布</h6>
+                    {% for year, count in stats.positions_by_year.items() %}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>{{ year }}年</span>
+                        <span class="badge bg-secondary">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}

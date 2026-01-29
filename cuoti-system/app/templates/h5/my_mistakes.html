@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>我的错题 - {{ student.name }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f7fb;
+            min-height: 100vh;
+            padding-bottom: 100px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            padding: 25px 20px;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .avatar {
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-right: 15px;
+        }
+        
+        .user-name { font-size: 20px; font-weight: 600; }
+        
+        .stats-row {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 15px;
+        }
+        
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 24px; font-weight: 700; }
+        .stat-label { font-size: 12px; opacity: 0.8; margin-top: 4px; }
+        
+        .container { padding: 15px; }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 20px 0 15px;
+            color: #333;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .category-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .category-item {
+            flex: 1;
+            min-width: 45%;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .category-name { font-size: 14px; color: #666; }
+        .category-count { font-size: 24px; font-weight: 700; color: #ef4444; margin-top: 5px; }
+        
+        .practice-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            text-decoration: none;
+            margin-top: 20px;
+        }
+        
+        .submission-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .submission-item:last-child { border-bottom: none; }
+        
+        .submission-info .name { font-weight: 600; }
+        .submission-info .time { font-size: 12px; color: #888; margin-top: 4px; }
+        
+        .submission-count {
+            background: #fee2e2;
+            color: #ef4444;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .mistake-list { margin-top: 15px; }
+        
+        .mistake-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+        
+        .mistake-stem {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #333;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .mistake-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #888;
+        }
+        
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .tab-item {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            text-decoration: none;
+            color: #666;
+        }
+        
+        .tab-item.active { color: #6366f1; }
+        .tab-item .icon { font-size: 20px; }
+        .tab-item .text { font-size: 12px; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="user-info">
+            <div class="avatar">{{ student.name[0] }}</div>
+            <div class="user-name">{{ student.name }}</div>
+        </div>
+        <div class="stats-row">
+            <div class="stat-item">
+                <div class="stat-value">{{ mistakes|length }}</div>
+                <div class="stat-label">错题总数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ submissions|length }}</div>
+                <div class="stat-label">提交次数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ category_stats|length }}</div>
+                <div class="stat-label">涉及分类</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- 分类统计 -->
+        <div class="section-title">错题分布</div>
+        <div class="card">
+            <div class="category-list">
+                {% for cat, count in category_stats %}
+                <div class="category-item">
+                    <div class="category-name">{{ cat or '未分类' }}</div>
+                    <div class="category-count">{{ count }}</div>
+                </div>
+                {% else %}
+                <p style="text-align: center; color: #888; width: 100%;">暂无错题记录</p>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- 开始练习 -->
+        {% if mistakes|length > 0 %}
+        <a href="{{ url_for('h5.practice', student_id=student.id) }}" class="practice-btn">
+            开始错题重做
+        </a>
+        {% endif %}
+        
+        <!-- 最近提交 -->
+        <div class="section-title">最近提交</div>
+        <div class="card">
+            {% for sub in submissions %}
+            <div class="submission-item">
+                <div class="submission-info">
+                    <div class="name">{{ sub.workbook.name }}</div>
+                    <div class="time">{{ sub.created_at.strftime('%m月%d日 %H:%M') }}</div>
+                </div>
+                <div class="submission-count">{{ sub.mistake_count }}题</div>
+            </div>
+            {% else %}
+            <p style="text-align: center; color: #888;">暂无提交记录</p>
+            {% endfor %}
+        </div>
+        
+        <!-- 错题列表 -->
+        <div class="section-title">最近错题</div>
+        <div class="mistake-list">
+            {% for m in mistakes[:10] %}
+            <div class="mistake-item">
+                <div class="mistake-stem">{{ m.question.stem }}</div>
+                <div class="mistake-meta">
+                    <span>{{ m.question.category or '未分类' }}</span>
+                    <span>{{ m.created_at.strftime('%m-%d') }}</span>
+                </div>
+            </div>
+            {% else %}
+            <div class="card" style="text-align: center; color: #888;">
+                暂无错题记录
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

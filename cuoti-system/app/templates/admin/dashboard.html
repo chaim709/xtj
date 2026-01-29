@@ -1,0 +1,207 @@
+{% extends "admin/base.html" %}
+
+{% block title %}仪表盘 - 错题收集系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="bi bi-speedometer2 me-2"></i>仪表盘</h1>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('admin.leaderboard') }}" class="btn btn-outline-primary">
+            <i class="bi bi-trophy"></i> 排行榜
+        </a>
+        <a href="{{ url_for('admin.data_import') }}" class="btn btn-outline-success">
+            <i class="bi bi-cloud-upload"></i> 导入数据
+        </a>
+    </div>
+</div>
+
+<!-- 统计卡片 -->
+<div class="row g-4 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card stat-card" style="border-left: 4px solid #1a73e8;">
+            <div class="stat-value text-primary">{{ stats.total_questions }}</div>
+            <div class="stat-label">题目总数</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card" style="border-left: 4px solid #34a853;">
+            <div class="stat-value text-success">{{ stats.total_workbooks }}</div>
+            <div class="stat-label">题册数量</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card" style="border-left: 4px solid #fbbc04;">
+            <div class="stat-value text-warning">{{ stats.total_students }}</div>
+            <div class="stat-label">学员数量</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card" style="border-left: 4px solid #ea4335;">
+            <div class="stat-value text-danger">{{ stats.total_mistakes }}</div>
+            <div class="stat-label">错题记录</div>
+        </div>
+    </div>
+</div>
+
+<!-- 今日统计 -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-calendar-check me-2"></i>今日概况
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="fs-3 fw-bold text-primary">{{ today_stats.submissions }}</div>
+                        <div class="small text-muted">今日提交</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="fs-3 fw-bold text-success">{{ today_stats.students }}</div>
+                        <div class="small text-muted">活跃学员</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="fs-3 fw-bold text-danger">{{ today_stats.mistakes }}</div>
+                        <div class="small text-muted">新增错题</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-graph-up me-2"></i>快捷操作
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('admin.create_workbook') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i>新建题册
+                    </a>
+                    <a href="{{ url_for('admin.questions') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-database me-1"></i>题库管理
+                    </a>
+                    <a href="{{ url_for('admin.classes') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-mortarboard me-1"></i>班级管理
+                    </a>
+                    <a href="{{ url_for('admin.statistics') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-bar-chart me-1"></i>数据分析
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- 最近提交 -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>最近提交</span>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_submissions %}
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>学员</th>
+                            <th>题册</th>
+                            <th>板块</th>
+                            <th class="text-center">做题</th>
+                            <th class="text-center">正确率</th>
+                            <th>时间</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sub in recent_submissions %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('admin.view_student', id=sub.student.id) }}" class="text-decoration-none">
+                                    {{ sub.student.name }}
+                                </a>
+                            </td>
+                            <td>
+                                {% if sub.workbook %}
+                                <a href="{{ url_for('admin.view_workbook', id=sub.workbook.id) }}" class="text-decoration-none">
+                                    {{ sub.workbook.name[:15] }}{% if sub.workbook.name|length > 15 %}...{% endif %}
+                                </a>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if sub.subcategory %}
+                                <small class="badge bg-secondary">{{ sub.subcategory }}</small>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td class="text-center">{{ sub.total_attempted or '-' }}</td>
+                            <td class="text-center">
+                                {% if sub.accuracy_rate is not none %}
+                                {% if sub.accuracy_rate >= 85 %}
+                                <span class="badge bg-success">{{ sub.accuracy_rate }}%</span>
+                                {% elif sub.accuracy_rate >= 70 %}
+                                <span class="badge bg-warning text-dark">{{ sub.accuracy_rate }}%</span>
+                                {% else %}
+                                <span class="badge bg-danger">{{ sub.accuracy_rate }}%</span>
+                                {% endif %}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td><small>{{ sub.created_at.strftime('%m-%d %H:%M') }}</small></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                    <p class="mt-2">暂无提交记录</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- 最近题册 -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>最近题册</span>
+                <a href="{{ url_for('admin.create_workbook') }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus"></i> 新建
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_workbooks %}
+                <ul class="list-group list-group-flush">
+                    {% for wb in recent_workbooks %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <a href="{{ url_for('admin.view_workbook', id=wb.id) }}" class="text-decoration-none">
+                                {{ wb.name }}
+                            </a>
+                            <br>
+                            <small class="text-muted">{{ wb.total_questions }} 题</small>
+                        </div>
+                        {% if wb.pdf_path %}
+                        <span class="badge bg-success"><i class="bi bi-check"></i> PDF</span>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <p>暂无题册</p>
+                    <a href="{{ url_for('admin.create_workbook') }}" class="btn btn-primary btn-sm">创建第一个题册</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}学员排行榜 - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">学员排行榜</h1>
+        <p class="text-muted mb-0">查看学员刷题情况和正确率排名</p>
+    </div>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+        <i data-lucide="arrow-left" class="me-1"></i> 返回
+    </a>
+</div>
+
+<!-- 筛选 -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3 align-items-end">
+            <div class="col-auto">
+                <label class="form-label">时间范围</label>
+                <select name="period" class="form-select" onchange="this.form.submit()">
+                    <option value="all" {% if period == 'all' %}selected{% endif %}>全部时间</option>
+                    <option value="7d" {% if period == '7d' %}selected{% endif %}>最近7天</option>
+                    <option value="30d" {% if period == '30d' %}selected{% endif %}>最近30天</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="form-label">排序方式</label>
+                <select name="sort" class="form-select" onchange="this.form.submit()">
+                    <option value="accuracy" {% if sort_by == 'accuracy' %}selected{% endif %}>按正确率</option>
+                    <option value="total" {% if sort_by == 'total' %}selected{% endif %}>按刷题量</option>
+                    <option value="submissions" {% if sort_by == 'submissions' %}selected{% endif %}>按提交次数</option>
+                </select>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 前三名 -->
+{% if leaderboard|length >= 3 %}
+<div class="row g-4 mb-4">
+    <!-- 第二名 -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow text-center" style="margin-top: 30px;">
+            <div class="card-body">
+                <div class="display-4 text-secondary mb-2">🥈</div>
+                <h4>{{ leaderboard[1].name }}</h4>
+                <p class="text-muted mb-2">{{ leaderboard[1].phone or '-' }}</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <div>
+                        <div class="h5 text-primary mb-0">{{ leaderboard[1].accuracy_rate }}%</div>
+                        <small class="text-muted">正确率</small>
+                    </div>
+                    <div>
+                        <div class="h5 mb-0">{{ leaderboard[1].total_attempted }}</div>
+                        <small class="text-muted">刷题量</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 第一名 -->
+    <div class="col-md-4">
+        <div class="card border-warning shadow text-center" style="border-width: 2px;">
+            <div class="card-body">
+                <div class="display-3 mb-2">🥇</div>
+                <h3>{{ leaderboard[0].name }}</h3>
+                <p class="text-muted mb-2">{{ leaderboard[0].phone or '-' }}</p>
+                <div class="d-flex justify-content-center gap-4">
+                    <div>
+                        <div class="h4 text-success mb-0">{{ leaderboard[0].accuracy_rate }}%</div>
+                        <small class="text-muted">正确率</small>
+                    </div>
+                    <div>
+                        <div class="h4 mb-0">{{ leaderboard[0].total_attempted }}</div>
+                        <small class="text-muted">刷题量</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 第三名 -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow text-center" style="margin-top: 50px;">
+            <div class="card-body">
+                <div class="display-4 mb-2" style="color: #cd7f32;">🥉</div>
+                <h4>{{ leaderboard[2].name }}</h4>
+                <p class="text-muted mb-2">{{ leaderboard[2].phone or '-' }}</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <div>
+                        <div class="h5 text-info mb-0">{{ leaderboard[2].accuracy_rate }}%</div>
+                        <small class="text-muted">正确率</small>
+                    </div>
+                    <div>
+                        <div class="h5 mb-0">{{ leaderboard[2].total_attempted }}</div>
+                        <small class="text-muted">刷题量</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- 完整排行表 -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">完整排行榜</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th width="60">排名</th>
+                    <th>姓名</th>
+                    <th>手机号</th>
+                    <th>刷题量</th>
+                    <th>正确数</th>
+                    <th>错题数</th>
+                    <th>正确率</th>
+                    <th>提交次数</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in leaderboard %}
+                <tr {% if item.rank <= 3 %}class="table-warning"{% endif %}>
+                    <td>
+                        {% if item.rank == 1 %}🥇
+                        {% elif item.rank == 2 %}🥈
+                        {% elif item.rank == 3 %}🥉
+                        {% else %}{{ item.rank }}{% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('students.detail', id=item.id) }}">{{ item.name }}</a>
+                    </td>
+                    <td class="text-muted">{{ item.phone or '-' }}</td>
+                    <td>{{ item.total_attempted }}</td>
+                    <td class="text-success">{{ item.total_correct }}</td>
+                    <td class="text-danger">{{ item.total_mistakes }}</td>
+                    <td>
+                        <span class="badge {% if item.accuracy_rate >= 85 %}bg-success{% elif item.accuracy_rate >= 70 %}bg-warning{% else %}bg-danger{% endif %}">
+                            {{ item.accuracy_rate }}%
+                        </span>
+                    </td>
+                    <td>{{ item.submission_count }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">暂无数据</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block title %}{{ '编辑学员' if student else '新增学员' }} - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<!-- 页面标题 -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="font-heading mb-1">{{ '编辑学员信息' if student else '新增学员' }}</h4>
+        <p class="text-muted mb-0">{{ '修改学员的档案信息' if student else '创建新学员的个人档案' }}</p>
+    </div>
+</div>
+
+<div class="card" style="border-radius:16px;border:none;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+    <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('students.edit', id=student.id) if student else url_for('students.create') }}">
+            
+            <!-- 基本信息 -->
+            <h6 class="font-heading mb-3" style="color:var(--primary);">
+                <i data-lucide="user" style="width:16px;height:16px;margin-right:8px;"></i>基本信息
+            </h6>
+            <div class="row mb-4">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">姓名 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" name="name" 
+                           value="{{ student.name if student else '' }}" required style="border-radius:10px;">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">联系电话</label>
+                    <input type="text" class="form-control" name="phone" 
+                           value="{{ student.phone if student else '' }}" style="border-radius:10px;">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">微信号</label>
+                    <input type="text" class="form-control" name="wechat" 
+                           value="{{ student.wechat if student else '' }}" style="border-radius:10px;">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">家长联系电话</label>
+                    <input type="text" class="form-control" name="parent_phone" 
+                           value="{{ student.parent_phone if student else '' }}" style="border-radius:10px;">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">身份证号</label>
+                    <input type="text" class="form-control" name="id_number" 
+                           value="{{ student.id_number if student else '' }}" style="border-radius:10px;">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">学历</label>
+                    <select class="form-select" name="education" style="border-radius:10px;">
+                        <option value="">请选择</option>
+                        <option value="大专" {% if student and student.education == '大专' %}selected{% endif %}>大专</option>
+                        <option value="本科" {% if student and student.education == '本科' %}selected{% endif %}>本科</option>
+                        <option value="硕士" {% if student and student.education == '硕士' %}selected{% endif %}>硕士</option>
+                        <option value="博士" {% if student and student.education == '博士' %}selected{% endif %}>博士</option>
+                    </select>
+                </div>
+                <div class="col-md-8 mb-3">
+                    <label class="form-label">家庭住址</label>
+                    <input type="text" class="form-control" name="address" 
+                           value="{{ student.address if student else '' }}" style="border-radius:10px;">
+                </div>
+            </div>
+            
+            <!-- 课程报名 -->
+            <h6 class="font-heading mb-3" style="color:var(--primary);">
+                <i data-lucide="package" style="width:16px;height:16px;margin-right:8px;"></i>课程报名
+            </h6>
+            <div class="row mb-4">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">选择项目</label>
+                    <select class="form-select" id="projectSelect" name="project_id" style="border-radius:10px;" onchange="loadPackages(this.value)">
+                        <option value="">请选择项目</option>
+                        {% for project in projects %}
+                        <option value="{{ project.id }}" {% if student and student.package and student.package.project_id == project.id %}selected{% endif %}>
+                            {{ project.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">报名套餐</label>
+                    <select class="form-select" id="packageSelect" name="package_id" style="border-radius:10px;">
+                        <option value="">请先选择项目</option>
+                        {% if packages %}
+                            {% for package in packages %}
+                            <option value="{{ package.id }}" {% if student and student.package_id == package.id %}selected{% endif %}>
+                                {{ package.name }} (¥{{ "%.0f" | format(package.price) }})
+                            </option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">实付金额</label>
+                    <input type="number" class="form-control" name="actual_price" 
+                           value="{{ '%.0f' | format(student.actual_price) if student and student.actual_price else '' }}" 
+                           min="0" step="100" style="border-radius:10px;">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">报名日期</label>
+                    <input type="date" class="form-control" name="course_enrollment_date" 
+                           value="{{ student.course_enrollment_date.strftime('%Y-%m-%d') if student and student.course_enrollment_date else '' }}" style="border-radius:10px;">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">有效期至</label>
+                    <input type="date" class="form-control" name="valid_until" 
+                           value="{{ student.valid_until.strftime('%Y-%m-%d') if student and student.valid_until else '' }}" style="border-radius:10px;">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">优惠信息</label>
+                    <input type="text" class="form-control" name="discount_info" 
+                           value="{{ student.discount_info if student else '' }}" placeholder="如：2人团报优惠2000元" style="border-radius:10px;">
+                </div>
+            </div>
+            
+            <!-- 报考信息 -->
+            <h6 class="font-heading mb-3" style="color:var(--primary);">
+                <i data-lucide="book-open" style="width:16px;height:16px;margin-right:8px;"></i>报考信息
+            </h6>
+            <div class="row mb-4">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">班次 <small class="text-muted">(旧版)</small></label>
+                    <select class="form-select" name="class_name" style="border-radius:10px;">
+                        <option value="">请选择</option>
+                        {% for c in class_options %}
+                        <option value="{{ c }}" {% if student and student.class_name == c %}selected{% endif %}>{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">报考类型</label>
+                    <select class="form-select" name="exam_type" style="border-radius:10px;">
+                        <option value="">请选择</option>
+                        {% for e in exam_type_options %}
+                        <option value="{{ e }}" {% if student and student.exam_type == e %}selected{% endif %}>{{ e }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">目标岗位</label>
+                    <input type="text" class="form-control" name="target_position" 
+                           value="{{ student.target_position if student else '' }}" style="border-radius:10px;">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">入学日期</label>
+                    <input type="date" class="form-control" name="enrollment_date" 
+                           value="{{ student.enrollment_date.strftime('%Y-%m-%d') if student and student.enrollment_date else '' }}" style="border-radius:10px;">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">督学负责人</label>
+                    <select class="form-select" name="supervisor_id" style="border-radius:10px;">
+                        <option value="">请选择</option>
+                        {% for s in supervisors %}
+                        <option value="{{ s.id }}" {% if student and student.supervisor_id == s.id %}selected{% endif %}>
+                            {{ s.real_name or s.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">缴费状态</label>
+                    <select class="form-select" name="payment_status" style="border-radius:10px;">
+                        <option value="">请选择</option>
+                        <option value="已缴费" {% if student and student.payment_status == '已缴费' %}selected{% endif %}>已缴费</option>
+                        <option value="部分缴费" {% if student and student.payment_status == '部分缴费' %}selected{% endif %}>部分缴费</option>
+                        <option value="未缴费" {% if student and student.payment_status == '未缴费' %}selected{% endif %}>未缴费</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" name="has_basic" id="hasBasic"
+                               {% if student and student.has_basic %}checked{% endif %}>
+                        <label class="form-check-label" for="hasBasic">有基础</label>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" name="is_agreement" id="isAgreement"
+                               {% if student and student.is_agreement %}checked{% endif %}>
+                        <label class="form-check-label" for="isAgreement">协议班</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 学习画像 -->
+            <h6 class="font-heading mb-3" style="color:var(--primary);">
+                <i data-lucide="bar-chart-2" style="width:16px;height:16px;margin-right:8px;"></i>学习画像
+            </h6>
+            <div class="row mb-4">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">基础水平</label>
+                    <select class="form-select" name="base_level" style="border-radius:10px;">
+                        <option value="">请选择</option>
+                        <option value="薄弱" {% if student and student.base_level == '薄弱' %}selected{% endif %}>薄弱</option>
+                        <option value="中等" {% if student and student.base_level == '中等' %}selected{% endif %}>中等</option>
+                        <option value="良好" {% if student and student.base_level == '良好' %}selected{% endif %}>良好</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">学习风格</label>
+                    <select class="form-select" name="learning_style" style="border-radius:10px;">
+                        <option value="">请选择</option>
+                        <option value="自律型" {% if student and student.learning_style == '自律型' %}selected{% endif %}>自律型</option>
+                        <option value="需督促型" {% if student and student.learning_style == '需督促型' %}selected{% endif %}>需督促型</option>
+                        <option value="基础薄弱型" {% if student and student.learning_style == '基础薄弱型' %}selected{% endif %}>基础薄弱型</option>
+                    </select>
+                </div>
+                {% if student %}
+                <div class="col-md-4 mb-3">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" name="need_attention" id="needAttention"
+                               {% if student.need_attention %}checked{% endif %}>
+                        <label class="form-check-label" for="needAttention">
+                            <i data-lucide="star" style="width:14px;height:14px;fill:#F59E0B;color:#F59E0B;"></i> 需重点关注
+                        </label>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="col-12 mb-3">
+                    <label class="form-label">个性化督学计划</label>
+                    <textarea class="form-control" name="study_plan" rows="3" style="border-radius:10px;">{{ student.study_plan if student else '' }}</textarea>
+                </div>
+                <div class="col-12 mb-3">
+                    <label class="form-label">备注</label>
+                    <textarea class="form-control" name="remarks" rows="2" style="border-radius:10px;">{{ student.remarks if student else '' }}</textarea>
+                </div>
+            </div>
+            
+            <!-- 操作按钮 -->
+            <div class="d-flex justify-content-end gap-2 pt-4 border-top">
+                <a href="{{ url_for('students.list') }}" class="btn btn-outline-secondary" style="border-radius:10px;padding:0.6rem 1.5rem;">取消</a>
+                <button type="submit" class="btn btn-primary" style="border-radius:10px;padding:0.6rem 1.5rem;">
+                    <i data-lucide="check" style="width:16px;height:16px;margin-right:6px;"></i> {{ '保存修改' if student else '创建学员' }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    lucide.createIcons();
+    
+    // 初始化：如果已选择项目，加载套餐
+    var selectedProject = $('#projectSelect').val();
+    if (selectedProject) {
+        loadPackages(selectedProject, true);
+    }
+});
+
+function loadPackages(projectId, keepSelected) {
+    if (!projectId) {
+        $('#packageSelect').html('<option value="">请先选择项目</option>');
+        return;
+    }
+    
+    var currentPackage = {% if student and student.package_id %}{{ student.package_id }}{% else %}null{% endif %};
+    
+    $.get('/courses/api/packages/' + projectId, function(data) {
+        var html = '<option value="">请选择套餐</option>';
+        data.forEach(function(pkg) {
+            var selected = (keepSelected && currentPackage == pkg.id) ? 'selected' : '';
+            html += '<option value="' + pkg.id + '" ' + selected + '>' + 
+                    pkg.name + ' (¥' + Math.round(pkg.price) + ')</option>';
+        });
+        $('#packageSelect').html(html);
+    });
+}
+</script>
+{% endblock %}

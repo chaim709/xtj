@@ -1,0 +1,157 @@
+{% extends "admin/base.html" %}
+
+{% block title %}编辑题册 - 错题收集系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">编辑题册: {{ workbook.name }}</h1>
+    <div>
+        <a href="{{ url_for('admin.view_workbook', id=workbook.id) }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> 返回查看
+        </a>
+    </div>
+</div>
+
+<!-- 基本信息 -->
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="bi bi-info-circle"></i> 基本信息
+    </div>
+    <div class="card-body">
+        <form method="post">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">题册名称</label>
+                    <input type="text" name="name" class="form-control" value="{{ workbook.name }}" required>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">分类</label>
+                    <select name="category" class="form-select">
+                        {% for cat in ['专项练习', '模拟套卷', '真题', '课堂练习', '课后作业', '其他'] %}
+                        <option value="{{ cat }}" {{ 'selected' if workbook.category == cat }}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">PDF模板</label>
+                    <select name="template_id" class="form-select">
+                        {% for t in templates %}
+                        <option value="{{ t.id }}" {{ 'selected' if workbook.template_id == t.id }}>
+                            {{ t.name }} - {{ t.questions_per_page }}题/页
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 mb-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-check"></i> 保存
+                    </button>
+                </div>
+            </div>
+            <div class="mb-0">
+                <label class="form-label">描述</label>
+                <input type="text" name="description" class="form-control" value="{{ workbook.description or '' }}">
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- 左侧：已添加的题目 -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>已添加的题目 ({{ items|length }})</span>
+            </div>
+            <div class="card-body p-0" style="max-height: 600px; overflow-y: auto;">
+                <table class="table table-hover mb-0">
+                    <thead style="position: sticky; top: 0; background: white;">
+                        <tr>
+                            <th width="50">序号</th>
+                            <th>题干</th>
+                            <th width="60">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td>{{ item.order }}</td>
+                            <td>{{ item.question.stem[:40] }}...</td>
+                            <td>
+                                <form action="{{ url_for('admin.remove_question_from_workbook', id=workbook.id, item_id=item.id) }}" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="移除">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="text-center py-4 text-muted">
+                                暂无题目
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 右侧：可添加的题目 -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <span>可添加的题目</span>
+            </div>
+            <form action="{{ url_for('admin.add_questions_to_workbook', id=workbook.id) }}" method="POST">
+                <div class="card-body p-0" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-hover mb-0">
+                        <thead style="position: sticky; top: 0; background: white;">
+                            <tr>
+                                <th width="40">
+                                    <input type="checkbox" id="selectAll">
+                                </th>
+                                <th>题干</th>
+                                <th width="80">分类</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for q in available_questions %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox" name="question_ids" value="{{ q.id }}" class="question-checkbox">
+                                </td>
+                                <td>{{ q.stem[:50] }}...</td>
+                                <td><span class="badge badge-category">{{ q.category or '?' }}</span></td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="3" class="text-center py-4 text-muted">
+                                    没有更多题目可添加
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus"></i> 添加选中题目
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('selectAll').addEventListener('change', function() {
+    document.querySelectorAll('.question-checkbox').forEach(cb => {
+        cb.checked = this.checked;
+    });
+});
+</script>
+{% endblock %}

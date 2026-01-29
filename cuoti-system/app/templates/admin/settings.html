@@ -1,0 +1,205 @@
+{% extends "admin/base.html" %}
+
+{% block title %}机构设置 - 错题收集系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">机构设置</h1>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <form method="post" action="{{ url_for('admin.update_institution') }}" enctype="multipart/form-data">
+            <!-- 基本信息 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-building"></i> 基本信息
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">机构名称 <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" 
+                                   value="{{ institution.name or '' }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">机构标语</label>
+                            <input type="text" name="slogan" class="form-control" 
+                                   value="{{ institution.slogan or '' }}"
+                                   placeholder="例：专注公考培训十年">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">机构Logo</label>
+                        <div class="d-flex align-items-center gap-3">
+                            {% if institution.logo_path %}
+                            <div class="logo-preview" style="width: 120px; height: 60px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+                                <img src="{{ url_for('static', filename='uploads/brand/logo.' + institution.logo_path.split('.')[-1]) }}" 
+                                     style="width: 100%; height: 100%; object-fit: contain;" alt="Logo">
+                            </div>
+                            <button type="button" class="btn btn-outline-danger btn-sm" 
+                                    onclick="deleteLogo()">
+                                <i class="bi bi-trash"></i> 删除
+                            </button>
+                            {% endif %}
+                            <input type="file" name="logo" class="form-control" accept="image/*" style="max-width: 300px;">
+                        </div>
+                        <div class="form-text">建议尺寸：400x200像素，支持 PNG/JPG/GIF 格式</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 联系方式 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-telephone"></i> 联系方式
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">联系电话</label>
+                            <input type="text" name="phone" class="form-control" 
+                                   value="{{ institution.phone or '' }}"
+                                   placeholder="400-xxx-xxxx">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">微信号/公众号</label>
+                            <input type="text" name="wechat" class="form-control" 
+                                   value="{{ institution.wechat or '' }}">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">网站地址</label>
+                            <input type="text" name="website" class="form-control" 
+                                   value="{{ institution.website or '' }}"
+                                   placeholder="https://...">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">机构地址</label>
+                            <input type="text" name="address" class="form-control" 
+                                   value="{{ institution.address or '' }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 品牌颜色 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-palette"></i> 品牌颜色
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">主色调</label>
+                            <div class="d-flex gap-2">
+                                <input type="color" name="primary_color" class="form-control form-control-color" 
+                                       value="{{ institution.primary_color or '#1a73e8' }}" style="width: 60px;">
+                                <input type="text" class="form-control" 
+                                       value="{{ institution.primary_color or '#1a73e8' }}" 
+                                       id="primary_color_text" readonly style="max-width: 120px;">
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">辅助色</label>
+                            <div class="d-flex gap-2">
+                                <input type="color" name="secondary_color" class="form-control form-control-color" 
+                                       value="{{ institution.secondary_color or '#34a853' }}" style="width: 60px;">
+                                <input type="text" class="form-control" 
+                                       value="{{ institution.secondary_color or '#34a853' }}" 
+                                       id="secondary_color_text" readonly style="max-width: 120px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 页眉页脚 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-file-earmark-text"></i> PDF页眉页脚
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">页眉文字</label>
+                        <input type="text" name="header_text" class="form-control" 
+                               value="{{ institution.header_text or '' }}"
+                               placeholder="显示在每页顶部，留空则显示机构名称">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">页脚文字</label>
+                        <input type="text" name="footer_text" class="form-control" 
+                               value="{{ institution.footer_text or '' }}"
+                               placeholder="显示在每页底部，例：咨询热线 400-xxx-xxxx">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-check-lg"></i> 保存设置
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- 预览 -->
+        <div class="card sticky-top" style="top: 20px;">
+            <div class="card-header">
+                <i class="bi bi-eye"></i> 品牌预览
+            </div>
+            <div class="card-body">
+                <div class="preview-box p-3 border rounded" 
+                     style="background: linear-gradient(135deg, {{ institution.primary_color or '#1a73e8' }}22 0%, {{ institution.secondary_color or '#34a853' }}22 100%);">
+                    <div class="text-center mb-3">
+                        {% if institution.logo_path %}
+                        <img src="{{ url_for('static', filename='uploads/brand/logo.' + institution.logo_path.split('.')[-1]) }}" 
+                             style="max-height: 50px;" alt="Logo">
+                        {% else %}
+                        <div class="h4 mb-0" style="color: {{ institution.primary_color or '#1a73e8' }};">
+                            {{ institution.name or '机构名称' }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="text-center text-muted small">
+                        {{ institution.slogan or '机构标语' }}
+                    </div>
+                    <hr>
+                    <div class="small text-muted">
+                        <div><i class="bi bi-telephone"></i> {{ institution.phone or '联系电话' }}</div>
+                        <div><i class="bi bi-wechat"></i> {{ institution.wechat or '微信号' }}</div>
+                    </div>
+                </div>
+                <div class="mt-3 text-muted small">
+                    此预览展示品牌信息在PDF中的大致效果
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 颜色同步
+document.querySelectorAll('input[type="color"]').forEach(input => {
+    input.addEventListener('input', function() {
+        const textInput = document.getElementById(this.name + '_text');
+        if (textInput) textInput.value = this.value;
+    });
+});
+
+// 删除Logo
+function deleteLogo() {
+    if (confirm('确定要删除Logo吗？')) {
+        fetch('{{ url_for("admin.delete_logo") }}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        }).then(() => location.reload());
+    }
+}
+</script>
+{% endblock %}

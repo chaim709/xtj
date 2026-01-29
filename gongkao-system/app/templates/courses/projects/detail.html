@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ project.name }} - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<!-- 页面标题 -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+        <a href="{{ url_for('courses.project_list') }}" class="btn btn-outline-secondary me-3">
+            <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+        </a>
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h4 class="mb-0 font-heading">{{ project.name }}</h4>
+                <span class="badge 
+                    {% if project.status == 'recruiting' %}bg-success
+                    {% elif project.status == 'preparing' %}bg-warning text-dark
+                    {% else %}bg-secondary{% endif %}">
+                    {{ project.status_display }}
+                </span>
+            </div>
+            <p class="text-muted mb-0">{{ project.exam_type_display }} · {{ project.year }}年</p>
+        </div>
+    </div>
+    {% if current_user.is_admin() %}
+    <div class="dropdown">
+        <button class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+            <i data-lucide="settings" style="width:18px;height:18px;"></i> 操作
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="{{ url_for('courses.project_edit', id=project.id) }}"><i data-lucide="edit-2" style="width:16px;height:16px;"></i> 编辑项目</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#statusModal"><i data-lucide="toggle-left" style="width:16px;height:16px;"></i> 更改状态</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger" href="#" onclick="deleteProject()"><i data-lucide="trash-2" style="width:16px;height:16px;"></i> 删除项目</a></li>
+        </ul>
+    </div>
+    {% endif %}
+</div>
+
+<!-- 统计卡片 -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <div class="stat-card-title">报名套餐</div>
+                <div class="stat-card-icon blue"><i data-lucide="package" style="width:20px;height:20px;"></i></div>
+            </div>
+            <div class="stat-card-value">{{ stats.package_count }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <div class="stat-card-title">班型数量</div>
+                <div class="stat-card-icon purple"><i data-lucide="layers" style="width:20px;height:20px;"></i></div>
+            </div>
+            <div class="stat-card-value">{{ stats.type_count }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <div class="stat-card-title">班次数量</div>
+                <div class="stat-card-icon green"><i data-lucide="calendar" style="width:20px;height:20px;"></i></div>
+            </div>
+            <div class="stat-card-value">{{ stats.batch_count }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card stat-card-gradient">
+            <div class="stat-card-header">
+                <div class="stat-card-title">学员总数</div>
+                <div class="stat-card-icon" style="background:rgba(255,255,255,0.2);"><i data-lucide="users" style="width:20px;height:20px;"></i></div>
+            </div>
+            <div class="stat-card-value">{{ stats.student_count }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- 报名套餐 -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 font-heading"><i data-lucide="package" style="width:18px;height:18px;"></i> 报名套餐</h6>
+                {% if current_user.is_admin() %}
+                <a href="{{ url_for('courses.package_create', project_id=project.id) }}" class="btn btn-sm btn-primary">
+                    <i data-lucide="plus" style="width:14px;height:14px;"></i> 新增
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                {% if packages %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>套餐名称</th>
+                                <th>类型</th>
+                                <th>原价</th>
+                                <th>状态</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for package in packages %}
+                            <tr>
+                                <td class="fw-medium">{{ package.name }}</td>
+                                <td><span class="badge bg-light text-dark">{{ package.package_type_display }}</span></td>
+                                <td>¥{{ "%.0f" | format(package.price) }}</td>
+                                <td>
+                                    {% if package.status == 'active' %}
+                                    <span class="badge bg-success">上架</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">下架</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <a href="{{ url_for('courses.package_edit', id=package.id) }}" class="btn btn-sm btn-outline-secondary">
+                                        <i data-lucide="edit-2" style="width:14px;height:14px;"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i data-lucide="package" style="width:32px;height:32px;" class="mb-2"></i>
+                    <p class="mb-0">暂无报名套餐</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- 班型管理 -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 font-heading"><i data-lucide="layers" style="width:18px;height:18px;"></i> 班型管理</h6>
+                {% if current_user.is_admin() %}
+                <a href="{{ url_for('courses.type_create', project_id=project.id) }}" class="btn btn-sm btn-primary">
+                    <i data-lucide="plus" style="width:14px;height:14px;"></i> 新增
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                {% if class_types %}
+                <ul class="list-group list-group-flush" id="sortable-types">
+                    {% for ct in class_types %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center" data-id="{{ ct.id }}">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="badge bg-primary rounded-pill">{{ ct.sort_order + 1 }}</span>
+                            <div>
+                                <div class="fw-medium">{{ ct.name }}</div>
+                                <div class="text-muted small">
+                                    {% if ct.planned_days %}{{ ct.planned_days }}天{% endif %}
+                                    {% if ct.single_price %} · ¥{{ "%.0f" | format(ct.single_price) }}{% endif %}
+                                    · {{ ct.batches.count() }}个班次
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <a href="{{ url_for('courses.batch_list', class_type_id=ct.id) }}" class="btn btn-sm btn-outline-primary me-1">
+                                查看班次
+                            </a>
+                            {% if current_user.is_admin() %}
+                            <a href="{{ url_for('courses.type_edit', id=ct.id) }}" class="btn btn-sm btn-outline-secondary">
+                                <i data-lucide="edit-2" style="width:14px;height:14px;"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i data-lucide="layers" style="width:32px;height:32px;" class="mb-2"></i>
+                    <p class="mb-0">暂无班型</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 状态更改模态框 -->
+<div class="modal fade" id="statusModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">更改项目状态</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn {{ 'btn-warning' if project.status == 'preparing' else 'btn-outline-warning' }}" onclick="changeStatus('preparing')">筹备中</button>
+                    <button type="button" class="btn {{ 'btn-success' if project.status == 'recruiting' else 'btn-outline-success' }}" onclick="changeStatus('recruiting')">招生中</button>
+                    <button type="button" class="btn {{ 'btn-secondary' if project.status == 'ended' else 'btn-outline-secondary' }}" onclick="changeStatus('ended')">已结束</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    lucide.createIcons();
+    
+    function changeStatus(status) {
+        $.post('{{ url_for("courses.project_status", id=project.id) }}', {status: status}, function(data) {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        });
+    }
+    
+    function deleteProject() {
+        if (!confirm('确定要删除项目「{{ project.name }}」吗？此操作不可恢复！')) return;
+        $.post('{{ url_for("courses.project_delete", id=project.id) }}', function(data) {
+            if (data.success) {
+                window.location.href = data.redirect;
+            } else {
+                alert(data.message);
+            }
+        });
+    }
+</script>
+{% endblock %}

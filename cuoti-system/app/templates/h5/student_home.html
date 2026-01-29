@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{ student.name }} - 学习中心</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f7fb;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .avatar {
+            width: 60px;
+            height: 60px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin: 0 auto 10px;
+        }
+        
+        .name { font-size: 22px; font-weight: bold; margin-bottom: 5px; }
+        .phone { font-size: 14px; opacity: 0.8; }
+        
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(255,255,255,0.1);
+            margin: 20px -20px -30px;
+            padding: 15px 20px;
+        }
+        
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 24px; font-weight: bold; }
+        .stat-label { font-size: 12px; opacity: 0.9; margin-top: 4px; }
+        
+        .container { padding: 15px; margin-top: 20px; }
+        
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .menu-item {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            text-decoration: none;
+            color: #333;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s;
+        }
+        
+        .menu-item:active { transform: scale(0.98); }
+        
+        .menu-icon { font-size: 32px; margin-bottom: 8px; }
+        .menu-title { font-size: 14px; font-weight: bold; }
+        .menu-desc { font-size: 12px; color: #888; margin-top: 4px; }
+        
+        .menu-item.highlight {
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+            color: white;
+        }
+        
+        .menu-item.highlight .menu-desc { color: rgba(255,255,255,0.8); }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .card-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .submission-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .submission-item:last-child { border-bottom: none; }
+        
+        .submission-info { flex: 1; }
+        .submission-name { font-size: 14px; color: #333; }
+        .submission-date { font-size: 12px; color: #888; }
+        
+        .submission-rate {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        
+        .rate-good { background: #dcfce7; color: #16a34a; }
+        .rate-warn { background: #fef3c7; color: #d97706; }
+        .rate-bad { background: #fee2e2; color: #dc2626; }
+        
+        .empty-state {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="avatar">👤</div>
+        <div class="name">{{ student.name }}</div>
+        <div class="phone">{{ student.phone }}</div>
+        
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value">{{ overview.total_attempted }}</div>
+                <div class="stat-label">做题数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ overview.accuracy_rate }}%</div>
+                <div class="stat-label">正确率</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ overview.study_days }}</div>
+                <div class="stat-label">学习天数</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- 功能菜单 -->
+        <div class="menu-grid">
+            {% if review_stats.due > 0 %}
+            <a href="{{ url_for('h5.review_center', student_id=student.id) }}" class="menu-item highlight">
+                <div class="menu-icon">🔥</div>
+                <div class="menu-title">待复习</div>
+                <div class="menu-desc">{{ review_stats.due }}题待复习</div>
+            </a>
+            {% else %}
+            <a href="{{ url_for('h5.review_center', student_id=student.id) }}" class="menu-item">
+                <div class="menu-icon">📚</div>
+                <div class="menu-title">复习中心</div>
+                <div class="menu-desc">艾宾浩斯记忆</div>
+            </a>
+            {% endif %}
+            
+            <a href="{{ url_for('h5.study_plan', student_id=student.id) }}" class="menu-item">
+                <div class="menu-icon">📋</div>
+                <div class="menu-title">学习计划</div>
+                <div class="menu-desc">个性化计划</div>
+            </a>
+            
+            <a href="{{ url_for('h5.recommend_practice', student_id=student.id) }}" class="menu-item">
+                <div class="menu-icon">🎯</div>
+                <div class="menu-title">智能推荐</div>
+                <div class="menu-desc">薄弱点练习</div>
+            </a>
+            
+            <a href="{{ url_for('h5.my_mistakes', student_id=student.id) }}" class="menu-item">
+                <div class="menu-icon">📒</div>
+                <div class="menu-title">错题本</div>
+                <div class="menu-desc">{{ overview.unique_mistakes }}道错题</div>
+            </a>
+        </div>
+        
+        <!-- 复习进度 -->
+        <div class="card">
+            <div class="card-title">📊 掌握进度</div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span style="font-size: 13px; color: #888;">已掌握 {{ review_stats.mastered }}/{{ review_stats.total }}</span>
+                <span style="font-size: 13px; color: #16a34a; font-weight: bold;">{{ review_stats.mastery_rate }}%</span>
+            </div>
+            <div style="height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
+                <div style="height: 100%; width: {{ review_stats.mastery_rate }}%; background: linear-gradient(90deg, #16a34a, #22c55e); border-radius: 4px;"></div>
+            </div>
+        </div>
+        
+        <!-- 最近提交 -->
+        <div class="card">
+            <div class="card-title">📝 最近提交</div>
+            {% if recent_submissions %}
+            {% for sub in recent_submissions %}
+            <div class="submission-item">
+                <div class="submission-info">
+                    <div class="submission-name">
+                        {{ sub.subcategory or (sub.workbook.name if sub.workbook else '练习') }}
+                    </div>
+                    <div class="submission-date">{{ sub.created_at.strftime('%m-%d %H:%M') }}</div>
+                </div>
+                {% if sub.accuracy_rate is not none %}
+                <span class="submission-rate {% if sub.accuracy_rate >= 85 %}rate-good{% elif sub.accuracy_rate >= 70 %}rate-warn{% else %}rate-bad{% endif %}">
+                    {{ sub.accuracy_rate }}%
+                </span>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state">暂无提交记录</div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

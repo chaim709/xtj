@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+{% block title %}老师管理 - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<!-- 页面标题 -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1 font-heading">老师管理</h4>
+        <p class="text-muted mb-0">管理外聘老师信息和排课</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('courses.teacher_workload') }}" class="btn btn-outline-primary">
+            <i data-lucide="bar-chart-2" style="width:18px;height:18px;"></i> 工作量统计
+        </a>
+        {% if current_user.is_admin() %}
+        <a href="{{ url_for('courses.teacher_create') }}" class="btn btn-primary">
+            <i data-lucide="plus" style="width:18px;height:18px;"></i> 新增老师
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 筛选 -->
+<div class="card mb-4">
+    <div class="card-body py-3">
+        <form class="row g-3 align-items-center" method="GET">
+            <div class="col-auto">
+                <select name="subject_id" class="form-select form-select-sm">
+                    <option value="">全部科目</option>
+                    {% for subject in subjects %}
+                    <option value="{{ subject.id }}" {{ 'selected' if current_subject_id == subject.id else '' }}>{{ subject.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="active" {{ 'selected' if current_status == 'active' else '' }}>在职</option>
+                    <option value="inactive" {{ 'selected' if current_status == 'inactive' else '' }}>停用</option>
+                    <option value="" {{ 'selected' if not current_status else '' }}>全部</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-outline-primary">筛选</button>
+                <a href="{{ url_for('courses.teacher_list') }}" class="btn btn-sm btn-outline-secondary">重置</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 老师列表 -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>姓名</th>
+                        <th>擅长科目</th>
+                        <th>联系电话</th>
+                        <th>日薪</th>
+                        <th>状态</th>
+                        <th class="text-end">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for teacher in teachers.items %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('courses.teacher_detail', id=teacher.id) }}" class="fw-medium text-decoration-none">
+                                {{ teacher.name }}
+                            </a>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark">{{ teacher.subjects_display or '-' }}</span>
+                        </td>
+                        <td>{{ teacher.phone }}</td>
+                        <td>
+                            {% if teacher.daily_rate %}
+                            ¥{{ "%.0f" | format(teacher.daily_rate) }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if teacher.status == 'active' %}
+                            <span class="badge bg-success">在职</span>
+                            {% else %}
+                            <span class="badge bg-secondary">停用</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('courses.teacher_detail', id=teacher.id) }}" class="btn btn-outline-primary" title="查看详情">
+                                    <i data-lucide="eye" style="width:14px;height:14px;"></i>
+                                </a>
+                                {% if current_user.is_admin() %}
+                                <a href="{{ url_for('courses.teacher_edit', id=teacher.id) }}" class="btn btn-outline-secondary" title="编辑">
+                                    <i data-lucide="edit-2" style="width:14px;height:14px;"></i>
+                                </a>
+                                <button type="button" class="btn btn-outline-secondary btn-toggle" data-id="{{ teacher.id }}" title="{{ '停用' if teacher.status == 'active' else '启用' }}">
+                                    <i data-lucide="{{ 'pause' if teacher.status == 'active' else 'play' }}" style="width:14px;height:14px;"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            <i data-lucide="user-x" style="width:32px;height:32px;" class="mb-2"></i>
+                            <p class="mb-0">暂无老师记录</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 分页 -->
+{% if teachers.pages > 1 %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if teachers.has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('courses.teacher_list', page=teachers.prev_num, subject_id=current_subject_id, status=current_status) }}">上一页</a>
+        </li>
+        {% endif %}
+        
+        {% for page_num in teachers.iter_pages() %}
+            {% if page_num %}
+                <li class="page-item {{ 'active' if page_num == teachers.page else '' }}">
+                    <a class="page-link" href="{{ url_for('courses.teacher_list', page=page_num, subject_id=current_subject_id, status=current_status) }}">{{ page_num }}</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if teachers.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('courses.teacher_list', page=teachers.next_num, subject_id=current_subject_id, status=current_status) }}">下一页</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    lucide.createIcons();
+    
+    // 切换状态
+    $('.btn-toggle').click(function() {
+        var id = $(this).data('id');
+        $.post('{{ url_for("courses.teacher_toggle", id=0) }}'.replace('0', id), function(data) {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

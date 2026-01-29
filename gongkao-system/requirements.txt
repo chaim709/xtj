@@ -1,0 +1,22 @@
+# Flask核心
+Flask==2.3.3
+Flask-SQLAlchemy==3.0.5
+Flask-Login==0.6.3
+Flask-Migrate==4.0.5
+
+# 数据库
+SQLAlchemy==2.0.21
+alembic==1.13.1
+
+# 密码加密（Flask内置Werkzeug已包含）
+# Werkzeug>=2.3.0
+
+# Excel数据导入
+pandas==2.3.3
+openpyxl==3.1.5
+
+# 环境变量
+python-dotenv==1.0.0
+
+# 开发工具（可选）
+# flask-debugtoolbar==0.13.1

@@ -1,0 +1,490 @@
+{% extends "base.html" %}
+
+{% block title %}{{ plan.name }} - 学习计划{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2" style="font-size:0.85rem;">
+                <li class="breadcrumb-item"><a href="{{ url_for('students.list') }}">学员库</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('students.detail', id=plan.student_id) }}">{{ plan.student.name }}</a></li>
+                <li class="breadcrumb-item active">学习计划</li>
+            </ol>
+        </nav>
+        <h1 class="page-title">
+            <i data-lucide="target" style="width:24px;height:24px;margin-right:8px;color:var(--primary);"></i>
+            {{ plan.name }}
+        </h1>
+        <p class="page-subtitle">
+            {{ plan.student.name }} · {{ plan.phase_display }} · 
+            {{ plan.start_date.strftime('%Y/%m/%d') if plan.start_date else '' }}
+            {% if plan.end_date %} - {{ plan.end_date.strftime('%Y/%m/%d') }}{% endif %}
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        {% if plan.status == 'active' %}
+        <form action="{{ url_for('plans.pause', plan_id=plan.id) }}" method="POST" class="d-inline">
+            <button type="submit" class="btn btn-outline-secondary">
+                <i data-lucide="pause" style="width:16px;height:16px;"></i> 暂停
+            </button>
+        </form>
+        <form action="{{ url_for('plans.complete', plan_id=plan.id) }}" method="POST" class="d-inline">
+            <button type="submit" class="btn btn-success">
+                <i data-lucide="check" style="width:16px;height:16px;"></i> 完成计划
+            </button>
+        </form>
+        {% elif plan.status == 'paused' %}
+        <form action="{{ url_for('plans.resume', plan_id=plan.id) }}" method="POST" class="d-inline">
+            <button type="submit" class="btn btn-primary">
+                <i data-lucide="play" style="width:16px;height:16px;"></i> 恢复计划
+            </button>
+        </form>
+        {% endif %}
+        <a href="{{ url_for('plans.edit', plan_id=plan.id) }}" class="btn btn-outline-primary">
+            <i data-lucide="edit" style="width:16px;height:16px;"></i> 编辑
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- 左侧主内容 -->
+    <div class="col-lg-8">
+        <!-- 计划状态卡片 -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <span class="stat-card-title">计划状态</span>
+                        <span class="stat-card-icon blue">
+                            <i data-lucide="activity" style="width:20px;height:20px;"></i>
+                        </span>
+                    </div>
+                    <div class="stat-card-value">
+                        <span class="badge {% if plan.status == 'active' %}bg-success{% elif plan.status == 'paused' %}bg-warning text-dark{% else %}bg-secondary{% endif %}" style="font-size:1rem;">
+                            {{ plan.status_display }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <span class="stat-card-title">目标完成</span>
+                        <span class="stat-card-icon green">
+                            <i data-lucide="target" style="width:20px;height:20px;"></i>
+                        </span>
+                    </div>
+                    <div class="stat-card-value">{{ plan.goal_progress }}%</div>
+                    <div class="stat-card-trend">
+                        {{ goals|selectattr('status', 'equalto', 'achieved')|list|length }}/{{ goals|length }} 个目标
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <span class="stat-card-title">任务完成</span>
+                        <span class="stat-card-icon orange">
+                            <i data-lucide="check-square" style="width:20px;height:20px;"></i>
+                        </span>
+                    </div>
+                    <div class="stat-card-value">{{ plan.task_progress }}%</div>
+                    <div class="stat-card-trend">
+                        {{ tasks|selectattr('is_completed')|list|length }}/{{ tasks|length }} 个任务
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 阶段目标 -->
+        <div class="card mb-4" style="border-radius:16px;border:none;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center" style="border-radius:16px 16px 0 0;border-bottom:1px solid #F1F5F9;">
+                <h6 class="mb-0 font-heading" style="font-weight:600;">
+                    <i data-lucide="target" style="width:18px;height:18px;margin-right:8px;color:#10B981;"></i>
+                    阶段目标
+                </h6>
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addGoalModal">
+                    <i data-lucide="plus" style="width:14px;height:14px;"></i> 添加目标
+                </button>
+            </div>
+            <div class="card-body">
+                {% if goals %}
+                <div class="goals-list">
+                    {% for goal in goals %}
+                    <div class="goal-item mb-3 p-3" style="background:#F8FAFC;border-radius:12px;">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <span class="badge {% if goal.goal_type == 'accuracy' %}bg-primary{% elif goal.goal_type == 'quantity' %}bg-success{% else %}bg-info{% endif %}" style="font-size:0.7rem;">
+                                    {{ goal.goal_type_display }}
+                                </span>
+                                {% if goal.module %}
+                                <span class="badge bg-secondary" style="font-size:0.7rem;">{{ goal.module }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex gap-2 align-items-center">
+                                <span class="badge {% if goal.status == 'achieved' %}bg-success{% elif goal.status == 'failed' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                    {{ goal.status_display }}
+                                </span>
+                                <form action="{{ url_for('plans.delete_goal', goal_id=goal.id) }}" method="POST" class="d-inline" onsubmit="return confirm('确定删除此目标？');">
+                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0">
+                                        <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="goal-description mb-2" style="font-weight:500;">{{ goal.description }}</div>
+                        <div class="progress mb-2" style="height:8px;border-radius:4px;">
+                            <div class="progress-bar {% if goal.progress_percent >= 100 %}bg-success{% else %}bg-primary{% endif %}" style="width:{{ goal.progress_percent }}%;border-radius:4px;"></div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                {{ goal.current_value }}{{ goal.unit }} / {{ goal.target_value }}{{ goal.unit }}
+                                {% if goal.deadline %}
+                                · 截止：{{ goal.deadline.strftime('%m/%d') }}
+                                {% endif %}
+                            </small>
+                            <form action="{{ url_for('plans.update_goal', goal_id=goal.id) }}" method="POST" class="d-flex gap-2 align-items-center update-goal-form">
+                                <input type="number" name="current_value" value="{{ goal.current_value }}" 
+                                       class="form-control form-control-sm" style="width:80px;" step="0.1">
+                                <button type="submit" class="btn btn-sm btn-outline-primary">更新</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i data-lucide="target" style="width:32px;height:32px;" class="mb-2 opacity-50"></i>
+                    <p class="mb-0">暂无阶段目标</p>
+                    <small>点击上方"添加目标"按钮创建第一个目标</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- 任务清单 -->
+        <div class="card mb-4" style="border-radius:16px;border:none;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center" style="border-radius:16px 16px 0 0;border-bottom:1px solid #F1F5F9;">
+                <h6 class="mb-0 font-heading" style="font-weight:600;">
+                    <i data-lucide="check-square" style="width:18px;height:18px;margin-right:8px;color:#F59E0B;"></i>
+                    任务清单
+                </h6>
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                    <i data-lucide="plus" style="width:14px;height:14px;"></i> 添加任务
+                </button>
+            </div>
+            <div class="card-body p-0">
+                {% if tasks %}
+                <div class="tasks-list">
+                    {% for task in tasks %}
+                    <div class="task-item d-flex align-items-center p-3 {% if not loop.last %}border-bottom{% endif %} {% if task.is_completed %}bg-light{% endif %}">
+                        <div class="me-3">
+                            {% if task.is_completed %}
+                            <form action="{{ url_for('plans.uncomplete_task', task_id=task.id) }}" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-sm p-0 border-0 bg-transparent">
+                                    <i data-lucide="check-circle-2" style="width:24px;height:24px;color:#10B981;"></i>
+                                </button>
+                            </form>
+                            {% else %}
+                            <form action="{{ url_for('plans.complete_task', task_id=task.id) }}" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-sm p-0 border-0 bg-transparent">
+                                    <i data-lucide="circle" style="width:24px;height:24px;color:#CBD5E1;"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge {% if task.task_type == 'daily' %}bg-info{% elif task.task_type == 'weekly' %}bg-primary{% else %}bg-warning text-dark{% endif %}" style="font-size:0.65rem;">
+                                    {{ task.task_type_display }}
+                                </span>
+                                <span class="{% if task.is_completed %}text-muted text-decoration-line-through{% endif %}">
+                                    {{ task.title }}
+                                </span>
+                                {% if task.is_overdue %}
+                                <span class="badge bg-danger" style="font-size:0.65rem;">已逾期</span>
+                                {% endif %}
+                            </div>
+                            {% if task.due_date %}
+                            <small class="text-muted">截止：{{ task.due_date.strftime('%m/%d') }}</small>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <form action="{{ url_for('plans.delete_task', task_id=task.id) }}" method="POST" class="d-inline" onsubmit="return confirm('确定删除此任务？');">
+                                <button type="submit" class="btn btn-sm btn-link text-danger p-1">
+                                    <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i data-lucide="list-todo" style="width:32px;height:32px;" class="mb-2 opacity-50"></i>
+                    <p class="mb-0">暂无任务</p>
+                    <small>点击上方"添加任务"按钮创建第一个任务</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- 右侧边栏 -->
+    <div class="col-lg-4">
+        <!-- 学员信息卡片 -->
+        <div class="card mb-4" style="border-radius:16px;border:none;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="avatar" style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg, #3B82F6, #8B5CF6);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:1.1rem;">
+                        {{ plan.student.name[0] }}
+                    </div>
+                    <div>
+                        <h6 class="mb-0 font-heading">{{ plan.student.name }}</h6>
+                        <small class="text-muted">{{ plan.student.exam_type or '未设置考试类型' }}</small>
+                    </div>
+                </div>
+                <a href="{{ url_for('students.detail', id=plan.student_id) }}" class="btn btn-outline-primary btn-sm w-100">
+                    查看学员详情
+                </a>
+            </div>
+        </div>
+        
+        <!-- 督学备注 -->
+        <div class="card mb-4" style="border-radius:16px;border:none;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+            <div class="card-header bg-white" style="border-radius:16px 16px 0 0;border-bottom:1px solid #F1F5F9;">
+                <h6 class="mb-0 font-heading" style="font-weight:600;">
+                    <i data-lucide="file-text" style="width:18px;height:18px;margin-right:8px;color:#64748B;"></i>
+                    督学备注
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if plan.notes %}
+                <p class="mb-0" style="white-space:pre-wrap;">{{ plan.notes }}</p>
+                {% else %}
+                <p class="text-muted mb-0">暂无备注</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- 进度记录 -->
+        <div class="card mb-4" style="border-radius:16px;border:none;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center" style="border-radius:16px 16px 0 0;border-bottom:1px solid #F1F5F9;">
+                <h6 class="mb-0 font-heading" style="font-weight:600;">
+                    <i data-lucide="clipboard-list" style="width:18px;height:18px;margin-right:8px;color:#8B5CF6;"></i>
+                    进度评估
+                </h6>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addProgressModal">
+                    <i data-lucide="plus" style="width:14px;height:14px;"></i>
+                </button>
+            </div>
+            <div class="card-body p-0">
+                {% if progress_records %}
+                <div class="progress-list">
+                    {% for record in progress_records[:5] %}
+                    <div class="progress-item p-3 {% if not loop.last %}border-bottom{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <span class="badge {% if record.record_type == 'evaluation' %}bg-primary{% else %}bg-secondary{% endif %}" style="font-size:0.65rem;">
+                                {{ record.record_type_display }}
+                            </span>
+                            <small class="text-muted">{{ record.record_date.strftime('%m/%d') }}</small>
+                        </div>
+                        <p class="mb-1 small">{{ record.content[:100] }}{% if record.content|length > 100 %}...{% endif %}</p>
+                        {% if record.overall_score %}
+                        <div class="d-flex gap-1">
+                            {% for i in range(5) %}
+                            <i data-lucide="star" style="width:12px;height:12px;{% if i < record.overall_score %}color:#F59E0B;fill:#F59E0B;{% else %}color:#E2E8F0;{% endif %}"></i>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i data-lucide="clipboard" style="width:24px;height:24px;" class="mb-2 opacity-50"></i>
+                    <p class="mb-0 small">暂无评估记录</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- 危险操作 -->
+        <div class="card" style="border-radius:16px;border:1px solid #FEE2E2;">
+            <div class="card-body p-3">
+                <form action="{{ url_for('plans.delete', plan_id=plan.id) }}" method="POST" onsubmit="return confirm('确定删除此计划？此操作不可恢复！');">
+                    <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                        <i data-lucide="trash-2" style="width:14px;height:14px;"></i> 删除计划
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 添加目标模态框 -->
+<div class="modal fade" id="addGoalModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius:16px;">
+            <form action="{{ url_for('plans.add_goal', plan_id=plan.id) }}" method="POST">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title font-heading">添加阶段目标</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">目标类型</label>
+                        <select name="goal_type" class="form-select" required>
+                            <option value="accuracy">正确率目标</option>
+                            <option value="quantity">数量目标</option>
+                            <option value="time">时间目标</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">模块（可选）</label>
+                        <input type="text" name="module" class="form-control" placeholder="如：资料分析、言语理解">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">目标描述</label>
+                        <input type="text" name="description" class="form-control" placeholder="如：资料分析正确率达到80%" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">目标值</label>
+                            <input type="number" name="target_value" class="form-control" step="0.1" required>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">单位</label>
+                            <select name="unit" class="form-select">
+                                <option value="%">%（百分比）</option>
+                                <option value="套">套</option>
+                                <option value="道">道</option>
+                                <option value="分钟">分钟</option>
+                                <option value="小时">小时</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">截止日期（可选）</label>
+                        <input type="date" name="deadline" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">添加目标</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 添加任务模态框 -->
+<div class="modal fade" id="addTaskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius:16px;">
+            <form action="{{ url_for('plans.add_task', plan_id=plan.id) }}" method="POST">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title font-heading">添加任务</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">任务类型</label>
+                        <select name="task_type" class="form-select" required>
+                            <option value="daily">每日任务</option>
+                            <option value="weekly">每周任务</option>
+                            <option value="milestone">里程碑</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">任务标题</label>
+                        <input type="text" name="title" class="form-control" placeholder="如：完成资料分析专项30道" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">任务描述（可选）</label>
+                        <textarea name="description" class="form-control" rows="2" placeholder="详细说明..."></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">优先级</label>
+                            <select name="priority" class="form-select">
+                                <option value="5">最高</option>
+                                <option value="4">高</option>
+                                <option value="3" selected>中</option>
+                                <option value="2">低</option>
+                                <option value="1">最低</option>
+                            </select>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">截止日期</label>
+                            <input type="date" name="due_date" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">添加任务</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 添加进度记录模态框 -->
+<div class="modal fade" id="addProgressModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius:16px;">
+            <form action="{{ url_for('plans.add_progress', plan_id=plan.id) }}" method="POST">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title font-heading">添加进度评估</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">记录日期</label>
+                            <input type="date" name="record_date" class="form-control" value="{{ now().strftime('%Y-%m-%d') if now else '' }}" required>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">记录类型</label>
+                            <select name="record_type" class="form-select">
+                                <option value="evaluation">阶段评估</option>
+                                <option value="note">备注</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">评估内容</label>
+                        <textarea name="content" class="form-control" rows="4" placeholder="记录学员本阶段的学习情况、进步点、待改进点..." required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">整体评分</label>
+                        <select name="overall_score" class="form-select">
+                            <option value="">不评分</option>
+                            <option value="5">5分 - 优秀</option>
+                            <option value="4">4分 - 良好</option>
+                            <option value="3">3分 - 一般</option>
+                            <option value="2">2分 - 较差</option>
+                            <option value="1">1分 - 很差</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存记录</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    lucide.createIcons();
+    
+    // 设置默认日期
+    document.querySelector('#addProgressModal input[name="record_date"]').value = new Date().toISOString().split('T')[0];
+</script>
+{% endblock %}

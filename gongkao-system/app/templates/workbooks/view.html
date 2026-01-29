@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}{{ workbook.name }} - 题册详情{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">{{ workbook.name }}</h1>
+        <p class="text-muted mb-0">{{ workbook.total_questions }} 道题目</p>
+    </div>
+    <div class="d-flex gap-2">
+        <!-- 生成PDF下拉 -->
+        <div class="dropdown">
+            <button class="btn btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i data-lucide="file-text" class="me-1"></i> 生成PDF
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li class="dropdown-header">标准生成</li>
+                <li>
+                    <form action="{{ url_for('workbooks.generate_pdf', id=workbook.id) }}" method="POST">
+                        <input type="hidden" name="embed_mode" value="standard">
+                        <button type="submit" class="dropdown-item">
+                            <i data-lucide="file-text" class="me-2" style="width:16px;height:16px;"></i>
+                            标准模式（分页二维码）
+                        </button>
+                    </form>
+                </li>
+                <li>
+                    <form action="{{ url_for('workbooks.generate_pdf', id=workbook.id) }}" method="POST">
+                        <input type="hidden" name="embed_mode" value="single_qr">
+                        <button type="submit" class="dropdown-item">
+                            <i data-lucide="qr-code" class="me-2" style="width:16px;height:16px;"></i>
+                            单二维码模式
+                        </button>
+                    </form>
+                </li>
+                <li>
+                    <form action="{{ url_for('workbooks.generate_pdf', id=workbook.id) }}" method="POST">
+                        <input type="hidden" name="embed_mode" value="by_category">
+                        <button type="submit" class="dropdown-item">
+                            <i data-lucide="layout-grid" class="me-2" style="width:16px;height:16px;"></i>
+                            按分类模式
+                        </button>
+                    </form>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li class="dropdown-header">增强现有PDF</li>
+                <li>
+                    <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#enhanceModal">
+                        <i data-lucide="upload" class="me-2" style="width:16px;height:16px;"></i>
+                        上传PDF/Word增强
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        {% if workbook.pdf_path %}
+        <a href="{{ url_for('workbooks.download_pdf', id=workbook.id) }}" class="btn btn-primary">
+            <i data-lucide="download" class="me-1"></i> 下载PDF
+        </a>
+        {% endif %}
+        
+        <a href="{{ url_for('workbooks.edit', id=workbook.id) }}" class="btn btn-outline-primary">
+            <i data-lucide="edit-2" class="me-1"></i> 编辑
+        </a>
+        <a href="{{ url_for('workbooks.index') }}" class="btn btn-outline-secondary">
+            <i data-lucide="arrow-left" class="me-1"></i> 返回
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- 题目列表 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">题目列表</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th width="60">序号</th>
+                            <th>题目</th>
+                            <th width="80">分类</th>
+                            <th width="60">答案</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td><span class="badge bg-secondary">{{ item.order }}</span></td>
+                            <td>
+                                {% if item.question %}
+                                {{ item.question.stem[:80] }}{% if item.question.stem|length > 80 %}...{% endif %}
+                                {% if item.question.subcategory %}
+                                <br><small class="text-muted">{{ item.question.subcategory }}</small>
+                                {% endif %}
+                                {% else %}
+                                <span class="text-danger">题目已删除</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.question and item.question.category %}
+                                <span class="badge bg-primary-subtle text-primary">{{ item.question.category }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.question %}
+                                <span class="fw-bold text-success">{{ item.question.answer }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">暂无题目</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- 题册信息 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">题册信息</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <td class="text-muted">名称</td>
+                        <td>{{ workbook.name }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">题目数</td>
+                        <td>{{ workbook.total_questions }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">分类</td>
+                        <td>{{ workbook.category or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">创建时间</td>
+                        <td>{{ workbook.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">PDF状态</td>
+                        <td>
+                            {% if workbook.pdf_path %}
+                            <span class="badge bg-success">已生成</span>
+                            {% else %}
+                            <span class="badge bg-warning">未生成</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        {% if workbook.description %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">描述</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">{{ workbook.description }}</p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- 危险操作 -->
+        <div class="card border-danger">
+            <div class="card-header bg-danger-subtle">
+                <h5 class="card-title mb-0 text-danger">危险操作</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('workbooks.delete', id=workbook.id) }}" method="POST" onsubmit="return confirm('确定删除此题册？此操作不可恢复！')">
+                    <button type="submit" class="btn btn-outline-danger w-100">
+                        <i data-lucide="trash-2" class="me-1"></i> 删除题册
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 增强PDF模态框 -->
+<div class="modal fade" id="enhanceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('workbooks.generate_pdf', id=workbook.id) }}" method="POST" enctype="multipart/form-data">
+                <div class="modal-header">
+                    <h5 class="modal-title">增强现有PDF/Word</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">上传文件</label>
+                        <input type="file" name="source_file" class="form-control" accept=".pdf,.doc,.docx" required>
+                        <small class="text-muted">支持 PDF、Word 格式</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">二维码模式</label>
+                        <select name="embed_mode" class="form-select">
+                            <option value="enhance_single">单二维码（整本一个）</option>
+                            <option value="enhance_standard">标准模式（分页）</option>
+                            <option value="enhance_category">按分类模式</option>
+                        </select>
+                    </div>
+                    
+                    <div class="alert alert-info small mb-0">
+                        <i data-lucide="info" class="me-1" style="width:14px;height:14px;"></i>
+                        增强模式会保留原文件的排版，仅添加封面和二维码
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">生成增强PDF</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}数据导入 - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">数据导入</h1>
+        <p class="text-muted mb-0">批量导入学员做题记录</p>
+    </div>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+        <i data-lucide="arrow-left" class="me-1"></i> 返回
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">上传Excel文件</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('admin.data_import') }}" method="POST" enctype="multipart/form-data">
+                    <div class="mb-4">
+                        <div class="border rounded p-4 text-center" id="dropZone" 
+                             style="border-style: dashed !important; cursor: pointer;"
+                             onclick="document.getElementById('fileInput').click()">
+                            <i data-lucide="upload-cloud" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
+                            <h5>拖拽文件到此处或点击选择</h5>
+                            <p class="text-muted mb-0">支持 .xlsx, .xls 格式</p>
+                            <input type="file" id="fileInput" name="file" accept=".xlsx,.xls" 
+                                   class="d-none" onchange="showFileName(this)">
+                        </div>
+                        <div id="fileName" class="mt-2 text-success" style="display: none;"></div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i data-lucide="upload" class="me-2"></i> 开始导入
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 导入说明 -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">导入说明</h5>
+            </div>
+            <div class="card-body">
+                <h6>必填字段：</h6>
+                <table class="table table-sm table-bordered mb-4">
+                    <thead class="table-light">
+                        <tr>
+                            <th>列名</th>
+                            <th>说明</th>
+                            <th>示例</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>学员姓名</code></td>
+                            <td>学员姓名（必填）</td>
+                            <td>张三</td>
+                        </tr>
+                        <tr>
+                            <td><code>手机号</code></td>
+                            <td>学员手机号（必填，用于识别学员）</td>
+                            <td>13800138000</td>
+                        </tr>
+                        <tr>
+                            <td><code>题册名称</code></td>
+                            <td>题册名称（必填）</td>
+                            <td>言语理解专项一</td>
+                        </tr>
+                        <tr>
+                            <td><code>板块</code></td>
+                            <td>练习板块（选填）</td>
+                            <td>片段阅读</td>
+                        </tr>
+                        <tr>
+                            <td><code>做题数</code></td>
+                            <td>本次做题数量（必填）</td>
+                            <td>40</td>
+                        </tr>
+                        <tr>
+                            <td><code>错题数</code></td>
+                            <td>本次错题数量（必填）</td>
+                            <td>8</td>
+                        </tr>
+                        <tr>
+                            <td><code>日期</code></td>
+                            <td>做题日期（选填，默认今天）</td>
+                            <td>2026-01-29</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="alert alert-info mb-0">
+                    <i data-lucide="info" class="me-2"></i>
+                    <strong>提示：</strong>如果学员手机号不存在，系统会自动创建新学员。
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">下载模板</h5>
+            </div>
+            <div class="card-body text-center">
+                <i data-lucide="file-spreadsheet" style="width: 64px; height: 64px;" class="text-success mb-3"></i>
+                <p>下载标准Excel模板，按格式填写后上传</p>
+                <a href="{{ url_for('admin.download_import_template') }}" class="btn btn-success">
+                    <i data-lucide="download" class="me-2"></i> 下载模板
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showFileName(input) {
+    if (input.files && input.files[0]) {
+        document.getElementById('fileName').style.display = 'block';
+        document.getElementById('fileName').innerHTML = '<i data-lucide="file" class="me-1"></i> ' + input.files[0].name;
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+}
+
+// 拖拽上传
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('border-primary');
+});
+dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('border-primary');
+});
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-primary');
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        document.getElementById('fileInput').files = files;
+        showFileName(document.getElementById('fileInput'));
+    }
+});
+</script>
+{% endblock %}

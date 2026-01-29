@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}{{ '编辑' if plan else '创建' }}学习计划 - {{ student.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-2" style="font-size:0.85rem;">
+            <li class="breadcrumb-item"><a href="{{ url_for('students.list') }}">学员库</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('students.detail', id=student.id) }}">{{ student.name }}</a></li>
+            <li class="breadcrumb-item active">{{ '编辑' if plan else '创建' }}学习计划</li>
+        </ol>
+    </nav>
+    <h1 class="page-title">
+        <i data-lucide="target" style="width:24px;height:24px;margin-right:8px;color:var(--primary);"></i>
+        {{ '编辑' if plan else '创建' }}学习计划
+    </h1>
+    <p class="page-subtitle">为 {{ student.name }} {{ '编辑' if plan else '制定个性化' }}学习计划</p>
+</div>
+
+<div class="row g-4">
+    <!-- 左侧表单 -->
+    <div class="col-lg-8">
+        <form method="POST" action="{{ url_for('plans.edit', plan_id=plan.id) if plan else url_for('plans.create', student_id=student.id) }}">
+            <div class="card mb-4" style="border-radius:16px;border:none;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                <div class="card-header bg-white" style="border-radius:16px 16px 0 0;border-bottom:1px solid #F1F5F9;">
+                    <h6 class="mb-0 font-heading" style="font-weight:600;">
+                        <i data-lucide="file-text" style="width:18px;height:18px;margin-right:8px;color:var(--primary);"></i>
+                        基本信息
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">计划名称 <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" 
+                                   value="{{ plan.name if plan else '' }}"
+                                   placeholder="如：2026国考冲刺阶段计划" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">学习阶段 <span class="text-danger">*</span></label>
+                            <select name="phase" class="form-select" required>
+                                <option value="foundation" {% if plan and plan.phase == 'foundation' %}selected{% endif %}>基础阶段</option>
+                                <option value="improvement" {% if plan and plan.phase == 'improvement' %}selected{% endif %}>提高阶段</option>
+                                <option value="sprint" {% if plan and plan.phase == 'sprint' %}selected{% endif %}>冲刺阶段</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">开始日期 <span class="text-danger">*</span></label>
+                            <input type="date" name="start_date" class="form-control" 
+                                   value="{{ plan.start_date.strftime('%Y-%m-%d') if plan and plan.start_date else '' }}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">结束日期</label>
+                            <input type="date" name="end_date" class="form-control"
+                                   value="{{ plan.end_date.strftime('%Y-%m-%d') if plan and plan.end_date else '' }}">
+                        </div>
+                        {% if plan %}
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">状态</label>
+                            <select name="status" class="form-select">
+                                <option value="active" {% if plan.status == 'active' %}selected{% endif %}>进行中</option>
+                                <option value="paused" {% if plan.status == 'paused' %}selected{% endif %}>已暂停</option>
+                                <option value="completed" {% if plan.status == 'completed' %}selected{% endif %}>已完成</option>
+                            </select>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">督学备注</label>
+                        <textarea name="notes" class="form-control" rows="3" placeholder="记录制定计划的思路、注意事项等...">{{ plan.notes if plan else '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+            
+            {% if ai_suggestion %}
+            <!-- AI建议区域 -->
+            <div class="card mb-4" style="border-radius:16px;border:2px solid #DBEAFE;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                <div class="card-header bg-primary bg-opacity-10" style="border-radius:14px 14px 0 0;border-bottom:1px solid #DBEAFE;">
+                    <h6 class="mb-0 font-heading d-flex align-items-center" style="font-weight:600;color:var(--primary);">
+                        <i data-lucide="sparkles" style="width:18px;height:18px;margin-right:8px;"></i>
+                        AI 智能建议
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-3" style="border-radius:12px;">
+                        <div class="d-flex align-items-start gap-2">
+                            <i data-lucide="info" style="width:18px;height:18px;flex-shrink:0;margin-top:2px;"></i>
+                            <div>
+                                <strong>建议阶段：</strong>{{ ai_suggestion.phase_display }}<br>
+                                <strong>重点模块：</strong>{{ ai_suggestion.focus_modules|join('、') if ai_suggestion.focus_modules else '无' }}<br>
+                                <strong>分析备注：</strong>{{ ai_suggestion.notes }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 推荐目标 -->
+                    {% if ai_suggestion.recommended_goals %}
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0" style="font-weight:600;">推荐目标</h6>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="adopt_goals" id="adoptGoals" value="1">
+                                <label class="form-check-label small" for="adoptGoals">采纳这些目标</label>
+                            </div>
+                        </div>
+                        <div id="goalsList" class="{% if not request.form.get('adopt_goals') %}opacity-50{% endif %}">
+                            {% for goal in ai_suggestion.recommended_goals %}
+                            <div class="p-2 mb-2" style="background:#F8FAFC;border-radius:8px;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge {% if goal.type == 'accuracy' %}bg-primary{% elif goal.type == 'quantity' %}bg-success{% else %}bg-info{% endif %}" style="font-size:0.65rem;">
+                                        {{ '正确率' if goal.type == 'accuracy' else ('数量' if goal.type == 'quantity' else '时间') }}
+                                    </span>
+                                    <span>{{ goal.description }}</span>
+                                    <span class="text-muted small">目标值：{{ goal.target }}{{ goal.unit }}</span>
+                                </div>
+                                <input type="hidden" name="goal_description[]" value="{{ goal.description }}">
+                                <input type="hidden" name="goal_type[]" value="{{ goal.type }}">
+                                <input type="hidden" name="goal_target[]" value="{{ goal.target }}">
+                                <input type="hidden" name="goal_unit[]" value="{{ goal.unit }}">
+                                <input type="hidden" name="goal_module[]" value="{{ goal.module or '' }}">
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- 推荐任务 -->
+                    {% if ai_suggestion.recommended_tasks %}
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0" style="font-weight:600;">推荐任务</h6>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="adopt_tasks" id="adoptTasks" value="1">
+                                <label class="form-check-label small" for="adoptTasks">采纳这些任务</label>
+                            </div>
+                        </div>
+                        <div id="tasksList" class="{% if not request.form.get('adopt_tasks') %}opacity-50{% endif %}">
+                            {% for task in ai_suggestion.recommended_tasks %}
+                            <div class="p-2 mb-2" style="background:#F8FAFC;border-radius:8px;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge {% if task.type == 'daily' %}bg-info{% elif task.type == 'weekly' %}bg-primary{% else %}bg-warning text-dark{% endif %}" style="font-size:0.65rem;">
+                                        {{ '每日' if task.type == 'daily' else ('每周' if task.type == 'weekly' else '里程碑') }}
+                                    </span>
+                                    <span>{{ task.title }}</span>
+                                </div>
+                                <input type="hidden" name="task_title[]" value="{{ task.title }}">
+                                <input type="hidden" name="task_type[]" value="{{ task.type }}">
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="d-flex gap-3">
+                <button type="submit" class="btn btn-primary">
+                    <i data-lucide="save" style="width:16px;height:16px;"></i>
+                    {{ '保存修改' if plan else '创建计划' }}
+                </button>
+                <a href="{{ url_for('plans.detail', plan_id=plan.id) if plan else url_for('students.detail', id=student.id) }}" class="btn btn-light">
+                    取消
+                </a>
+            </div>
+        </form>
+    </div>
+    
+    <!-- 右侧学员信息 -->
+    <div class="col-lg-4">
+        <!-- 学员信息卡片 -->
+        <div class="card mb-4" style="border-radius:16px;border:none;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+            <div class="card-header bg-white" style="border-radius:16px 16px 0 0;border-bottom:1px solid #F1F5F9;">
+                <h6 class="mb-0 font-heading" style="font-weight:600;">
+                    <i data-lucide="user" style="width:18px;height:18px;margin-right:8px;color:var(--primary);"></i>
+                    学员信息
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="avatar" style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg, #3B82F6, #8B5CF6);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:1.25rem;">
+                        {{ student.name[0] }}
+                    </div>
+                    <div>
+                        <h5 class="mb-0 font-heading">{{ student.name }}</h5>
+                        <small class="text-muted">{{ student.phone or '未设置电话' }}</small>
+                    </div>
+                </div>
+                
+                <div class="info-list">
+                    <div class="info-item d-flex justify-content-between py-2 border-bottom">
+                        <span class="text-muted">考试类型</span>
+                        <span>{{ student.exam_type or '-' }}</span>
+                    </div>
+                    <div class="info-item d-flex justify-content-between py-2 border-bottom">
+                        <span class="text-muted">考试日期</span>
+                        <span>{{ student.exam_date.strftime('%Y/%m/%d') if student.exam_date else '-' }}</span>
+                    </div>
+                    <div class="info-item d-flex justify-content-between py-2 border-bottom">
+                        <span class="text-muted">是否有基础</span>
+                        <span>{{ '有基础' if student.has_basic else '零基础' }}</span>
+                    </div>
+                    <div class="info-item d-flex justify-content-between py-2">
+                        <span class="text-muted">基础水平</span>
+                        <span>{{ student.base_level or '-' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- AI建议入口 -->
+        {% if not ai_suggestion and not plan %}
+        <div class="card" style="border-radius:16px;border:2px dashed #DBEAFE;background:#F8FAFC;">
+            <div class="card-body text-center py-4">
+                <i data-lucide="sparkles" style="width:48px;height:48px;color:var(--primary);margin-bottom:12px;"></i>
+                <h6 class="font-heading mb-2">AI 智能建议</h6>
+                <p class="text-muted small mb-3">根据学员情况自动生成学习计划建议</p>
+                <a href="{{ url_for('plans.create', student_id=student.id, generate_ai=1) }}" class="btn btn-primary">
+                    <i data-lucide="wand-2" style="width:16px;height:16px;"></i>
+                    生成建议
+                </a>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- 薄弱项标签 -->
+        {% if student.weakness_tags.count() > 0 %}
+        <div class="card mt-4" style="border-radius:16px;border:none;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+            <div class="card-header bg-white" style="border-radius:16px 16px 0 0;border-bottom:1px solid #F1F5F9;">
+                <h6 class="mb-0 font-heading" style="font-weight:600;">
+                    <i data-lucide="alert-triangle" style="width:18px;height:18px;margin-right:8px;color:#F59E0B;"></i>
+                    薄弱项标签
+                </h6>
+            </div>
+            <div class="card-body">
+                {% for tag in student.weakness_tags %}
+                <div class="d-flex justify-content-between align-items-center py-2 {% if not loop.last %}border-bottom{% endif %}">
+                    <span>{{ tag.module }}</span>
+                    <span class="badge {% if tag.accuracy_rate < 60 %}bg-danger{% elif tag.accuracy_rate < 75 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                        {{ tag.accuracy_rate }}%
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    lucide.createIcons();
+    
+    // 设置默认开始日期
+    const startDateInput = document.querySelector('input[name="start_date"]');
+    if (!startDateInput.value) {
+        startDateInput.value = new Date().toISOString().split('T')[0];
+    }
+    
+    // AI建议采纳复选框交互
+    const adoptGoalsCheckbox = document.getElementById('adoptGoals');
+    const adoptTasksCheckbox = document.getElementById('adoptTasks');
+    const goalsList = document.getElementById('goalsList');
+    const tasksList = document.getElementById('tasksList');
+    
+    if (adoptGoalsCheckbox && goalsList) {
+        adoptGoalsCheckbox.addEventListener('change', function() {
+            goalsList.classList.toggle('opacity-50', !this.checked);
+        });
+    }
+    
+    if (adoptTasksCheckbox && tasksList) {
+        adoptTasksCheckbox.addEventListener('change', function() {
+            tasksList.classList.toggle('opacity-50', !this.checked);
+        });
+    }
+</script>
+{% endblock %}

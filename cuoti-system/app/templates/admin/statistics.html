@@ -1,0 +1,272 @@
+{% extends "admin/base.html" %}
+
+{% block title %}数据分析 - 错题收集系统{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chart-card {
+        min-height: 350px;
+    }
+    .chart-container {
+        height: 300px;
+    }
+    .stat-highlight {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--primary);
+    }
+    .trend-up { color: #16a34a; }
+    .trend-down { color: #ef4444; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">数据分析</h1>
+    <div class="btn-group">
+        <button class="btn btn-outline-secondary active" onclick="setTimeRange('all')">全部</button>
+        <button class="btn btn-outline-secondary" onclick="setTimeRange('week')">近7天</button>
+        <button class="btn btn-outline-secondary" onclick="setTimeRange('month')">近30天</button>
+    </div>
+</div>
+
+<!-- 概览卡片 -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-value">{{ overview.total_mistakes }}</div>
+            <div class="stat-label">错题总数</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-value">{{ overview.total_students }}</div>
+            <div class="stat-label">学员人数</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-value">{{ overview.total_submissions }}</div>
+            <div class="stat-label">提交次数</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-value">{{ "%.1f"|format(overview.avg_mistakes) }}</div>
+            <div class="stat-label">人均错题</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- 分类分布图 -->
+    <div class="col-lg-6">
+        <div class="card chart-card">
+            <div class="card-header">
+                <i class="bi bi-pie-chart"></i> 错题分类分布
+            </div>
+            <div class="card-body">
+                <div id="categoryChart" class="chart-container"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 难度分布图 -->
+    <div class="col-lg-6">
+        <div class="card chart-card">
+            <div class="card-header">
+                <i class="bi bi-bar-chart"></i> 难度分布
+            </div>
+            <div class="card-body">
+                <div id="difficultyChart" class="chart-container"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-2">
+    <!-- 趋势图 -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-graph-up"></i> 错题趋势
+            </div>
+            <div class="card-body">
+                <div id="trendChart" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-2">
+    <!-- 高频错题 -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-exclamation-triangle"></i> 高频错题TOP20</span>
+                <span class="badge bg-danger">需重点关注</span>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th width="50">排名</th>
+                            <th>题干</th>
+                            <th width="100">分类</th>
+                            <th width="80">难度</th>
+                            <th width="90">错误次数</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for q, count in top_mistakes %}
+                        <tr>
+                            <td>
+                                {% if loop.index <= 3 %}
+                                <span class="badge bg-danger">{{ loop.index }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ loop.index }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="text-truncate" style="max-width: 350px;" title="{{ q.stem }}">
+                                    {{ q.stem[:50] }}{% if q.stem|length > 50 %}...{% endif %}
+                                </div>
+                            </td>
+                            <td><span class="badge badge-category">{{ q.category or '未分类' }}</span></td>
+                            <td>
+                                {% if q.difficulty == '简单' %}
+                                <span class="badge bg-success">简单</span>
+                                {% elif q.difficulty == '困难' %}
+                                <span class="badge bg-danger">困难</span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">中等</span>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge bg-danger">{{ count }} 次</span></td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">暂无数据</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 学员排行 -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-people"></i> 学员错题排行
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for s in student_ranking %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-{% if loop.index <= 3 %}warning text-dark{% else %}secondary{% endif %} me-2">{{ loop.index }}</span>
+                            {{ s.name }}
+                        </div>
+                        <span class="badge bg-danger">{{ s.mistake_count }} 题</span>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-center text-muted">暂无数据</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        
+        <!-- 题册统计 -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <i class="bi bi-book"></i> 题册错题统计
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for name, count in workbook_stats %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="text-truncate" style="max-width: 180px;">{{ name }}</span>
+                        <span class="badge bg-primary">{{ count }}</span>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-center text-muted">暂无数据</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script>
+// 分类分布图
+const categoryData = {{ category_stats_json|safe }};
+const categoryChart = echarts.init(document.getElementById('categoryChart'));
+categoryChart.setOption({
+    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+    legend: { orient: 'vertical', left: 'left', top: 'middle' },
+    series: [{
+        type: 'pie',
+        radius: ['40%', '70%'],
+        center: ['60%', '50%'],
+        avoidLabelOverlap: false,
+        itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
+        label: { show: false },
+        emphasis: {
+            label: { show: true, fontSize: 16, fontWeight: 'bold' }
+        },
+        data: categoryData
+    }]
+});
+
+// 难度分布图
+const difficultyData = {{ difficulty_stats_json|safe }};
+const difficultyChart = echarts.init(document.getElementById('difficultyChart'));
+difficultyChart.setOption({
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: difficultyData.map(d => d.name) },
+    yAxis: { type: 'value' },
+    series: [{
+        type: 'bar',
+        data: difficultyData.map(d => ({
+            value: d.value,
+            itemStyle: { 
+                color: d.name === '简单' ? '#22c55e' : (d.name === '困难' ? '#ef4444' : '#f59e0b'),
+                borderRadius: [8, 8, 0, 0]
+            }
+        })),
+        barWidth: '50%'
+    }]
+});
+
+// 趋势图
+const trendData = {{ trend_data_json|safe }};
+const trendChart = echarts.init(document.getElementById('trendChart'));
+trendChart.setOption({
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: trendData.dates, boundaryGap: false },
+    yAxis: { type: 'value' },
+    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+    series: [{
+        name: '错题数',
+        type: 'line',
+        smooth: true,
+        areaStyle: { opacity: 0.3 },
+        lineStyle: { width: 3 },
+        itemStyle: { color: '#6366f1' },
+        data: trendData.counts
+    }]
+});
+
+// 响应式
+window.addEventListener('resize', function() {
+    categoryChart.resize();
+    difficultyChart.resize();
+    trendChart.resize();
+});
+</script>
+{% endblock %}

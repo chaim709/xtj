@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}{{ '编辑模板' if template else '新建模板' }} - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">{{ '编辑模板' if template else '新建模板' }}</h1>
+    </div>
+    <a href="{{ url_for('workbooks.templates') }}" class="btn btn-outline-secondary">
+        <i data-lucide="arrow-left" class="me-1"></i> 返回
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <form action="{{ url_for('workbooks.create_template') }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">模板名称 <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" required
+                               value="{{ template.name if template else '' }}"
+                               placeholder="如：标准练习册模板">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">答案模式</label>
+                        <select name="answer_mode" class="form-select">
+                            <option value="hidden" {% if template and template.answer_mode == 'hidden' %}selected{% endif %}>隐藏答案</option>
+                            <option value="separated" {% if template and template.answer_mode == 'separated' %}selected{% endif %}>答案分离</option>
+                            <option value="inline" {% if template and template.answer_mode == 'inline' %}selected{% endif %}>直接显示</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">每页题目数</label>
+                        <input type="number" name="questions_per_page" class="form-control"
+                               value="{{ template.questions_per_page if template else 8 }}" min="1" max="20">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" name="brand_enabled" class="form-check-input" id="brandEnabled"
+                                   {% if not template or template.brand_enabled %}checked{% endif %}>
+                            <label class="form-check-label" for="brandEnabled">显示机构品牌</label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" name="show_cover" class="form-check-input" id="showCover"
+                                   {% if not template or template.show_cover %}checked{% endif %}>
+                            <label class="form-check-label" for="showCover">生成封面页</label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" name="show_qrcode" class="form-check-input" id="showQrcode"
+                                   {% if not template or template.show_qrcode %}checked{% endif %}>
+                            <label class="form-check-label" for="showQrcode">显示二维码</label>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i data-lucide="save" class="me-1"></i> {{ '保存修改' if template else '创建模板' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

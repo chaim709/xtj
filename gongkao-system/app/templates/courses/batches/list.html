@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}班次课表 - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<!-- 页面标题 -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1 font-heading">班次课表</h4>
+        <p class="text-muted mb-0">管理班次和课表安排</p>
+    </div>
+    {% if current_user.is_admin() %}
+    <a href="{{ url_for('courses.batch_create') }}" class="btn btn-primary">
+        <i data-lucide="plus" style="width:18px;height:18px;"></i> 新增班次
+    </a>
+    {% endif %}
+</div>
+
+<!-- 筛选 -->
+<div class="card mb-4">
+    <div class="card-body py-3">
+        <form class="row g-3 align-items-center" method="GET">
+            <div class="col-auto">
+                <select name="project_id" class="form-select form-select-sm" onchange="loadTypes(this.value)">
+                    <option value="">选择项目</option>
+                    {% for project in projects %}
+                    <option value="{{ project.id }}" {{ 'selected' if current_project_id == project.id else '' }}>{{ project.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <select name="class_type_id" class="form-select form-select-sm" id="typeSelect">
+                    <option value="">全部班型</option>
+                    {% for ct in class_types %}
+                    <option value="{{ ct.id }}" {{ 'selected' if current_type_id == ct.id else '' }}>{{ ct.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">全部状态</option>
+                    <option value="recruiting" {{ 'selected' if current_status == 'recruiting' else '' }}>招生中</option>
+                    <option value="ongoing" {{ 'selected' if current_status == 'ongoing' else '' }}>进行中</option>
+                    <option value="ended" {{ 'selected' if current_status == 'ended' else '' }}>已结课</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-outline-primary">筛选</button>
+                <a href="{{ url_for('courses.batch_list') }}" class="btn btn-sm btn-outline-secondary">重置</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 班次列表 -->
+<div class="row g-4">
+    {% for batch in batches.items %}
+    <div class="col-md-6 col-xl-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <span class="badge 
+                        {% if batch.status == 'recruiting' %}bg-success
+                        {% elif batch.status == 'ongoing' %}bg-primary
+                        {% else %}bg-secondary{% endif %}">
+                        {{ batch.status_display }}
+                    </span>
+                    <span class="text-muted small">{{ batch.class_type.name }}</span>
+                </div>
+                
+                <h5 class="card-title font-heading mb-2">
+                    <a href="{{ url_for('courses.batch_detail', id=batch.id) }}" class="text-decoration-none text-dark">
+                        {{ batch.name }}
+                    </a>
+                </h5>
+                
+                <p class="text-muted small mb-3">
+                    <i data-lucide="calendar" style="width:14px;height:14px;"></i>
+                    {{ batch.start_date.strftime('%m/%d') }} - {{ batch.end_date.strftime('%m/%d') }}
+                    <span class="ms-2"><i data-lucide="clock" style="width:14px;height:14px;"></i> {{ batch.actual_days or '-' }}天</span>
+                </p>
+                
+                <div class="d-flex gap-3 text-muted small mb-3">
+                    <span><i data-lucide="users" style="width:14px;height:14px;"></i> {{ batch.enrolled_count }}{% if batch.max_students %}/{{ batch.max_students }}{% endif %}人</span>
+                    <span><i data-lucide="book" style="width:14px;height:14px;"></i> {{ batch.schedules.count() }}节课</span>
+                </div>
+                
+                {% if batch.is_full %}
+                <div class="alert alert-warning small mb-3 py-1">
+                    <i data-lucide="alert-circle" style="width:14px;height:14px;"></i> 已满员
+                </div>
+                {% endif %}
+                
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('courses.batch_detail', id=batch.id) }}" class="btn btn-sm btn-primary flex-grow-1">
+                        管理课表
+                    </a>
+                    {% if current_user.is_admin() %}
+                    <a href="{{ url_for('courses.batch_edit', id=batch.id) }}" class="btn btn-sm btn-outline-secondary">
+                        <i data-lucide="edit-2" style="width:14px;height:14px;"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i data-lucide="calendar" style="width:48px;height:48px;" class="text-muted mb-3"></i>
+                <h5 class="text-muted">暂无班次</h5>
+                <p class="text-muted mb-3">请先选择项目和班型，或点击"新增班次"创建</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- 分页 -->
+{% if batches.pages > 1 %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if batches.has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('courses.batch_list', page=batches.prev_num, project_id=current_project_id, class_type_id=current_type_id, status=current_status) }}">上一页</a>
+        </li>
+        {% endif %}
+        
+        {% for page_num in batches.iter_pages() %}
+            {% if page_num %}
+                <li class="page-item {{ 'active' if page_num == batches.page else '' }}">
+                    <a class="page-link" href="{{ url_for('courses.batch_list', page=page_num, project_id=current_project_id, class_type_id=current_type_id, status=current_status) }}">{{ page_num }}</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if batches.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('courses.batch_list', page=batches.next_num, project_id=current_project_id, class_type_id=current_type_id, status=current_status) }}">下一页</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    lucide.createIcons();
+    
+    function loadTypes(projectId) {
+        if (!projectId) {
+            $('#typeSelect').html('<option value="">全部班型</option>');
+            return;
+        }
+        $.get('{{ url_for("courses.api_types", project_id=0) }}'.replace('0', projectId), function(data) {
+            var html = '<option value="">全部班型</option>';
+            data.forEach(function(ct) {
+                html += '<option value="' + ct.id + '">' + ct.name + '</option>';
+            });
+            $('#typeSelect').html(html);
+        });
+    }
+</script>
+{% endblock %}

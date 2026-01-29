@@ -1,0 +1,543 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ batch.name }} - 班次详情 - 公考培训管理系统{% endblock %}
+
+{% block extra_css %}
+<style>
+    .schedule-table th, .schedule-table td {
+        vertical-align: middle;
+    }
+    .schedule-row:hover {
+        background-color: #f8f9fa;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- 页面标题 -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+        <a href="{{ url_for('courses.batch_list') }}" class="btn btn-outline-secondary me-3">
+            <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+        </a>
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h4 class="mb-0 font-heading">{{ batch.name }}</h4>
+                <span class="badge 
+                    {% if batch.status == 'recruiting' %}bg-success
+                    {% elif batch.status == 'ongoing' %}bg-primary
+                    {% else %}bg-secondary{% endif %}">
+                    {{ batch.status_display }}
+                </span>
+            </div>
+            <p class="text-muted mb-0">
+                {{ batch.class_type.project.name }} · {{ batch.class_type.name }}
+                <span class="ms-3">
+                    <i data-lucide="calendar" style="width:14px;height:14px;"></i>
+                    {{ batch.start_date.strftime('%Y/%m/%d') }} - {{ batch.end_date.strftime('%Y/%m/%d') }}
+                </span>
+            </p>
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('courses.attendance_list', batch_id=batch.id) }}" class="btn btn-outline-primary">
+            <i data-lucide="check-square" style="width:18px;height:18px;"></i> 考勤管理
+        </a>
+        {% if current_user.is_admin() %}
+        <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#copyModal">
+            <i data-lucide="copy" style="width:18px;height:18px;"></i> 复制班次
+        </button>
+        <a href="{{ url_for('courses.batch_edit', id=batch.id) }}" class="btn btn-outline-primary">
+            <i data-lucide="edit-2" style="width:18px;height:18px;"></i> 编辑
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 统计卡片 -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <div class="stat-card-title">课程天数</div>
+                <div class="stat-card-icon blue"><i data-lucide="calendar" style="width:20px;height:20px;"></i></div>
+            </div>
+            <div class="stat-card-value">{{ batch.actual_days or schedules|length }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <div class="stat-card-title">已排课</div>
+                <div class="stat-card-icon green"><i data-lucide="check-circle" style="width:20px;height:20px;"></i></div>
+            </div>
+            <div class="stat-card-value">{{ schedules|length }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <div class="stat-card-title">学员人数</div>
+                <div class="stat-card-icon purple"><i data-lucide="users" style="width:20px;height:20px;"></i></div>
+            </div>
+            <div class="stat-card-value">{{ batch.enrolled_count }}{% if batch.max_students %}<span class="fs-6 text-muted">/{{ batch.max_students }}</span>{% endif %}</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <div class="stat-card-title">教室</div>
+                <div class="stat-card-icon orange"><i data-lucide="home" style="width:20px;height:20px;"></i></div>
+            </div>
+            <div class="stat-card-value fs-5">{{ batch.classroom or '未设置' }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- 标签页导航 -->
+<ul class="nav nav-tabs mb-4" id="batchTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="schedule-tab" data-bs-toggle="tab" data-bs-target="#schedule-pane" type="button" role="tab">
+            <i data-lucide="calendar" style="width:16px;height:16px;"></i> 课表安排
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="recordings-tab" data-bs-toggle="tab" data-bs-target="#recordings-pane" type="button" role="tab">
+            <i data-lucide="video" style="width:16px;height:16px;"></i> 课程录播
+            <span class="badge bg-primary ms-1" id="recordingCount">0</span>
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="batchTabsContent">
+    <!-- 课表标签页 -->
+    <div class="tab-pane fade show active" id="schedule-pane" role="tabpanel">
+        <div class="row g-4">
+            <!-- 课表 -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 font-heading"><i data-lucide="calendar" style="width:18px;height:18px;"></i> 课表安排</h6>
+                {% if current_user.is_admin() %}
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+                        <i data-lucide="plus" style="width:14px;height:14px;"></i> 添加课表
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#addScheduleModal">逐天添加</a></li>
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#generateModal">批量生成</a></li>
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#importModal">Excel导入</a></li>
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                {% if schedules %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 schedule-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:50px;">天</th>
+                                <th style="width:90px;">日期</th>
+                                <th>科目</th>
+                                <th>上午</th>
+                                <th>下午</th>
+                                <th>晚间</th>
+                                <th style="width:60px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for schedule in schedules %}
+                            <tr class="schedule-row">
+                                <td class="text-center"><span class="badge bg-primary">{{ schedule.day_number }}</span></td>
+                                <td>{{ schedule.schedule_date.strftime('%m/%d') }}</td>
+                                <td class="fw-medium">{{ schedule.subject.short_name or schedule.subject.name if schedule.subject else '-' }}</td>
+                                <td>{{ schedule.morning_teacher.name if schedule.morning_teacher else '-' }}</td>
+                                <td>{{ schedule.afternoon_teacher.name if schedule.afternoon_teacher else '-' }}</td>
+                                <td>
+                                    <span class="badge bg-light text-dark">{{ schedule.evening_type_display }}</span>
+                                    {% if schedule.evening_teacher %}{{ schedule.evening_teacher.name }}{% endif %}
+                                </td>
+                                <td>
+                                    {% if current_user.is_admin() %}
+                                    <button class="btn btn-sm btn-link text-muted p-0 btn-edit-schedule" data-id="{{ schedule.id }}" title="编辑">
+                                        <i data-lucide="edit-2" style="width:14px;height:14px;"></i>
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i data-lucide="calendar-x" style="width:48px;height:48px;" class="mb-3"></i>
+                    <h6>尚未设置课表</h6>
+                    <p class="mb-3">点击"添加课表"开始安排课程</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- 学员列表 -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 font-heading"><i data-lucide="users" style="width:18px;height:18px;"></i> 学员名单</h6>
+                <span class="badge bg-primary">{{ students|length }}人</span>
+            </div>
+            <div class="card-body p-0">
+                {% if students %}
+                <ul class="list-group list-group-flush">
+                    {% for student in students[:10] %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('students.detail', id=student.id) }}" class="text-decoration-none">
+                            {{ student.name }}
+                        </a>
+                        <span class="badge bg-light text-dark">{{ student.phone[-4:] if student.phone else '-' }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% if students|length > 10 %}
+                <div class="text-center py-2">
+                    <a href="{{ url_for('students.list', batch_id=batch.id) }}" class="small text-muted">查看全部 {{ students|length }} 名学员</a>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <p class="mb-0">暂无学员</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+    </div>
+    
+    <!-- 录播标签页 -->
+    <div class="tab-pane fade" id="recordings-pane" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 font-heading"><i data-lucide="video" style="width:18px;height:18px;"></i> 课程录播</h6>
+                <a href="{{ url_for('courses.recording_create', batch_id=batch.id, return_to='batch') }}" class="btn btn-sm btn-primary">
+                    <i data-lucide="plus" style="width:14px;height:14px;"></i> 添加录播
+                </a>
+            </div>
+            <div class="card-body p-0" id="recordingsContainer">
+                <div class="text-center py-4 text-muted">
+                    <i data-lucide="loader" style="width:24px;height:24px;" class="spin"></i>
+                    <p class="mb-0 mt-2">加载中...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 复制班次模态框 -->
+<div class="modal fade" id="copyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">复制班次</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">复制当前班次及其课表，生成新的班次。</p>
+                <div class="mb-3">
+                    <label class="form-label">新班次开课日期 <span class="text-danger">*</span></label>
+                    <input type="date" id="newStartDate" class="form-control" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="copyBatch()">确认复制</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 批量生成课表模态框 -->
+<div class="modal fade" id="generateModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">批量生成课表</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">按科目和天数自动生成课表（将清除现有课表）</p>
+                <div id="subjectDaysList">
+                    <div class="row g-2 mb-2 subject-day-item">
+                        <div class="col">
+                            <select class="form-select form-select-sm subject-select" required>
+                                <option value="">选择科目</option>
+                                {% for subject in subjects %}
+                                <option value="{{ subject.id }}">{{ subject.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-3">
+                            <input type="number" class="form-control form-control-sm days-input" placeholder="天数" min="1" value="4">
+                        </div>
+                        <div class="col-auto">
+                            <button type="button" class="btn btn-sm btn-outline-danger btn-remove-subject" disabled><i data-lucide="x" style="width:14px;height:14px;"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="addSubjectDay()">
+                    <i data-lucide="plus" style="width:14px;height:14px;"></i> 添加科目
+                </button>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="generateSchedules()">生成课表</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 逐天添加课表模态框 -->
+<div class="modal fade" id="addScheduleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="addScheduleForm">
+                <div class="modal-header">
+                    <h6 class="modal-title">添加课表</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label">日期</label>
+                            <input type="date" name="schedule_date" class="form-control" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">第几天</label>
+                            <input type="number" name="day_number" class="form-control" value="{{ (schedules|length) + 1 }}" min="1">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">科目</label>
+                            <select name="subject_id" class="form-select" required>
+                                <option value="">选择科目</option>
+                                {% for subject in subjects %}
+                                <option value="{{ subject.id }}">{{ subject.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">上午老师</label>
+                            <select name="morning_teacher_id" class="form-select">
+                                <option value="">选择老师</option>
+                                {% for teacher in teachers %}
+                                <option value="{{ teacher.id }}">{{ teacher.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">下午老师</label>
+                            <select name="afternoon_teacher_id" class="form-select">
+                                <option value="">选择老师</option>
+                                {% for teacher in teachers %}
+                                <option value="{{ teacher.id }}">{{ teacher.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">晚间安排</label>
+                            <select name="evening_type" class="form-select">
+                                <option value="self_study">自习</option>
+                                <option value="exercise">习题</option>
+                                <option value="class">上课</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    lucide.createIcons();
+    
+    // 加载录播列表
+    function loadRecordings() {
+        $.get('{{ url_for("courses.batch_recordings", batch_id=batch.id) }}', function(data) {
+            $('#recordingCount').text(data.length);
+            
+            if (data.length === 0) {
+                $('#recordingsContainer').html(`
+                    <div class="text-center py-5 text-muted">
+                        <i data-lucide="video" style="width:48px;height:48px;" class="mb-3"></i>
+                        <h6>暂无录播记录</h6>
+                        <p class="mb-3">点击"添加录播"添加课程录播链接</p>
+                        <a href="{{ url_for('courses.recording_create', batch_id=batch.id, return_to='batch') }}" class="btn btn-primary btn-sm">
+                            <i data-lucide="plus" style="width:14px;height:14px;"></i> 添加录播
+                        </a>
+                    </div>
+                `);
+            } else {
+                var html = `<div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:100px;">日期</th>
+                                <th style="width:70px;">时段</th>
+                                <th>标题</th>
+                                <th>科目</th>
+                                <th>老师</th>
+                                <th>时长</th>
+                                <th class="text-end" style="width:120px;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+                
+                data.forEach(function(r) {
+                    var periodClass = r.period === 'morning' ? 'bg-info' : (r.period === 'afternoon' ? 'bg-warning text-dark' : 'bg-secondary');
+                    html += `<tr>
+                        <td>${r.recording_date ? r.recording_date.substring(5).replace('-', '/') : '-'}</td>
+                        <td><span class="badge ${periodClass}">${r.period_display}</span></td>
+                        <td>
+                            <a href="${r.recording_url}" target="_blank" class="text-decoration-none">
+                                ${r.title}
+                                <i data-lucide="external-link" style="width:12px;height:12px;" class="ms-1"></i>
+                            </a>
+                        </td>
+                        <td>${r.subject_name || '-'}</td>
+                        <td>${r.teacher_name || '-'}</td>
+                        <td>${r.duration_display}</td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a href="${r.recording_url}" target="_blank" class="btn btn-outline-success" title="打开链接">
+                                    <i data-lucide="play" style="width:14px;height:14px;"></i>
+                                </a>
+                                <a href="{{ url_for('courses.recording_edit', id=0) }}".replace('/0/', '/' + r.id + '/') + '?return_to=batch' class="btn btn-outline-secondary" title="编辑">
+                                    <i data-lucide="edit-2" style="width:14px;height:14px;"></i>
+                                </a>
+                                <button type="button" class="btn btn-outline-danger btn-delete-recording" data-id="${r.id}" data-title="${r.title}" title="删除">
+                                    <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table></div>';
+                $('#recordingsContainer').html(html);
+                
+                // 绑定删除事件
+                $('.btn-delete-recording').click(function() {
+                    var id = $(this).data('id');
+                    var title = $(this).data('title');
+                    if (confirm('确定要删除录播"' + title + '"吗？')) {
+                        $.post('{{ url_for("courses.recording_delete", id=0) }}'.replace('/0/', '/' + id + '/'), {return_to: 'batch'}, function(data) {
+                            if (data.success) {
+                                loadRecordings();
+                            } else {
+                                alert(data.message || '删除失败');
+                            }
+                        });
+                    }
+                });
+            }
+            
+            lucide.createIcons();
+        });
+    }
+    
+    // 标签页切换时加载录播
+    $('#recordings-tab').on('shown.bs.tab', function() {
+        loadRecordings();
+    });
+    
+    // 如果URL hash为#recordings，自动切换到录播标签页
+    $(document).ready(function() {
+        if (window.location.hash === '#recordings') {
+            $('#recordings-tab').tab('show');
+        }
+        // 预加载录播数量
+        $.get('{{ url_for("courses.batch_recordings", batch_id=batch.id) }}', function(data) {
+            $('#recordingCount').text(data.length);
+        });
+    });
+    
+    // 复制班次
+    function copyBatch() {
+        var newStartDate = $('#newStartDate').val();
+        if (!newStartDate) {
+            alert('请选择开课日期');
+            return;
+        }
+        $.post('{{ url_for("courses.batch_copy", id=batch.id) }}', {new_start_date: newStartDate}, function(data) {
+            if (data.success) {
+                window.location.href = data.redirect;
+            } else {
+                alert(data.message);
+            }
+        });
+    }
+    
+    // 添加科目天数行
+    function addSubjectDay() {
+        var html = `
+            <div class="row g-2 mb-2 subject-day-item">
+                <div class="col">
+                    <select class="form-select form-select-sm subject-select" required>
+                        <option value="">选择科目</option>
+                        {% for subject in subjects %}
+                        <option value="{{ subject.id }}">{{ subject.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-3">
+                    <input type="number" class="form-control form-control-sm days-input" placeholder="天数" min="1" value="4">
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-sm btn-outline-danger btn-remove-subject" onclick="$(this).closest('.subject-day-item').remove()"><i data-lucide="x" style="width:14px;height:14px;"></i></button>
+                </div>
+            </div>
+        `;
+        $('#subjectDaysList').append(html);
+        lucide.createIcons();
+    }
+    
+    // 生成课表
+    function generateSchedules() {
+        var items = [];
+        $('.subject-day-item').each(function() {
+            var subjectId = $(this).find('.subject-select').val();
+            var days = $(this).find('.days-input').val();
+            if (subjectId && days) {
+                items.push({subject_id: parseInt(subjectId), days: parseInt(days)});
+            }
+        });
+        
+        if (items.length === 0) {
+            alert('请至少添加一个科目');
+            return;
+        }
+        
+        if (!confirm('确定要生成课表吗？这将清除现有的全部课表！')) {
+            return;
+        }
+        
+        // TODO: 实现批量生成API调用
+        alert('功能开发中...');
+    }
+    
+    // 添加课表表单提交
+    $('#addScheduleForm').submit(function(e) {
+        e.preventDefault();
+        // TODO: 实现添加课表API
+        alert('功能开发中...');
+    });
+</script>
+{% endblock %}

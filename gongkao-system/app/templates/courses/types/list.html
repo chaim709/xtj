@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}班型管理 - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<!-- 页面标题 -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1 font-heading">班型管理</h4>
+        <p class="text-muted mb-0">管理项目下的班型设置</p>
+    </div>
+    {% if current_user.is_admin() and current_project %}
+    <a href="{{ url_for('courses.type_create', project_id=current_project.id) }}" class="btn btn-primary">
+        <i data-lucide="plus" style="width:18px;height:18px;"></i> 新增班型
+    </a>
+    {% endif %}
+</div>
+
+<!-- 项目选择 -->
+<div class="card mb-4">
+    <div class="card-body py-3">
+        <form class="row g-3 align-items-center" method="GET">
+            <div class="col-auto">
+                <select name="project_id" class="form-select" onchange="this.form.submit()">
+                    <option value="">选择项目</option>
+                    {% for project in projects %}
+                    <option value="{{ project.id }}" {{ 'selected' if current_project and current_project.id == project.id else '' }}>{{ project.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if current_project %}
+<!-- 班型列表 -->
+<div class="card">
+    <div class="card-body p-0">
+        {% if class_types %}
+        <ul class="list-group list-group-flush" id="sortableTypes">
+            {% for ct in class_types %}
+            <li class="list-group-item d-flex justify-content-between align-items-center" data-id="{{ ct.id }}">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-primary rounded-pill">{{ loop.index }}</span>
+                    <div>
+                        <div class="fw-medium">{{ ct.name }}</div>
+                        <div class="text-muted small">
+                            {% if ct.planned_days %}{{ ct.planned_days }}天{% endif %}
+                            {% if ct.single_price %} · 单价 ¥{{ "%.0f" | format(ct.single_price) }}{% endif %}
+                            · {{ ct.batches.count() }}个班次
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <a href="{{ url_for('courses.batch_list', class_type_id=ct.id) }}" class="btn btn-sm btn-outline-primary me-1">
+                        查看班次
+                    </a>
+                    <a href="{{ url_for('courses.batch_create', class_type_id=ct.id) }}" class="btn btn-sm btn-outline-success me-1">
+                        <i data-lucide="plus" style="width:14px;height:14px;"></i> 开班
+                    </a>
+                    {% if current_user.is_admin() %}
+                    <a href="{{ url_for('courses.type_edit', id=ct.id) }}" class="btn btn-sm btn-outline-secondary">
+                        <i data-lucide="edit-2" style="width:14px;height:14px;"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i data-lucide="layers" style="width:48px;height:48px;" class="mb-3"></i>
+            <h6>该项目暂无班型</h6>
+            <p class="mb-3">点击"新增班型"开始添加</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5 text-muted">
+        <i data-lucide="folder-open" style="width:48px;height:48px;" class="mb-3"></i>
+        <h6>请先选择一个项目</h6>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}

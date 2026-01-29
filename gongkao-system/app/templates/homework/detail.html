@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}{{ task.task_name }} - 作业详情{% endblock %}
+
+{% block content %}
+<!-- 页面标题 -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="font-heading mb-1">{{ task.task_name }}</h4>
+        <p class="text-muted mb-0">作业详情与成绩录入</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('homework.list') }}" class="btn btn-outline-secondary" style="border-radius:10px;">
+            <i data-lucide="arrow-left" style="width:16px;height:16px;margin-right:6px;"></i> 返回列表
+        </a>
+        {% if task.status == 'published' and (current_user.is_admin() or task.creator_id == current_user.id) %}
+        <form method="POST" action="{{ url_for('homework.close', id=task.id) }}" class="d-inline"
+              onsubmit="return confirm('确定要关闭此作业吗？关闭后学员无法再提交。');">
+            <button type="submit" class="btn btn-outline-danger" style="border-radius:10px;">
+                <i data-lucide="x-circle" style="width:16px;height:16px;margin-right:6px;"></i> 关闭作业
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 作业信息 -->
+<div class="card mb-4" style="border-radius:16px;border:none;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+    <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="d-flex align-items-center">
+                <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#3B82F6,#8B5CF6);display:flex;align-items:center;justify-content:center;margin-right:1rem;">
+                    <i data-lucide="file-text" style="width:24px;height:24px;color:white;"></i>
+                </div>
+                <div>
+                    <h5 class="font-heading mb-1">{{ task.task_name }}</h5>
+                    <span style="color:#64748B;">{{ task.module or '未分类' }}{% if task.sub_module %} - {{ task.sub_module }}{% endif %}</span>
+                </div>
+            </div>
+            {% if task.status == 'published' %}
+            <span class="badge" style="background:#DCFCE7;color:#16A34A;padding:8px 16px;border-radius:20px;">进行中</span>
+            {% else %}
+            <span class="badge" style="background:#F1F5F9;color:#64748B;padding:8px 16px;border-radius:20px;">已关闭</span>
+            {% endif %}
+        </div>
+        
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="text-muted small mb-1">题量</div>
+                <div style="font-weight:500;">{{ task.question_count or '-' }} 题</div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-muted small mb-1">建议用时</div>
+                <div style="font-weight:500;">{{ task.suggested_time or '-' }} 分钟</div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-muted small mb-1">截止时间</div>
+                <div style="font-weight:500;">{{ task.deadline.strftime('%Y-%m-%d %H:%M') if task.deadline else '无' }}</div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-muted small mb-1">创建人</div>
+                <div style="font-weight:500;">{{ task.creator.real_name if task.creator else '未知' }}</div>
+            </div>
+            {% if task.description %}
+            <div class="col-12">
+                <div class="text-muted small mb-1">作业说明</div>
+                <div style="font-weight:500;">{{ task.description }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 统计信息 -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <div class="stat-card-title">完成人数</div>
+                <div class="stat-card-icon blue">
+                    <i data-lucide="users" style="width:20px;height:20px;"></i>
+                </div>
+            </div>
+            <div class="stat-card-value">{{ stats.completed }}/{{ stats.total_target }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <div class="stat-card-title">完成率</div>
+                <div class="stat-card-icon" style="background:#DCFCE7;color:#16A34A;">
+                    <i data-lucide="check-circle" style="width:20px;height:20px;"></i>
+                </div>
+            </div>
+            <div class="stat-card-value" style="color:#16A34A;">{{ stats.completion_rate|round(1) }}%</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <div class="stat-card-title">平均正确率</div>
+                <div class="stat-card-icon" style="background:#DBEAFE;color:#2563EB;">
+                    <i data-lucide="target" style="width:20px;height:20px;"></i>
+                </div>
+            </div>
+            <div class="stat-card-value" style="color:#2563EB;">{{ stats.avg_accuracy_rate }}%</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <div class="stat-card-title">平均用时</div>
+                <div class="stat-card-icon orange">
+                    <i data-lucide="clock" style="width:20px;height:20px;"></i>
+                </div>
+            </div>
+            <div class="stat-card-value">{{ stats.avg_time_spent|round(0)|int }}分钟</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- 已完成列表 -->
+    <div class="col-lg-6">
+        <div class="card" style="border-radius:16px;border:none;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+            <div class="card-header bg-white" style="border-radius:16px 16px 0 0;border-bottom:1px solid #F1F5F9;">
+                <i data-lucide="check-circle" style="width:18px;height:18px;margin-right:8px;color:#16A34A;"></i>
+                <span class="font-heading" style="font-weight:600;">已完成 ({{ submissions|length }})</span>
+            </div>
+            <div class="card-body p-0">
+                {% if submissions %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead style="background:#F8FAFC;">
+                            <tr>
+                                <th style="padding:1rem;font-weight:500;color:#64748B;font-size:0.85rem;">学员</th>
+                                <th style="padding:1rem;font-weight:500;color:#64748B;font-size:0.85rem;">正确率</th>
+                                <th style="padding:1rem;font-weight:500;color:#64748B;font-size:0.85rem;">用时</th>
+                                <th style="padding:1rem;font-weight:500;color:#64748B;font-size:0.85rem;">提交时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in submissions %}
+                            <tr>
+                                <td style="padding:1rem;">
+                                    <div class="d-flex align-items-center">
+                                        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#3B82F6,#8B5CF6);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:0.75rem;margin-right:10px;">
+                                            {{ s.student.name[0] }}
+                                        </div>
+                                        {{ s.student.name }}
+                                    </div>
+                                </td>
+                                <td style="padding:1rem;">
+                                    <span class="badge" style="
+                                        {% if s.accuracy_rate >= 70 %}background:#DCFCE7;color:#16A34A;
+                                        {% elif s.accuracy_rate >= 50 %}background:#FEF3C7;color:#D97706;
+                                        {% else %}background:#FEE2E2;color:#DC2626;{% endif %}">
+                                        {{ s.accuracy_rate|round(1) if s.accuracy_rate else 0 }}%
+                                    </span>
+                                </td>
+                                <td style="padding:1rem;color:#64748B;">{{ s.time_spent or '-' }}分钟</td>
+                                <td style="padding:1rem;color:#94A3B8;font-size:0.9rem;">{{ s.submit_time.strftime('%m-%d %H:%M') if s.submit_time else '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4 mb-0">暂无提交记录</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- 录入成绩 -->
+    <div class="col-lg-6">
+        <div class="card mb-4" style="border-radius:16px;border:none;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+            <div class="card-header bg-white" style="border-radius:16px 16px 0 0;border-bottom:1px solid #F1F5F9;">
+                <i data-lucide="edit-3" style="width:18px;height:18px;margin-right:8px;color:var(--primary);"></i>
+                <span class="font-heading" style="font-weight:600;">录入成绩</span>
+            </div>
+            <div class="card-body p-4">
+                {% if task.status == 'published' %}
+                <form id="submitForm">
+                    <div class="mb-3">
+                        <label class="form-label">选择学员</label>
+                        <select class="form-select" name="student_id" id="studentSelect" required style="border-radius:10px;">
+                            <option value="">请选择学员</option>
+                            {% for s in target_students %}
+                            <option value="{{ s.id }}" {% if s.id in submitted_ids %}disabled{% endif %}>
+                                {{ s.name }} {% if s.id in submitted_ids %}(已录入){% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">完成题量</label>
+                            <input type="number" class="form-control" name="completed_count" 
+                                   min="0" max="{{ task.question_count or 999 }}" value="{{ task.question_count or '' }}" style="border-radius:10px;">
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">正确数量</label>
+                            <input type="number" class="form-control" name="correct_count" 
+                                   min="0" max="{{ task.question_count or 999 }}" style="border-radius:10px;">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">用时(分钟)</label>
+                        <input type="number" class="form-control" name="time_spent" min="0" max="999" style="border-radius:10px;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">错题编号</label>
+                        <input type="text" class="form-control" name="wrong_questions" 
+                               placeholder="如：3,7,15,23（逗号分隔）" style="border-radius:10px;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">备注</label>
+                        <textarea class="form-control" name="feedback" rows="2" style="border-radius:10px;"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" style="border-radius:10px;padding:0.75rem;">
+                        <i data-lucide="check" style="width:16px;height:16px;margin-right:6px;"></i> 录入成绩
+                    </button>
+                </form>
+                {% else %}
+                <p class="text-muted text-center py-4 mb-0">作业已关闭，无法录入</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- 未完成学员 -->
+        {% if stats.uncompleted_students %}
+        <div class="card" style="border-radius:16px;border:none;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+            <div class="card-header bg-white" style="border-radius:16px 16px 0 0;border-bottom:1px solid #F1F5F9;">
+                <i data-lucide="alert-circle" style="width:18px;height:18px;margin-right:8px;color:#DC2626;"></i>
+                <span class="font-heading" style="font-weight:600;">未完成 ({{ stats.uncompleted_students|length }})</span>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    {% for s in stats.uncompleted_students %}
+                    <span class="badge" style="background:#FEE2E2;color:#DC2626;padding:6px 12px;border-radius:20px;">{{ s.name }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    lucide.createIcons();
+});
+
+$('#submitForm').submit(function(e) {
+    e.preventDefault();
+    
+    var formData = $(this).serialize();
+    
+    $.post('/homework/{{ task.id }}/submit', formData, function(response) {
+        if (response.success) {
+            alert('录入成功！');
+            location.reload();
+        } else {
+            alert(response.message);
+        }
+    }).fail(function() {
+        alert('提交失败，请重试');
+    });
+});
+</script>
+{% endblock %}

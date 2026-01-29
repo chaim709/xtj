@@ -1,0 +1,2368 @@
+{% extends "base.html" %}
+
+{% block title %}岗位数据仪表盘 - 公考培训管理系统{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* 仪表盘特定样式 */
+    .dashboard-header {
+        background: var(--gradient-welcome);
+        border-radius: var(--radius-xl);
+        padding: 1.5rem 2rem;
+        color: white;
+        margin-bottom: 1.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .dashboard-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 200px;
+        height: 200px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+    }
+    
+    .dashboard-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .dashboard-subtitle {
+        opacity: 0.9;
+        font-size: 0.9rem;
+    }
+    
+    /* 筛选器栏 */
+    .filter-bar {
+        background: var(--card-bg);
+        border-radius: var(--radius-lg);
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        box-shadow: var(--shadow-card);
+    }
+    
+    .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .filter-label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        white-space: nowrap;
+    }
+    
+    .filter-bar .form-select {
+        min-width: 120px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+    
+    /* 视角切换按钮 */
+    .view-switcher {
+        display: flex;
+        background: var(--background);
+        border-radius: var(--radius-md);
+        padding: 4px;
+        margin-left: auto;
+    }
+    
+    .view-btn {
+        padding: 0.5rem 1.25rem;
+        border: none;
+        background: transparent;
+        border-radius: var(--radius-sm);
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all var(--transition-normal);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .view-btn.active {
+        background: var(--primary);
+        color: white;
+        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+    }
+    
+    .view-btn:hover:not(.active) {
+        background: var(--background-alt);
+        color: var(--text-primary);
+    }
+    
+    /* KPI 卡片组 */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    @media (max-width: 1200px) {
+        .kpi-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .kpi-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .kpi-card {
+        background: var(--card-bg);
+        border-radius: var(--radius-lg);
+        padding: 1.25rem;
+        box-shadow: var(--shadow-card);
+        transition: all var(--transition-normal);
+        border: 1px solid transparent;
+    }
+    
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--border-light);
+    }
+    
+    .kpi-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+    }
+    
+    .kpi-title {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+    
+    .kpi-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+    }
+    
+    .kpi-icon.blue { background: var(--gradient-blue); }
+    .kpi-icon.green { background: var(--gradient-green); }
+    .kpi-icon.orange { background: var(--gradient-orange); }
+    .kpi-icon.purple { background: var(--gradient-purple); }
+    
+    .kpi-value {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.2;
+    }
+    
+    .kpi-suffix {
+        font-size: 0.9rem;
+        font-weight: 400;
+        color: var(--text-secondary);
+        margin-left: 4px;
+    }
+    
+    .kpi-desc {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: 0.5rem;
+    }
+    
+    /* 图表卡片 */
+    .chart-card {
+        background: var(--card-bg);
+        border-radius: var(--radius-lg);
+        padding: 1rem;
+        box-shadow: var(--shadow-card);
+        border: 1px solid var(--border-light);
+        margin-bottom: 1.25rem;
+    }
+    
+    /* 行间距 */
+    #adminView > .row,
+    #studentView > .row {
+        margin-bottom: 0.5rem;
+    }
+    
+    /* 空数据提示 */
+    .empty-data-msg {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        min-height: 200px;
+        color: var(--text-muted);
+    }
+    
+    .empty-data-msg i {
+        opacity: 0.4;
+        margin-bottom: 0.75rem;
+    }
+    
+    .empty-data-msg span {
+        font-size: 0.9rem;
+    }
+    
+    .chart-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--border-light);
+    }
+    
+    .chart-card-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .chart-container {
+        height: 280px;
+        width: 100%;
+    }
+    
+    .chart-container-lg {
+        height: 350px;
+    }
+    
+    .chart-container-sm {
+        height: 220px;
+    }
+    
+    /* 地图容器 */
+    .map-container {
+        height: 280px;
+        width: 100%;
+    }
+    
+    /* 排行榜样式 */
+    .ranking-list {
+        height: 280px;
+        overflow-y: auto;
+    }
+    
+    /* 地区链接新样式 */
+    .regional-links {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .regional-link-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.25rem;
+        background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
+        border-radius: var(--radius-md);
+        text-decoration: none;
+        transition: all var(--transition-normal);
+    }
+    
+    .regional-link-item:hover {
+        transform: translateX(4px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    }
+    
+    .regional-link-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: var(--radius-md);
+        background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    
+    .regional-link-content {
+        flex: 1;
+    }
+    
+    .regional-link-item .regional-link-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+    }
+    
+    .regional-link-item .regional-link-desc {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+    }
+    
+    .ranking-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--border-light);
+        transition: background var(--transition-fast);
+    }
+    
+    .ranking-item:last-child {
+        border-bottom: none;
+    }
+    
+    .ranking-item:hover {
+        background: var(--card-bg-hover);
+        margin: 0 -0.5rem;
+        padding: 0.75rem 0.5rem;
+        border-radius: var(--radius-sm);
+    }
+    
+    .ranking-num {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-right: 0.75rem;
+        flex-shrink: 0;
+    }
+    
+    .ranking-num.top-1 { background: #FEF3C7; color: #D97706; }
+    .ranking-num.top-2 { background: #E5E7EB; color: #4B5563; }
+    .ranking-num.top-3 { background: #FED7AA; color: #C2410C; }
+    .ranking-num.normal { background: var(--background); color: var(--text-secondary); }
+    
+    .ranking-info {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .ranking-name {
+        font-weight: 500;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .ranking-sub {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+    
+    .ranking-value {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 0.9rem;
+    }
+    
+    /* 选岗视角专用样式 */
+    .match-highlight {
+        background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+        color: white;
+        border-radius: var(--radius-lg);
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .match-highlight-title {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-bottom: 0.5rem;
+    }
+    
+    .match-highlight-value {
+        font-family: 'Poppins', sans-serif;
+        font-size: 2rem;
+        font-weight: 700;
+    }
+    
+    .match-highlight-sub {
+        font-size: 0.85rem;
+        opacity: 0.85;
+        margin-top: 0.25rem;
+    }
+    
+    /* 专业/学历输入 */
+    .match-filter-card {
+        background: var(--card-bg);
+        border-radius: var(--radius-lg);
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+        box-shadow: var(--shadow-card);
+    }
+    
+    .match-filter-title {
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    /* 低竞争推荐列表 */
+    .recommend-list {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .recommend-item {
+        padding: 1rem;
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-md);
+        margin-bottom: 0.75rem;
+        transition: all var(--transition-normal);
+        cursor: pointer;
+    }
+    
+    .recommend-item:hover {
+        border-color: var(--primary);
+        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+    }
+    
+    .recommend-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.5rem;
+    }
+    
+    .recommend-dept {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 0.9rem;
+    }
+    
+    .recommend-position {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+    }
+    
+    .recommend-tags {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 0.5rem;
+    }
+    
+    .recommend-tag {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: var(--radius-sm);
+        background: var(--background);
+        color: var(--text-secondary);
+    }
+    
+    .recommend-tag.competition {
+        background: #DCFCE7;
+        color: #166534;
+    }
+    
+    .recommend-tag.score {
+        background: #DBEAFE;
+        color: #1E40AF;
+    }
+    
+    /* 专项链接卡片 */
+    .regional-link-card {
+        background: linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%);
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        color: white;
+        cursor: pointer;
+        transition: all var(--transition-normal);
+        text-decoration: none;
+        display: block;
+    }
+    
+    .regional-link-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.3);
+        color: white;
+    }
+    
+    .regional-link-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .regional-link-desc {
+        font-size: 0.85rem;
+        opacity: 0.85;
+    }
+    
+    /* 隐藏视角内容 */
+    .view-content {
+        display: none;
+    }
+    
+    .view-content.active {
+        display: block;
+    }
+    
+    /* 加载状态 */
+    .chart-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: var(--text-muted);
+    }
+    
+    .chart-loading i {
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* 导出按钮组 */
+    .export-group {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .export-btn {
+        padding: 0.5rem 0.75rem;
+        border-radius: var(--radius-md);
+        font-size: 0.8rem;
+        font-weight: 500;
+        background: var(--background);
+        border: 1px solid var(--border-default);
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all var(--transition-normal);
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+    
+    .export-btn:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+        background: var(--primary-light);
+    }
+    
+    .export-btn i {
+        width: 14px;
+        height: 14px;
+    }
+    
+    /* 导出模态框 */
+    .export-modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: var(--z-modal-backdrop);
+        display: none;
+    }
+    
+    .export-modal-backdrop.show {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .export-modal {
+        background: var(--card-bg);
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        width: 90%;
+        max-width: 400px;
+        box-shadow: var(--shadow-xl);
+    }
+    
+    .export-modal-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .export-modal-close {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--text-muted);
+        padding: 0.25rem;
+    }
+    
+    .export-modal-close:hover {
+        color: var(--text-primary);
+    }
+    
+    .export-option {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-md);
+        margin-bottom: 0.75rem;
+        cursor: pointer;
+        transition: all var(--transition-normal);
+    }
+    
+    .export-option:hover {
+        border-color: var(--primary);
+        background: var(--primary-light);
+    }
+    
+    .export-option-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        color: white;
+    }
+    
+    .export-option-icon.png { background: var(--gradient-purple); }
+    .export-option-icon.excel { background: var(--gradient-green); }
+    .export-option-icon.pdf { background: var(--gradient-orange); }
+    
+    .export-option-info h4 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0 0 0.25rem 0;
+    }
+    
+    .export-option-info p {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- 页面标题 -->
+<div class="dashboard-header">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+            <div class="dashboard-title">
+                <i data-lucide="bar-chart-3" style="width:28px;height:28px;margin-right:8px;"></i>
+                岗位数据仪表盘
+            </div>
+            <div class="dashboard-subtitle">全面分析招录数据，助力科学选岗决策</div>
+        </div>
+        <div class="export-group">
+            <button class="export-btn" onclick="showExportModal()" style="background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.3);color:white;">
+                <i data-lucide="download"></i>
+                导出报告
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 导出模态框 -->
+<div class="export-modal-backdrop" id="exportModal">
+    <div class="export-modal">
+        <div class="export-modal-title">
+            导出数据
+            <button class="export-modal-close" onclick="hideExportModal()">
+                <i data-lucide="x" style="width:20px;height:20px;"></i>
+            </button>
+        </div>
+        
+        <div class="export-option" onclick="exportChartsToPNG()">
+            <div class="export-option-icon png">
+                <i data-lucide="image" style="width:20px;height:20px;"></i>
+            </div>
+            <div class="export-option-info">
+                <h4>导出图片 (PNG)</h4>
+                <p>将所有图表导出为高清图片</p>
+            </div>
+        </div>
+        
+        <div class="export-option" onclick="exportToExcel()">
+            <div class="export-option-icon excel">
+                <i data-lucide="table" style="width:20px;height:20px;"></i>
+            </div>
+            <div class="export-option-info">
+                <h4>导出表格 (Excel/CSV)</h4>
+                <p>导出统计数据为电子表格</p>
+            </div>
+        </div>
+        
+        <div class="export-option" onclick="printReport()">
+            <div class="export-option-icon pdf">
+                <i data-lucide="file-text" style="width:20px;height:20px;"></i>
+            </div>
+            <div class="export-option-info">
+                <h4>打印/保存PDF</h4>
+                <p>打印当前页面或保存为PDF</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 筛选器栏 -->
+<div class="filter-bar">
+    <div class="filter-group">
+        <span class="filter-label">年份</span>
+        <select class="form-select" id="yearFilter">
+            <option value="2026" {% if year == 2026 %}selected{% endif %}>2026年</option>
+            <option value="2025" {% if year == 2025 %}selected{% endif %}>2025年</option>
+            <option value="2024" {% if year == 2024 %}selected{% endif %}>2024年</option>
+            <option value="2023" {% if year == 2023 %}selected{% endif %}>2023年</option>
+            <option value="2022" {% if year == 2022 %}selected{% endif %}>2022年</option>
+        </select>
+    </div>
+    <div class="filter-group">
+        <span class="filter-label">考试类型</span>
+        <select class="form-select" id="examTypeFilter">
+            <option value="省考" {% if exam_type == '省考' %}selected{% endif %}>省考</option>
+            <option value="国考" {% if exam_type == '国考' %}selected{% endif %}>国考</option>
+        </select>
+    </div>
+    <div class="filter-group">
+        <span class="filter-label">城市</span>
+        <select class="form-select" id="cityFilter">
+            <option value="">全省</option>
+            {% for city in cities %}
+            <option value="{{ city }}">{{ city }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <!-- 视角切换 -->
+    <div class="view-switcher">
+        <button class="view-btn {% if view == 'admin' %}active{% endif %}" data-view="admin">
+            <i data-lucide="bar-chart-2" style="width:16px;height:16px;"></i>
+            管理视角
+        </button>
+        <button class="view-btn {% if view == 'student' %}active{% endif %}" data-view="student">
+            <i data-lucide="target" style="width:16px;height:16px;"></i>
+            选岗视角
+        </button>
+    </div>
+</div>
+
+<!-- 管理视角内容 -->
+<div class="view-content {% if view == 'admin' %}active{% endif %}" id="adminView">
+    <!-- KPI 卡片 -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-card-header">
+                <div class="kpi-title">岗位总数</div>
+                <div class="kpi-icon blue">
+                    <i data-lucide="briefcase" style="width:20px;height:20px;"></i>
+                </div>
+            </div>
+            <div class="kpi-value" id="kpiPositions">{{ overview.total_positions }}</div>
+            <div class="kpi-desc">{{ year }}年{{ exam_type }}招录岗位</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-card-header">
+                <div class="kpi-title">招录人数</div>
+                <div class="kpi-icon green">
+                    <i data-lucide="users" style="width:20px;height:20px;"></i>
+                </div>
+            </div>
+            <div class="kpi-value" id="kpiRecruit">{{ overview.total_recruit }}<span class="kpi-suffix">人</span></div>
+            <div class="kpi-desc">总招录计划人数</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-card-header">
+                <div class="kpi-title">平均竞争比</div>
+                <div class="kpi-icon orange">
+                    <i data-lucide="flame" style="width:20px;height:20px;"></i>
+                </div>
+            </div>
+            <div class="kpi-value" id="kpiCompetition">{{ overview.avg_competition }}<span class="kpi-suffix">:1</span></div>
+            <div class="kpi-desc">报名人数/招录人数</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-card-header">
+                <div class="kpi-title">平均进面分</div>
+                <div class="kpi-icon purple">
+                    <i data-lucide="trophy" style="width:20px;height:20px;"></i>
+                </div>
+            </div>
+            <div class="kpi-value" id="kpiScore">{{ overview.avg_entry_score }}<span class="kpi-suffix">分</span></div>
+            <div class="kpi-desc">笔试最低进面分数</div>
+        </div>
+    </div>
+    
+    <!-- 第一行：地图 + 系统分布 + 学历分布 -->
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">
+                        <i data-lucide="map" style="width:18px;height:18px;color:var(--primary);"></i>
+                        江苏省招录热力图
+                    </div>
+                </div>
+                <div class="map-container" id="mapChart">
+                    <div class="chart-loading">
+                        <i data-lucide="loader" style="width:24px;height:24px;"></i>
+                        <span style="margin-left:8px;">加载地图数据...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">
+                        <i data-lucide="building-2" style="width:18px;height:18px;color:var(--info);"></i>
+                        系统类型分布
+                    </div>
+                </div>
+                <div class="chart-container" id="systemChart"></div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">
+                        <i data-lucide="graduation-cap" style="width:18px;height:18px;color:var(--purple);"></i>
+                        学历要求分布
+                    </div>
+                </div>
+                <div class="chart-container" id="educationChart"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 第二行：年度对比 + 竞争比分布 -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">
+                        <i data-lucide="trending-up" style="width:18px;height:18px;color:var(--success);"></i>
+                        年度招录对比
+                    </div>
+                </div>
+                <div class="chart-container" id="yearComparisonChart"></div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">
+                        <i data-lucide="flame" style="width:18px;height:18px;color:var(--warning);"></i>
+                        竞争比分布
+                    </div>
+                </div>
+                <div class="chart-container" id="competitionChart"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 第三行：城市排行 + 进面分分布 -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">
+                        <i data-lucide="bar-chart" style="width:18px;height:18px;color:var(--primary);"></i>
+                        城市招录排行
+                    </div>
+                </div>
+                <div class="ranking-list" id="cityRanking"></div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">
+                        <i data-lucide="target" style="width:18px;height:18px;color:var(--info);"></i>
+                        进面分分布
+                    </div>
+                </div>
+                <div class="chart-container" id="scoreChart"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 第四行：热门专业 + 地区入口 -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">
+                        <i data-lucide="bookmark" style="width:18px;height:18px;color:var(--purple);"></i>
+                        热门招录专业
+                    </div>
+                </div>
+                <div class="chart-container" id="majorChart"></div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">
+                        <i data-lucide="map-pin" style="width:18px;height:18px;color:var(--success);"></i>
+                        地区专项分析
+                    </div>
+                </div>
+                <div class="regional-links">
+                    <a href="{{ url_for('positions.suqian_dashboard') }}?year={{ year }}&exam_type={{ exam_type }}" class="regional-link-item">
+                        <div class="regional-link-icon">
+                            <i data-lucide="map-pin" style="width:24px;height:24px;"></i>
+                        </div>
+                        <div class="regional-link-content">
+                            <div class="regional-link-title">宿迁市专项分析</div>
+                            <div class="regional-link-desc">查看宿迁各区县招录详情和选岗建议</div>
+                        </div>
+                        <i data-lucide="chevron-right" style="width:20px;height:20px;color:var(--text-muted);"></i>
+                    </a>
+                    <a href="{{ url_for('positions.sihong_dashboard') }}?year={{ year }}&exam_type={{ exam_type }}" class="regional-link-item">
+                        <div class="regional-link-icon">
+                            <i data-lucide="home" style="width:24px;height:24px;"></i>
+                        </div>
+                        <div class="regional-link-content">
+                            <div class="regional-link-title">泗洪县专项分析</div>
+                            <div class="regional-link-desc">查看泗洪乡镇岗位分布和本地选岗策略</div>
+                        </div>
+                        <i data-lucide="chevron-right" style="width:20px;height:20px;color:var(--text-muted);"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 选岗视角内容 -->
+<div class="view-content {% if view == 'student' %}active{% endif %}" id="studentView">
+    <div class="row">
+        <!-- 左侧：筛选和提示 -->
+        <div class="col-lg-4">
+            <!-- 条件筛选 -->
+            <div class="match-filter-card">
+                <div class="match-filter-title">
+                    <i data-lucide="filter" style="width:18px;height:18px;color:var(--primary);"></i>
+                    我的条件
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" style="font-size:0.85rem;">我的学历</label>
+                    <select class="form-select" id="myEducation">
+                        <option value="">不限</option>
+                        <option value="专科">专科</option>
+                        <option value="本科" selected>本科</option>
+                        <option value="研究生">研究生</option>
+                        <option value="博士">博士</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" style="font-size:0.85rem;">我的专业</label>
+                    <input type="text" class="form-control" id="myMajor" placeholder="输入专业名称...">
+                    <div class="form-text">输入后自动筛选可报岗位</div>
+                </div>
+                <button class="btn btn-primary w-100" id="applyMatchFilter">
+                    <i data-lucide="search" style="width:16px;height:16px;margin-right:6px;"></i>
+                    查看匹配岗位
+                </button>
+            </div>
+            
+            <!-- 匹配结果提示 -->
+            <div class="match-highlight" id="matchHighlight">
+                <div class="match-highlight-title">可报岗位数量</div>
+                <div class="match-highlight-value" id="matchTotal">{{ overview.total_positions }}</div>
+                <div class="match-highlight-sub">
+                    其中低竞争岗位 <strong id="matchLowComp">{{ overview.low_competition_count }}</strong> 个
+                </div>
+            </div>
+            
+            <!-- 地区专项入口 -->
+            <a href="{{ url_for('positions.suqian_dashboard') }}?year={{ year }}&exam_type={{ exam_type }}" class="regional-link-card mb-3">
+                <div class="regional-link-title">
+                    <i data-lucide="map-pin" style="width:20px;height:20px;"></i>
+                    宿迁市选岗指南
+                </div>
+                <div class="regional-link-desc">针对宿迁本地的选岗建议</div>
+            </a>
+            
+            <a href="{{ url_for('positions.sihong_dashboard') }}?year={{ year }}&exam_type={{ exam_type }}" class="regional-link-card">
+                <div class="regional-link-title">
+                    <i data-lucide="home" style="width:20px;height:20px;"></i>
+                    泗洪县选岗指南
+                </div>
+                <div class="regional-link-desc">泗洪乡镇岗位详细分析</div>
+            </a>
+        </div>
+        
+        <!-- 右侧：图表和推荐 -->
+        <div class="col-lg-8">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="chart-card">
+                        <div class="chart-card-header">
+                            <div class="chart-card-title">
+                                <i data-lucide="flame" style="width:18px;height:18px;color:var(--warning);"></i>
+                                竞争热度分布
+                            </div>
+                        </div>
+                        <div class="chart-container-sm" id="studentCompetitionChart"></div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="chart-card">
+                        <div class="chart-card-header">
+                            <div class="chart-card-title">
+                                <i data-lucide="target" style="width:18px;height:18px;color:var(--info);"></i>
+                                进面分参考
+                            </div>
+                        </div>
+                        <div class="chart-container-sm" id="studentScoreChart"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">
+                        <i data-lucide="map" style="width:18px;height:18px;color:var(--primary);"></i>
+                        城市机会分布
+                    </div>
+                </div>
+                <div class="chart-container" id="cityOpportunityChart"></div>
+            </div>
+            
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">
+                        <i data-lucide="star" style="width:18px;height:18px;color:var(--success);"></i>
+                        低竞争优质岗位推荐
+                    </div>
+                    <a href="{{ url_for('positions.list') }}?sort_by=competition_ratio&sort_order=asc" class="btn btn-sm btn-outline-primary">
+                        查看全部
+                    </a>
+                </div>
+                <div class="recommend-list" id="recommendList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- ECharts -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<!-- 江苏省地图数据 -->
+<script src="https://geo.datav.aliyun.com/areas_v3/bound/320000_full.json" type="application/json" id="jiangsuMapData"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    lucide.createIcons();
+    
+    // 全局变量
+    let currentYear = {{ year }};
+    let currentExamType = '{{ exam_type }}';
+    let currentCity = '';
+    let currentView = '{{ view }}';
+    
+    // 图表实例
+    let mapChart, systemChart, educationChart, yearComparisonChart;
+    let competitionChart, scoreChart, majorChart;
+    let studentCompetitionChart, studentScoreChart, cityOpportunityChart;
+    
+    // ==================== 视角切换 ====================
+    document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const view = this.dataset.view;
+            currentView = view;
+            
+            // 更新按钮状态
+            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            // 切换内容
+            document.querySelectorAll('.view-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(view === 'admin' ? 'adminView' : 'studentView').classList.add('active');
+            
+            // 初始化对应视角的图表（延迟以确保容器可见）
+            setTimeout(() => {
+                if (view === 'admin') {
+                    initAdminCharts();
+                    // 调整已有图表大小
+                    if (mapChart) mapChart.resize();
+                    if (systemChart) systemChart.resize();
+                    if (educationChart) educationChart.resize();
+                    if (yearComparisonChart) yearComparisonChart.resize();
+                    if (competitionChart) competitionChart.resize();
+                    if (scoreChart) scoreChart.resize();
+                    if (majorChart) majorChart.resize();
+                } else {
+                    initStudentCharts();
+                    // 调整选岗视角图表大小
+                    setTimeout(() => {
+                        if (studentCompetitionChart) studentCompetitionChart.resize();
+                        if (studentScoreChart) studentScoreChart.resize();
+                        if (cityOpportunityChart) cityOpportunityChart.resize();
+                    }, 150);
+                }
+            }, 50);
+        });
+    });
+    
+    // ==================== 筛选器 ====================
+    document.getElementById('yearFilter').addEventListener('change', function() {
+        currentYear = parseInt(this.value);
+        refreshData();
+    });
+    
+    document.getElementById('examTypeFilter').addEventListener('change', function() {
+        currentExamType = this.value;
+        refreshData();
+    });
+    
+    document.getElementById('cityFilter').addEventListener('change', function() {
+        currentCity = this.value;
+        refreshData();
+    });
+    
+    // ==================== 数据刷新 ====================
+    function refreshData() {
+        // 刷新 KPI
+        fetchOverview();
+        
+        // 刷新当前视角的图表
+        if (currentView === 'admin') {
+            initAdminCharts();
+        } else {
+            initStudentCharts();
+        }
+    }
+    
+    // ==================== API 调用 ====================
+    function fetchOverview() {
+        const params = new URLSearchParams({
+            year: currentYear,
+            exam_type: currentExamType,
+            city: currentCity
+        });
+        
+        fetch(`/positions/api/dashboard/overview?${params}`)
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('kpiPositions').textContent = data.total_positions;
+                document.getElementById('kpiRecruit').innerHTML = data.total_recruit + '<span class="kpi-suffix">人</span>';
+                document.getElementById('kpiCompetition').innerHTML = data.avg_competition + '<span class="kpi-suffix">:1</span>';
+                document.getElementById('kpiScore').innerHTML = data.avg_entry_score + '<span class="kpi-suffix">分</span>';
+                
+                // 更新选岗视角的匹配数据
+                document.getElementById('matchTotal').textContent = data.total_positions;
+                document.getElementById('matchLowComp').textContent = data.low_competition_count;
+            });
+    }
+    
+    // ==================== 管理视角图表 ====================
+    function initAdminCharts() {
+        initMapChart();
+        initSystemChart();
+        initEducationChart();
+        initYearComparisonChart();
+        initCompetitionChart();
+        initCityRanking();
+        initScoreChart();
+        initMajorChart();
+    }
+    
+    // 地图图表
+    function initMapChart() {
+        const container = document.getElementById('mapChart');
+        
+        // 清除加载提示
+        function clearLoading() {
+            const loading = container.querySelector('.chart-loading');
+            if (loading) loading.remove();
+        }
+        
+        // 显示错误提示
+        function showError(msg) {
+            clearLoading();
+            container.innerHTML = `
+                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text-muted);">
+                    <i data-lucide="map-pin-off" style="width:48px;height:48px;opacity:0.5;margin-bottom:1rem;"></i>
+                    <p style="margin:0;font-size:0.9rem;">${msg}</p>
+                    <button onclick="initMapChart()" style="margin-top:1rem;padding:0.5rem 1rem;border:1px solid var(--border-default);border-radius:var(--radius-md);background:white;cursor:pointer;">
+                        重试
+                    </button>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+        
+        // 显示备用柱状图
+        function showFallbackChart(cityData) {
+            clearLoading();
+            if (!mapChart) {
+                mapChart = echarts.init(container);
+            }
+            
+            const sortedData = cityData.sort((a, b) => (b.recruit_count || 0) - (a.recruit_count || 0)).slice(0, 10);
+            
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'shadow' },
+                    formatter: function(params) {
+                        const d = sortedData[params[0].dataIndex];
+                        return `<strong>${d.city}</strong><br/>招录人数: ${d.recruit_count}人<br/>岗位数: ${d.position_count}个`;
+                    }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    top: '10%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: sortedData.map(d => d.city.replace('市', '')),
+                    axisLabel: { fontSize: 10, rotate: 30 }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '招录人数'
+                },
+                series: [{
+                    type: 'bar',
+                    data: sortedData.map(d => d.recruit_count),
+                    itemStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: '#3B82F6' },
+                            { offset: 1, color: '#1D4ED8' }
+                        ])
+                    },
+                    label: {
+                        show: true,
+                        position: 'top',
+                        fontSize: 10
+                    }
+                }]
+            };
+            
+            mapChart.setOption(option);
+        }
+        
+        // 获取城市数据
+        const params = new URLSearchParams({
+            year: currentYear,
+            exam_type: currentExamType
+        });
+        
+        fetch(`/positions/api/dashboard/city-stats?${params}`)
+            .then(r => r.json())
+            .then(cityData => {
+                if (!cityData || cityData.length === 0) {
+                    showError('暂无城市数据');
+                    return;
+                }
+                
+                // 转换为地图数据格式 - 确保城市名带"市"后缀以匹配 GeoJSON
+                // 江苏省13个地级市列表
+                const jsCities = ['南京', '无锡', '徐州', '常州', '苏州', '南通', '连云港', '淮安', '盐城', '扬州', '镇江', '泰州', '宿迁'];
+                const mapData = cityData.map(c => {
+                    let cityName = c.city;
+                    // 如果是地级市但没有"市"后缀，添加后缀
+                    if (jsCities.includes(cityName)) {
+                        cityName = cityName + '市';
+                    } else if (jsCities.some(city => cityName.startsWith(city)) && !cityName.endsWith('市')) {
+                        // 处理可能的变体
+                        const matched = jsCities.find(city => cityName.startsWith(city));
+                        if (matched) cityName = matched + '市';
+                    }
+                    return {
+                        name: cityName,
+                        value: c.recruit_count,
+                        positionCount: c.position_count,
+                        avgCompetition: c.avg_competition
+                    };
+                });
+                
+                // 加载江苏省地图
+                fetch('https://geo.datav.aliyun.com/areas_v3/bound/320000_full.json')
+                    .then(r => {
+                        if (!r.ok) throw new Error('地图数据加载失败');
+                        return r.json();
+                    })
+                    .then(geoJson => {
+                        clearLoading();
+                        
+                        if (!mapChart) {
+                            mapChart = echarts.init(container);
+                        }
+                        
+                        echarts.registerMap('jiangsu', geoJson);
+                        
+                        const option = {
+                            tooltip: {
+                                trigger: 'item',
+                                formatter: function(params) {
+                                    const data = params.data || {};
+                                    return `<strong>${params.name}</strong><br/>
+                                            招录人数: ${data.value || 0}人<br/>
+                                            岗位数: ${data.positionCount || 0}个<br/>
+                                            平均竞争比: ${data.avgCompetition || '-'}:1`;
+                                }
+                            },
+                            visualMap: {
+                                min: 0,
+                                max: Math.max(...mapData.map(d => d.value || 0)) || 1000,
+                                left: 'left',
+                                top: 'bottom',
+                                text: ['高', '低'],
+                                calculable: true,
+                                inRange: {
+                                    color: ['#EFF6FF', '#3B82F6', '#1D4ED8']
+                                }
+                            },
+                            series: [{
+                                name: '招录人数',
+                                type: 'map',
+                                map: 'jiangsu',
+                                roam: true,
+                                label: {
+                                    show: true,
+                                    fontSize: 10
+                                },
+                                emphasis: {
+                                    label: {
+                                        show: true,
+                                        fontSize: 12,
+                                        fontWeight: 'bold'
+                                    },
+                                    itemStyle: {
+                                        areaColor: '#F97316'
+                                    }
+                                },
+                                data: mapData
+                            }]
+                        };
+                        
+                        mapChart.setOption(option);
+                        
+                        // 地图点击交互 - 筛选城市
+                        mapChart.on('click', function(params) {
+                            if (params.name) {
+                                // GeoJSON 中的名称已经带"市"后缀
+                                filterByCity(params.name);
+                            }
+                        });
+                    })
+                    .catch(err => {
+                        console.error('地图加载失败:', err);
+                        // 使用备用柱状图
+                        showFallbackChart(cityData);
+                    });
+            })
+            .catch(err => {
+                console.error('城市数据加载失败:', err);
+                showError('数据加载失败，请刷新重试');
+            });
+    }
+    
+    // 系统类型分布
+    function initSystemChart() {
+        const container = document.getElementById('systemChart');
+        
+        const params = new URLSearchParams({
+            year: currentYear,
+            exam_type: currentExamType,
+            city: currentCity
+        });
+        
+        fetch(`/positions/api/dashboard/system-stats?${params}`)
+            .then(r => r.json())
+            .then(data => {
+                // 如果没有数据，显示提示信息
+                if (!data || data.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-data-msg">
+                            <i data-lucide="pie-chart" style="width:48px;height:48px;"></i>
+                            <span>${currentYear}年暂无系统类型数据</span>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                    systemChart = null;
+                    return;
+                }
+                
+                if (!systemChart) {
+                    systemChart = echarts.init(container);
+                }
+                
+                const option = {
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: '{b}: {c}人 ({d}%)'
+                    },
+                    legend: {
+                        orient: 'vertical',
+                        right: 10,
+                        top: 'center',
+                        textStyle: { fontSize: 11 }
+                    },
+                    series: [{
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        center: ['35%', '50%'],
+                        avoidLabelOverlap: false,
+                        label: { show: false },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: 12,
+                                fontWeight: 'bold'
+                            }
+                        },
+                        data: data.map(d => ({
+                            name: d.system_type,
+                            value: d.recruit_count
+                        }))
+                    }],
+                    color: ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#06B6D4']
+                };
+                
+                systemChart.setOption(option);
+            });
+    }
+    
+    // 学历分布
+    function initEducationChart() {
+        const container = document.getElementById('educationChart');
+        if (!educationChart) {
+            educationChart = echarts.init(container);
+        }
+        
+        const params = new URLSearchParams({
+            year: currentYear,
+            exam_type: currentExamType,
+            city: currentCity
+        });
+        
+        fetch(`/positions/api/dashboard/education-stats?${params}`)
+            .then(r => r.json())
+            .then(data => {
+                const option = {
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: '{b}: {c}个岗位'
+                    },
+                    legend: {
+                        orient: 'vertical',
+                        right: 10,
+                        top: 'center',
+                        textStyle: { fontSize: 11 }
+                    },
+                    series: [{
+                        type: 'pie',
+                        radius: '65%',
+                        center: ['35%', '50%'],
+                        label: { show: false },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: 12
+                            }
+                        },
+                        data: data.slice(0, 8).map(d => ({
+                            name: d.education,
+                            value: d.position_count
+                        }))
+                    }],
+                    color: ['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#06B6D4', '#EC4899', '#64748B']
+                };
+                
+                educationChart.setOption(option);
+            });
+    }
+    
+    // 年度对比
+    function initYearComparisonChart() {
+        const container = document.getElementById('yearComparisonChart');
+        if (!yearComparisonChart) {
+            yearComparisonChart = echarts.init(container);
+        }
+        
+        const params = new URLSearchParams({
+            exam_type: currentExamType,
+            city: currentCity
+        });
+        
+        fetch(`/positions/api/dashboard/year-comparison?${params}`)
+            .then(r => r.json())
+            .then(data => {
+                const years = data.map(d => d.year + '年');
+                
+                const option = {
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: { type: 'shadow' }
+                    },
+                    legend: {
+                        data: ['岗位数', '招录人数', '平均竞争比'],
+                        top: 0
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        top: '15%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: years
+                    },
+                    yAxis: [
+                        {
+                            type: 'value',
+                            name: '数量',
+                            position: 'left'
+                        },
+                        {
+                            type: 'value',
+                            name: '竞争比',
+                            position: 'right'
+                        }
+                    ],
+                    series: [
+                        {
+                            name: '岗位数',
+                            type: 'bar',
+                            data: data.map(d => d.position_count),
+                            itemStyle: { color: '#3B82F6' }
+                        },
+                        {
+                            name: '招录人数',
+                            type: 'bar',
+                            data: data.map(d => d.recruit_count),
+                            itemStyle: { color: '#10B981' }
+                        },
+                        {
+                            name: '平均竞争比',
+                            type: 'line',
+                            yAxisIndex: 1,
+                            data: data.map(d => d.avg_competition),
+                            itemStyle: { color: '#F59E0B' },
+                            lineStyle: { width: 3 }
+                        }
+                    ]
+                };
+                
+                yearComparisonChart.setOption(option);
+            });
+    }
+    
+    // 竞争比分布
+    function initCompetitionChart() {
+        const container = document.getElementById('competitionChart');
+        if (!competitionChart) {
+            competitionChart = echarts.init(container);
+        }
+        
+        const params = new URLSearchParams({
+            year: currentYear,
+            exam_type: currentExamType,
+            city: currentCity
+        });
+        
+        fetch(`/positions/api/dashboard/competition?${params}`)
+            .then(r => r.json())
+            .then(data => {
+                const distribution = data.distribution;
+                
+                const option = {
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: { type: 'shadow' }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        top: '10%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: distribution.map(d => d.range),
+                        axisLabel: { fontSize: 11 }
+                    },
+                    yAxis: {
+                        type: 'value',
+                        name: '岗位数'
+                    },
+                    series: [{
+                        type: 'bar',
+                        data: distribution.map((d, i) => ({
+                            value: d.count,
+                            itemStyle: {
+                                color: ['#22C55E', '#3B82F6', '#F59E0B', '#EF4444'][i]
+                            }
+                        })),
+                        barWidth: '50%',
+                        label: {
+                            show: true,
+                            position: 'top',
+                            fontSize: 12
+                        }
+                    }]
+                };
+                
+                competitionChart.setOption(option);
+            });
+    }
+    
+    // 城市排行
+    function initCityRanking() {
+        const params = new URLSearchParams({
+            year: currentYear,
+            exam_type: currentExamType
+        });
+        
+        fetch(`/positions/api/dashboard/city-stats?${params}`)
+            .then(r => r.json())
+            .then(data => {
+                const container = document.getElementById('cityRanking');
+                container.innerHTML = data.slice(0, 10).map((city, index) => `
+                    <div class="ranking-item" onclick="filterByCity('${city.city}')">
+                        <div class="ranking-num ${index < 3 ? 'top-' + (index + 1) : 'normal'}">${index + 1}</div>
+                        <div class="ranking-info">
+                            <div class="ranking-name">${city.city}</div>
+                            <div class="ranking-sub">岗位 ${city.position_count} 个 · 竞争比 ${city.avg_competition || '-'}:1</div>
+                        </div>
+                        <div class="ranking-value">${city.recruit_count}人</div>
+                    </div>
+                `).join('');
+            });
+    }
+    
+    // 进面分分布
+    function initScoreChart() {
+        const container = document.getElementById('scoreChart');
+        if (!scoreChart) {
+            scoreChart = echarts.init(container);
+        }
+        
+        const params = new URLSearchParams({
+            year: currentYear,
+            exam_type: currentExamType,
+            city: currentCity
+        });
+        
+        fetch(`/positions/api/dashboard/score-distribution?${params}`)
+            .then(r => r.json())
+            .then(data => {
+                const histogram = data.histogram;
+                
+                const option = {
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: { type: 'shadow' }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        top: '10%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: histogram.map(d => d.range),
+                        axisLabel: { fontSize: 11 }
+                    },
+                    yAxis: {
+                        type: 'value',
+                        name: '岗位数'
+                    },
+                    series: [{
+                        type: 'bar',
+                        data: histogram.map(d => d.count),
+                        itemStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: '#3B82F6' },
+                                { offset: 1, color: '#1D4ED8' }
+                            ])
+                        },
+                        barWidth: '60%',
+                        label: {
+                            show: true,
+                            position: 'top',
+                            fontSize: 11
+                        }
+                    }]
+                };
+                
+                scoreChart.setOption(option);
+            });
+    }
+    
+    // 热门专业
+    function initMajorChart() {
+        const container = document.getElementById('majorChart');
+        if (!majorChart) {
+            majorChart = echarts.init(container);
+        }
+        
+        const params = new URLSearchParams({
+            year: currentYear,
+            exam_type: currentExamType
+        });
+        
+        fetch(`/positions/api/dashboard/major-ranking?${params}`)
+            .then(r => r.json())
+            .then(data => {
+                // 横向柱状图
+                const top10 = data.slice(0, 10).reverse();
+                
+                const option = {
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: { type: 'shadow' }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '10%',
+                        bottom: '3%',
+                        top: '3%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'value'
+                    },
+                    yAxis: {
+                        type: 'category',
+                        data: top10.map(d => d.major.length > 8 ? d.major.substr(0, 8) + '...' : d.major),
+                        axisLabel: { fontSize: 11 }
+                    },
+                    series: [{
+                        type: 'bar',
+                        data: top10.map(d => d.count),
+                        itemStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                { offset: 0, color: '#8B5CF6' },
+                                { offset: 1, color: '#A855F7' }
+                            ])
+                        },
+                        label: {
+                            show: true,
+                            position: 'right',
+                            fontSize: 11
+                        }
+                    }]
+                };
+                
+                majorChart.setOption(option);
+            });
+    }
+    
+    // ==================== 选岗视角图表 ====================
+    function initStudentCharts() {
+        // 确保容器可见后再初始化图表
+        setTimeout(() => {
+            initStudentCompetitionChart();
+            initStudentScoreChart();
+            initCityOpportunityChart();
+            initRecommendList();
+        }, 100);
+    }
+    
+    // 显示空数据提示
+    function showEmptyMessage(container, message) {
+        container.innerHTML = `
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text-muted);">
+                <i data-lucide="bar-chart-2" style="width:40px;height:40px;opacity:0.3;margin-bottom:0.75rem;"></i>
+                <p style="margin:0;font-size:0.85rem;text-align:center;">${message}</p>
+            </div>
+        `;
+        lucide.createIcons();
+    }
+    
+    // 选岗视角 - 竞争热度
+    function initStudentCompetitionChart() {
+        const container = document.getElementById('studentCompetitionChart');
+        
+        const params = new URLSearchParams({
+            year: currentYear,
+            exam_type: currentExamType,
+            city: currentCity
+        });
+        
+        fetch(`/positions/api/dashboard/competition?${params}`)
+            .then(r => r.json())
+            .then(data => {
+                const distribution = data.distribution;
+                const totalCount = distribution.reduce((sum, d) => sum + d.count, 0);
+                
+                // 如果没有数据，显示提示
+                if (totalCount === 0) {
+                    showEmptyMessage(container, `${currentYear}年竞争比数据<br/>将在报名结束后更新`);
+                    return;
+                }
+                
+                if (!studentCompetitionChart) {
+                    studentCompetitionChart = echarts.init(container);
+                }
+                
+                const option = {
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: '{b}: {c}个岗位 ({d}%)'
+                    },
+                    legend: {
+                        orient: 'horizontal',
+                        bottom: 0,
+                        textStyle: { fontSize: 11 }
+                    },
+                    series: [{
+                        type: 'pie',
+                        radius: ['35%', '60%'],
+                        center: ['50%', '45%'],
+                        label: {
+                            show: true,
+                            formatter: '{b}\n{c}个',
+                            fontSize: 10
+                        },
+                        data: distribution.map((d, i) => ({
+                            name: d.range,
+                            value: d.count,
+                            itemStyle: {
+                                color: ['#22C55E', '#3B82F6', '#F59E0B', '#EF4444'][i]
+                            }
+                        }))
+                    }]
+                };
+                
+                studentCompetitionChart.setOption(option);
+            })
+            .catch(err => {
+                console.error('竞争热度加载失败:', err);
+                showEmptyMessage(container, '数据加载失败');
+            });
+    }
+    
+    // 选岗视角 - 进面分参考
+    function initStudentScoreChart() {
+        const container = document.getElementById('studentScoreChart');
+        
+        const params = new URLSearchParams({
+            year: currentYear,
+            exam_type: currentExamType,
+            city: currentCity
+        });
+        
+        fetch(`/positions/api/dashboard/score-distribution?${params}`)
+            .then(r => r.json())
+            .then(data => {
+                const stats = data.stats;
+                
+                // 如果没有分数数据，显示提示
+                if (!stats || !stats.count || stats.count === 0) {
+                    showEmptyMessage(container, `${currentYear}年进面分数据<br/>将在笔试成绩公布后更新`);
+                    return;
+                }
+                
+                if (!studentScoreChart) {
+                    studentScoreChart = echarts.init(container);
+                }
+                
+                const option = {
+                    tooltip: {
+                        trigger: 'axis'
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '15%',
+                        top: '15%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: ['最低分', '平均分', '中位数', '最高分'],
+                        axisLabel: { fontSize: 11 }
+                    },
+                    yAxis: {
+                        type: 'value',
+                        min: Math.floor((stats.min || 100) / 10) * 10 - 10,
+                        max: Math.ceil((stats.max || 180) / 10) * 10 + 10
+                    },
+                    series: [{
+                        type: 'bar',
+                        data: [
+                            { value: stats.min || 0, itemStyle: { color: '#22C55E' } },
+                            { value: stats.mean || 0, itemStyle: { color: '#3B82F6' } },
+                            { value: stats.median || 0, itemStyle: { color: '#8B5CF6' } },
+                            { value: stats.max || 0, itemStyle: { color: '#EF4444' } }
+                        ],
+                        barWidth: '50%',
+                        label: {
+                            show: true,
+                            position: 'top',
+                            fontSize: 12,
+                            fontWeight: 'bold'
+                        }
+                    }],
+                    graphic: stats.median ? [{
+                        type: 'text',
+                        left: 'center',
+                        bottom: 5,
+                        style: {
+                            text: `建议目标: ${Math.round(stats.median + 5)}分以上`,
+                            fontSize: 12,
+                            fill: '#64748B'
+                        }
+                    }] : []
+                };
+                
+                studentScoreChart.setOption(option);
+            })
+            .catch(err => {
+                console.error('分数分布加载失败:', err);
+                showEmptyMessage(container, '数据加载失败');
+            });
+    }
+    
+    // 选岗视角 - 城市机会分布
+    function initCityOpportunityChart() {
+        const container = document.getElementById('cityOpportunityChart');
+        
+        const params = new URLSearchParams({
+            year: currentYear,
+            exam_type: currentExamType
+        });
+        
+        fetch(`/positions/api/dashboard/city-stats?${params}`)
+            .then(r => r.json())
+            .then(data => {
+                // 如果没有竞争比数据，使用岗位数和招录人数生成柱状图替代
+                const hasCompetition = data.some(d => d.avg_competition);
+                
+                if (!hasCompetition) {
+                    // 使用柱状图显示各城市岗位数
+                    if (!cityOpportunityChart) {
+                        cityOpportunityChart = echarts.init(container);
+                    }
+                    
+                    const sortedData = data.sort((a, b) => (b.recruit_count || 0) - (a.recruit_count || 0)).slice(0, 10);
+                    
+                    const option = {
+                        title: {
+                            text: '各城市招录人数（竞争数据待更新）',
+                            left: 'center',
+                            top: 0,
+                            textStyle: { fontSize: 12, color: '#94A3B8' }
+                        },
+                        tooltip: {
+                            trigger: 'axis',
+                            axisPointer: { type: 'shadow' },
+                            formatter: function(params) {
+                                const d = sortedData[params[0].dataIndex];
+                                return `<strong>${d.city}</strong><br/>招录人数: ${d.recruit_count}人<br/>岗位数: ${d.position_count}个`;
+                            }
+                        },
+                        grid: {
+                            left: '3%',
+                            right: '4%',
+                            bottom: '3%',
+                            top: '15%',
+                            containLabel: true
+                        },
+                        xAxis: {
+                            type: 'category',
+                            data: sortedData.map(d => d.city.replace('市', '')),
+                            axisLabel: { fontSize: 10, rotate: 30 }
+                        },
+                        yAxis: {
+                            type: 'value',
+                            name: '招录人数'
+                        },
+                        series: [{
+                            type: 'bar',
+                            data: sortedData.map(d => d.recruit_count),
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                    { offset: 0, color: '#3B82F6' },
+                                    { offset: 1, color: '#1D4ED8' }
+                                ])
+                            },
+                            label: {
+                                show: true,
+                                position: 'top',
+                                fontSize: 10
+                            }
+                        }]
+                    };
+                    
+                    cityOpportunityChart.setOption(option);
+                    return;
+                }
+                
+                // 有竞争比数据时使用气泡图
+                if (!cityOpportunityChart) {
+                    cityOpportunityChart = echarts.init(container);
+                }
+                
+                const chartData = data.filter(d => d.avg_competition).map(d => ({
+                    name: d.city,
+                    value: [d.position_count, d.avg_competition, d.recruit_count]
+                }));
+                
+                const option = {
+                    tooltip: {
+                        formatter: function(params) {
+                            const d = params.data;
+                            return `<strong>${d.name}</strong><br/>
+                                    岗位数: ${d.value[0]}个<br/>
+                                    平均竞争比: ${d.value[1]}:1<br/>
+                                    招录人数: ${d.value[2]}人`;
+                        }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '10%',
+                        bottom: '10%',
+                        top: '10%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'value',
+                        name: '岗位数',
+                        nameLocation: 'middle',
+                        nameGap: 25
+                    },
+                    yAxis: {
+                        type: 'value',
+                        name: '平均竞争比',
+                        nameLocation: 'middle',
+                        nameGap: 40
+                    },
+                    series: [{
+                        type: 'scatter',
+                        symbolSize: function(data) {
+                            return Math.sqrt(data[2]) * 2;
+                        },
+                        data: chartData,
+                        label: {
+                            show: true,
+                            formatter: '{b}',
+                            position: 'right',
+                            fontSize: 10
+                        },
+                        itemStyle: {
+                            color: function(params) {
+                                const competition = params.data.value[1];
+                                if (competition < 30) return '#22C55E';
+                                if (competition < 50) return '#3B82F6';
+                                return '#F59E0B';
+                            }
+                        }
+                    }]
+                };
+                
+                cityOpportunityChart.setOption(option);
+            })
+            .catch(err => {
+                console.error('城市机会加载失败:', err);
+                showEmptyMessage(container, '数据加载失败');
+            });
+    }
+    
+    // 选岗视角 - 低竞争推荐
+    function initRecommendList() {
+        const education = document.getElementById('myEducation').value;
+        const major = document.getElementById('myMajor').value;
+        const container = document.getElementById('recommendList');
+        
+        const params = new URLSearchParams({
+            year: currentYear,
+            exam_type: currentExamType,
+            city: currentCity
+        });
+        if (education) params.append('education', education);
+        if (major) params.append('major', major);
+        
+        fetch(`/positions/api/dashboard/low-competition?${params}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.length === 0) {
+                    // 根据年份显示不同提示
+                    const isCurrentYear = currentYear >= new Date().getFullYear();
+                    const message = isCurrentYear 
+                        ? `${currentYear}年竞争数据将在报名结束后更新<br/>届时将显示低竞争岗位推荐`
+                        : '暂无符合条件的低竞争岗位';
+                    
+                    container.innerHTML = `
+                        <div class="text-center py-4 text-muted">
+                            <i data-lucide="clock" style="width:48px;height:48px;opacity:0.3;"></i>
+                            <p class="mt-3 mb-2" style="font-size:0.9rem;">${message}</p>
+                            <a href="${'{{ url_for("positions.list") }}'}?year=${currentYear}&exam_type=${currentExamType}&sort_by=recruit_count&sort_order=desc" 
+                               class="btn btn-sm btn-outline-primary mt-2">
+                                查看全部岗位
+                            </a>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                    return;
+                }
+                
+                container.innerHTML = data.map(p => `
+                    <div class="recommend-item" onclick="location.href='/positions/${p.id}'">
+                        <div class="recommend-item-header">
+                            <div>
+                                <div class="recommend-dept">${p.department_name}</div>
+                                <div class="recommend-position">${p.position_name} · ${p.city}</div>
+                            </div>
+                        </div>
+                        <div class="recommend-tags">
+                            <span class="recommend-tag competition">竞争比 ${p.competition_ratio}:1</span>
+                            <span class="recommend-tag score">进面分 ${p.min_entry_score || '-'}</span>
+                            <span class="recommend-tag">${p.education || '不限学历'}</span>
+                            <span class="recommend-tag">招${p.recruit_count}人</span>
+                        </div>
+                    </div>
+                `).join('');
+            })
+            .catch(err => {
+                console.error('推荐列表加载失败:', err);
+                container.innerHTML = `
+                    <div class="text-center py-4 text-muted">
+                        <p class="mb-0">数据加载失败，请刷新重试</p>
+                    </div>
+                `;
+            });
+    }
+    
+    // 城市筛选快捷操作
+    window.filterByCity = function(city) {
+        document.getElementById('cityFilter').value = city;
+        currentCity = city;
+        refreshData();
+    };
+    
+    // 选岗筛选按钮
+    document.getElementById('applyMatchFilter').addEventListener('click', function() {
+        const education = document.getElementById('myEducation').value;
+        const major = document.getElementById('myMajor').value;
+        
+        // 更新匹配统计
+        const params = new URLSearchParams({
+            year: currentYear,
+            exam_type: currentExamType
+        });
+        if (education) params.append('education', education);
+        if (major) params.append('major', major);
+        
+        fetch(`/positions/api/dashboard/matching-stats?${params}`)
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('matchTotal').textContent = data.total_matching;
+                document.getElementById('matchLowComp').textContent = data.low_competition_count;
+            });
+        
+        // 刷新推荐列表
+        initRecommendList();
+    });
+    
+    // 响应式图表
+    window.addEventListener('resize', function() {
+        if (mapChart) mapChart.resize();
+        if (systemChart) systemChart.resize();
+        if (educationChart) educationChart.resize();
+        if (yearComparisonChart) yearComparisonChart.resize();
+        if (competitionChart) competitionChart.resize();
+        if (scoreChart) scoreChart.resize();
+        if (majorChart) majorChart.resize();
+        if (studentCompetitionChart) studentCompetitionChart.resize();
+        if (studentScoreChart) studentScoreChart.resize();
+        if (cityOpportunityChart) cityOpportunityChart.resize();
+    });
+    
+    // 初始化
+    if (currentView === 'admin') {
+        initAdminCharts();
+    } else {
+        initStudentCharts();
+    }
+});
+
+// ==================== 导出功能 ====================
+function showExportModal() {
+    document.getElementById('exportModal').classList.add('show');
+    lucide.createIcons();
+}
+
+function hideExportModal() {
+    document.getElementById('exportModal').classList.remove('show');
+}
+
+// 点击背景关闭模态框
+document.getElementById('exportModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideExportModal();
+    }
+});
+
+// 导出图表为PNG
+function exportChartsToPNG() {
+    hideExportModal();
+    
+    // 获取所有图表实例
+    const chartContainers = document.querySelectorAll('[id$="Chart"]');
+    
+    chartContainers.forEach(container => {
+        const chart = echarts.getInstanceByDom(container);
+        if (chart) {
+            const url = chart.getDataURL({
+                type: 'png',
+                pixelRatio: 2,
+                backgroundColor: '#fff'
+            });
+            
+            // 创建下载链接
+            const link = document.createElement('a');
+            link.download = `${container.id}_${new Date().toISOString().split('T')[0]}.png`;
+            link.href = url;
+            link.click();
+        }
+    });
+    
+    alert('图表导出完成！');
+}
+
+// 导出数据为Excel/CSV
+function exportToExcel() {
+    hideExportModal();
+    
+    const year = document.getElementById('yearFilter').value;
+    const examType = document.getElementById('examTypeFilter').value;
+    
+    // 获取各项统计数据
+    Promise.all([
+        fetch(`/positions/api/dashboard/overview?year=${year}&exam_type=${examType}`).then(r => r.json()),
+        fetch(`/positions/api/dashboard/city-stats?year=${year}&exam_type=${examType}`).then(r => r.json()),
+        fetch(`/positions/api/dashboard/system-stats?year=${year}&exam_type=${examType}`).then(r => r.json()),
+        fetch(`/positions/api/dashboard/education-stats?year=${year}&exam_type=${examType}`).then(r => r.json())
+    ]).then(([overview, cityStats, systemStats, educationStats]) => {
+        // 构建CSV内容
+        let csv = '\uFEFF'; // BOM for UTF-8
+        
+        // 概览数据
+        csv += `${year}年${examType}岗位数据统计报告\n\n`;
+        csv += '一、总体概览\n';
+        csv += `岗位总数,${overview.total_positions}\n`;
+        csv += `招录人数,${overview.total_recruit}\n`;
+        csv += `平均竞争比,${overview.avg_competition}:1\n`;
+        csv += `平均进面分,${overview.avg_entry_score}\n`;
+        csv += `低竞争岗位数,${overview.low_competition_count}\n\n`;
+        
+        // 城市统计
+        csv += '二、城市招录统计\n';
+        csv += '城市,岗位数,招录人数,平均竞争比,平均进面分\n';
+        cityStats.forEach(c => {
+            csv += `${c.city},${c.position_count},${c.recruit_count},${c.avg_competition || '-'},${c.avg_entry_score || '-'}\n`;
+        });
+        csv += '\n';
+        
+        // 系统类型统计
+        csv += '三、系统类型统计\n';
+        csv += '系统类型,岗位数,招录人数,平均竞争比\n';
+        systemStats.forEach(s => {
+            csv += `${s.system_type},${s.position_count},${s.recruit_count},${s.avg_competition || '-'}\n`;
+        });
+        csv += '\n';
+        
+        // 学历统计
+        csv += '四、学历要求统计\n';
+        csv += '学历要求,岗位数,招录人数\n';
+        educationStats.forEach(e => {
+            csv += `${e.education},${e.position_count},${e.recruit_count}\n`;
+        });
+        
+        // 创建下载链接
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `岗位数据统计_${year}${examType}_${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+        
+        alert('数据导出完成！');
+    });
+}
+
+// 打印/保存PDF
+function printReport() {
+    hideExportModal();
+    
+    // 先确保所有图表渲染完成
+    setTimeout(() => {
+        window.print();
+    }, 500);
+}
+
+// 添加打印样式
+const printStyle = document.createElement('style');
+printStyle.innerHTML = `
+    @media print {
+        .sidebar, .filter-bar, .export-group, .nav-buttons, 
+        .regional-link-card, .match-filter-card, .view-switcher { 
+            display: none !important; 
+        }
+        .main-content { 
+            margin-left: 0 !important; 
+            padding: 0 !important;
+        }
+        .dashboard-header { 
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        .chart-card, .kpi-card { 
+            break-inside: avoid; 
+            page-break-inside: avoid;
+        }
+        body { 
+            background: white !important; 
+        }
+    }
+`;
+document.head.appendChild(printStyle);
+</script>
+{% endblock %}

@@ -1,0 +1,714 @@
+{% extends "base.html" %}
+
+{% block title %}课程日历 - 公考培训机构管理系统{% endblock %}
+
+{% block extra_css %}
+<!-- FullCalendar CSS -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+<style>
+    /* ========== 全局日历样式 ========== */
+    .fc {
+        font-family: inherit;
+    }
+    
+    /* 日历卡片容器 */
+    .calendar-card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+    .calendar-card .card-body {
+        padding: 1.5rem;
+    }
+    
+    /* 工具栏样式 */
+    .fc .fc-toolbar {
+        margin-bottom: 1.5rem !important;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .fc .fc-toolbar-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1a1a2e;
+        letter-spacing: -0.5px;
+    }
+    .fc .fc-button-group {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .fc .fc-button {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border: none;
+        transition: all 0.2s ease;
+    }
+    .fc .fc-button-primary {
+        background-color: #f0f4ff;
+        color: #4361ee;
+    }
+    .fc .fc-button-primary:hover {
+        background-color: #e0e7ff;
+        color: #3730a3;
+    }
+    .fc .fc-button-primary:not(:disabled).fc-button-active,
+    .fc .fc-button-primary:not(:disabled):active {
+        background: linear-gradient(135deg, #4361ee 0%, #3730a3 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(67, 97, 238, 0.35);
+    }
+    .fc .fc-button-primary:disabled {
+        background-color: #f0f4ff;
+        color: #a5b4fc;
+    }
+    .fc .fc-today-button {
+        border-radius: 10px !important;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+        color: white !important;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+    }
+    .fc .fc-today-button:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    }
+    .fc .fc-today-button:disabled {
+        background: #d1fae5 !important;
+        color: #6ee7b7 !important;
+        box-shadow: none;
+    }
+    
+    /* 日历表头 */
+    .fc .fc-col-header-cell {
+        padding: 0.75rem 0;
+        background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+        border: none;
+    }
+    .fc .fc-col-header-cell-cushion {
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+    }
+    
+    /* 日期单元格 */
+    .fc .fc-daygrid-day {
+        border-color: #f1f5f9 !important;
+        transition: background 0.2s ease;
+    }
+    .fc .fc-daygrid-day:hover {
+        background-color: #f8fafc;
+    }
+    .fc .fc-daygrid-day-frame {
+        min-height: 100px;
+    }
+    .fc .fc-daygrid-day-top {
+        padding: 0.5rem;
+    }
+    .fc .fc-daygrid-day-number {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #334155;
+        padding: 0.25rem 0.5rem;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+    .fc .fc-daygrid-day:hover .fc-daygrid-day-number {
+        background-color: #e0e7ff;
+        color: #4361ee;
+    }
+    
+    /* 今天的日期 */
+    .fc .fc-day-today {
+        background: linear-gradient(180deg, rgba(67, 97, 238, 0.08) 0%, rgba(67, 97, 238, 0.03) 100%) !important;
+    }
+    .fc .fc-day-today .fc-daygrid-day-number {
+        background: linear-gradient(135deg, #4361ee 0%, #3730a3 100%);
+        color: white !important;
+        box-shadow: 0 2px 8px rgba(67, 97, 238, 0.35);
+    }
+    
+    /* 事件样式 */
+    .fc-event {
+        cursor: pointer;
+        font-size: 0.75rem;
+        padding: 4px 8px;
+        border-radius: 6px;
+        border: none !important;
+        margin: 2px 4px;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        font-weight: 500;
+    }
+    .fc-event:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .fc-event-title {
+        font-weight: 500;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    /* 更多事件链接 */
+    .fc .fc-daygrid-more-link {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #4361ee;
+        padding: 4px 8px;
+        border-radius: 6px;
+        background: #f0f4ff;
+        margin: 2px 4px;
+    }
+    .fc .fc-daygrid-more-link:hover {
+        background: #e0e7ff;
+    }
+    
+    /* 周视图样式 */
+    .fc-timegrid-slot {
+        height: 3rem;
+    }
+    
+    /* ========== 筛选面板样式 ========== */
+    .filter-panel {
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 1px solid #f1f5f9;
+        overflow: hidden;
+    }
+    .filter-panel .panel-header {
+        background: linear-gradient(135deg, #4361ee 0%, #3730a3 100%);
+        color: white;
+        padding: 1rem 1.25rem;
+    }
+    .filter-panel .panel-header h6 {
+        margin: 0;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .filter-panel .panel-body {
+        padding: 1.25rem;
+    }
+    .filter-panel .form-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+    }
+    .filter-panel .form-select {
+        border-radius: 10px;
+        border-color: #e2e8f0;
+        font-size: 0.875rem;
+        padding: 0.625rem 0.875rem;
+        transition: all 0.2s ease;
+    }
+    .filter-panel .form-select:focus {
+        border-color: #4361ee;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+    }
+    .filter-panel .btn-reset {
+        width: 100%;
+        border-radius: 10px;
+        padding: 0.625rem;
+        font-weight: 500;
+        background: #f1f5f9;
+        border: none;
+        color: #64748b;
+        transition: all 0.2s ease;
+    }
+    .filter-panel .btn-reset:hover {
+        background: #e2e8f0;
+        color: #475569;
+    }
+    
+    /* ========== 图例样式 ========== */
+    .legend-panel {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 1px solid #f1f5f9;
+        overflow: hidden;
+    }
+    .legend-panel .panel-header {
+        background: #f8fafc;
+        padding: 0.875rem 1.25rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .legend-panel .panel-header h6 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: #475569;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .legend-panel .panel-body {
+        padding: 1rem 1.25rem;
+    }
+    .legend-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 0;
+        font-size: 0.85rem;
+        color: #475569;
+    }
+    .legend-color {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        margin-right: 0.75rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* ========== 模态框样式 ========== */
+    .modal-content {
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+    .modal-header {
+        background: linear-gradient(135deg, #4361ee 0%, #3730a3 100%);
+        color: white;
+        border-radius: 20px 20px 0 0;
+        padding: 1.25rem 1.5rem;
+        border: none;
+    }
+    .modal-header .modal-title {
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .modal-header .btn-close {
+        filter: brightness(0) invert(1);
+        opacity: 0.8;
+    }
+    .modal-header .btn-close:hover {
+        opacity: 1;
+    }
+    .modal-body {
+        padding: 1.5rem;
+    }
+    .modal-footer {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid #f1f5f9;
+    }
+    
+    /* 课程详情卡片 */
+    .schedule-item {
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        transition: all 0.2s ease;
+    }
+    .schedule-item:hover {
+        border-color: #4361ee;
+        box-shadow: 0 4px 12px rgba(67, 97, 238, 0.12);
+    }
+    .schedule-item:last-child {
+        margin-bottom: 0;
+    }
+    .schedule-item .batch-name {
+        font-weight: 700;
+        font-size: 1rem;
+        color: #1a1a2e;
+    }
+    .schedule-item .subject-badge {
+        font-size: 0.75rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 6px;
+        font-weight: 500;
+    }
+    .schedule-item .badge.bg-info {
+        background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%) !important;
+    }
+    
+    /* 时间段样式 */
+    .time-slot {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+        transition: background 0.2s ease;
+    }
+    .time-slot:hover {
+        background: #f8fafc;
+    }
+    .time-slot:last-child {
+        margin-bottom: 0;
+    }
+    .time-slot .time-label {
+        width: 70px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+    .time-slot .time-content {
+        flex: 1;
+        font-size: 0.875rem;
+        color: #334155;
+    }
+    .time-slot .time-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 0.75rem;
+    }
+    .time-slot.morning .time-icon {
+        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+        color: white;
+    }
+    .time-slot.afternoon .time-icon {
+        background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+        color: white;
+    }
+    .time-slot.evening .time-icon {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        color: white;
+    }
+    
+    /* 页面标题样式 */
+    .page-header {
+        margin-bottom: 1.5rem;
+    }
+    .page-header h4 {
+        font-weight: 700;
+        color: #1a1a2e;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .page-header p {
+        color: #64748b;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- 页面标题 -->
+    <div class="page-header">
+        <h4>
+            <i data-lucide="calendar" style="width:28px;height:28px;color:#4361ee;"></i>
+            课程日历
+        </h4>
+        <p class="mb-0">可视化查看和管理所有课程安排</p>
+    </div>
+    
+    <div class="row g-4">
+        <!-- 左侧筛选面板 -->
+        <div class="col-md-3 col-lg-2">
+            <!-- 筛选条件 -->
+            <div class="filter-panel mb-3">
+                <div class="panel-header">
+                    <h6>
+                        <i data-lucide="sliders-horizontal" style="width:18px;height:18px;"></i>
+                        筛选条件
+                    </h6>
+                </div>
+                <div class="panel-body">
+                    <div class="mb-3">
+                        <label class="form-label">班次</label>
+                        <select id="filterBatch" class="form-select">
+                            <option value="">全部班次</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">老师</label>
+                        <select id="filterTeacher" class="form-select">
+                            <option value="">全部老师</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">科目</label>
+                        <select id="filterSubject" class="form-select">
+                            <option value="">全部科目</option>
+                        </select>
+                    </div>
+                    <button id="btnResetFilter" class="btn btn-reset">
+                        <i data-lucide="refresh-cw" class="me-1" style="width:14px;height:14px;"></i>
+                        重置筛选
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 图例说明 -->
+            <div class="legend-panel">
+                <div class="panel-header">
+                    <h6>
+                        <i data-lucide="palette" style="width:16px;height:16px;"></i>
+                        状态图例
+                    </h6>
+                </div>
+                <div class="panel-body">
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);"></span>
+                        <span>招生中</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);"></span>
+                        <span>进行中</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);"></span>
+                        <span>已结束</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右侧日历主体 -->
+        <div class="col-md-9 col-lg-10">
+            <div class="card calendar-card">
+                <div class="card-body">
+                    <div id="calendar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 日期详情模态框 -->
+<div class="modal fade" id="dayDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i data-lucide="calendar-days" style="width:22px;height:22px;"></i>
+                    <span id="modalDateTitle">课程详情</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="dayDetailContent">
+                <!-- 动态加载内容 -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius:10px;padding:0.5rem 1.25rem;">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- FullCalendar JS -->
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/locales/zh-cn.global.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let calendar;
+    const calendarEl = document.getElementById('calendar');
+    const dayDetailModal = new bootstrap.Modal(document.getElementById('dayDetailModal'));
+    
+    // 初始化日历
+    calendar = new FullCalendar.Calendar(calendarEl, {
+        locale: 'zh-cn',
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,dayGridWeek'
+        },
+        buttonText: {
+            today: '今天',
+            month: '月',
+            week: '周'
+        },
+        dayMaxEvents: 3,
+        moreLinkText: '更多',
+        events: function(fetchInfo, successCallback, failureCallback) {
+            // 获取筛选条件
+            const batchId = document.getElementById('filterBatch').value;
+            const teacherId = document.getElementById('filterTeacher').value;
+            const subjectId = document.getElementById('filterSubject').value;
+            
+            let url = `/calendar/api/events?start=${fetchInfo.startStr}&end=${fetchInfo.endStr}`;
+            if (batchId) url += `&batch_id=${batchId}`;
+            if (teacherId) url += `&teacher_id=${teacherId}`;
+            if (subjectId) url += `&subject_id=${subjectId}`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    successCallback(data);
+                })
+                .catch(error => {
+                    console.error('获取日历事件失败:', error);
+                    failureCallback(error);
+                });
+        },
+        dateClick: function(info) {
+            // 点击日期显示详情
+            loadDayDetail(info.dateStr);
+        },
+        eventClick: function(info) {
+            // 点击事件也显示该日期详情
+            const dateStr = info.event.startStr.split('T')[0];
+            loadDayDetail(dateStr);
+        }
+    });
+    
+    calendar.render();
+    
+    // 加载筛选选项
+    loadFilters();
+    
+    // 筛选变化时刷新日历
+    document.getElementById('filterBatch').addEventListener('change', () => calendar.refetchEvents());
+    document.getElementById('filterTeacher').addEventListener('change', () => calendar.refetchEvents());
+    document.getElementById('filterSubject').addEventListener('change', () => calendar.refetchEvents());
+    
+    // 重置筛选
+    document.getElementById('btnResetFilter').addEventListener('click', function() {
+        document.getElementById('filterBatch').value = '';
+        document.getElementById('filterTeacher').value = '';
+        document.getElementById('filterSubject').value = '';
+        calendar.refetchEvents();
+    });
+    
+    // 加载筛选选项
+    function loadFilters() {
+        fetch('/calendar/api/filters')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 班次
+                    const batchSelect = document.getElementById('filterBatch');
+                    data.batches.forEach(b => {
+                        const option = document.createElement('option');
+                        option.value = b.id;
+                        option.textContent = b.name;
+                        batchSelect.appendChild(option);
+                    });
+                    
+                    // 老师
+                    const teacherSelect = document.getElementById('filterTeacher');
+                    data.teachers.forEach(t => {
+                        const option = document.createElement('option');
+                        option.value = t.id;
+                        option.textContent = t.name;
+                        teacherSelect.appendChild(option);
+                    });
+                    
+                    // 科目
+                    const subjectSelect = document.getElementById('filterSubject');
+                    data.subjects.forEach(s => {
+                        const option = document.createElement('option');
+                        option.value = s.id;
+                        option.textContent = s.name;
+                        subjectSelect.appendChild(option);
+                    });
+                }
+            });
+    }
+    
+    // 加载日期详情
+    function loadDayDetail(dateStr) {
+        document.getElementById('modalDateTitle').textContent = dateStr + ' 课程详情';
+        document.getElementById('dayDetailContent').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+        dayDetailModal.show();
+        
+        fetch(`/calendar/api/day-detail/${dateStr}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.schedules.length > 0) {
+                    let html = '';
+                    data.schedules.forEach(s => {
+                        const statusBadge = getStatusBadge(s.batch_status);
+                        html += `
+                            <div class="schedule-item">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <span class="batch-name">${s.batch_name}</span>
+                                    ${statusBadge}
+                                </div>
+                                <div class="d-flex align-items-center mb-3 flex-wrap gap-2">
+                                    <span class="badge bg-info subject-badge">${s.subject_name}</span>
+                                    <span class="badge bg-light text-dark" style="font-weight:500;">第 ${s.day_number} 天</span>
+                                    ${s.classroom ? `<span class="badge bg-light text-dark"><i data-lucide="map-pin" style="width:12px;height:12px;" class="me-1"></i>${s.classroom}</span>` : ''}
+                                </div>
+                                <div class="time-slot morning">
+                                    <div class="time-icon">
+                                        <i data-lucide="sun" style="width:16px;height:16px;"></i>
+                                    </div>
+                                    <div class="time-label">上午</div>
+                                    <div class="time-content">
+                                        <strong>${s.sessions.morning.time}</strong>
+                                        <span class="text-muted ms-2">${s.sessions.morning.teacher_name || '待定老师'}</span>
+                                    </div>
+                                </div>
+                                <div class="time-slot afternoon">
+                                    <div class="time-icon">
+                                        <i data-lucide="cloud-sun" style="width:16px;height:16px;"></i>
+                                    </div>
+                                    <div class="time-label">下午</div>
+                                    <div class="time-content">
+                                        <strong>${s.sessions.afternoon.time}</strong>
+                                        <span class="text-muted ms-2">${s.sessions.afternoon.teacher_name || '待定老师'}</span>
+                                    </div>
+                                </div>
+                                <div class="time-slot evening">
+                                    <div class="time-icon">
+                                        <i data-lucide="moon" style="width:16px;height:16px;"></i>
+                                    </div>
+                                    <div class="time-label">晚上</div>
+                                    <div class="time-content">
+                                        <strong>${s.sessions.evening.time}</strong>
+                                        <span class="text-muted ms-2">${s.sessions.evening.type === 'class' ? (s.sessions.evening.teacher_name || '待定老师') : '学员自习'}</span>
+                                    </div>
+                                </div>
+                                ${s.remark ? `<div class="mt-3 small text-muted" style="background:#f8fafc;padding:0.75rem;border-radius:8px;"><i data-lucide="message-square" style="width:14px;height:14px;" class="me-1"></i>${s.remark}</div>` : ''}
+                                <div class="mt-3">
+                                    <a href="/courses/batches/${s.batch_id}" class="btn btn-sm" style="background:linear-gradient(135deg,#4361ee,#3730a3);color:white;border-radius:8px;padding:0.5rem 1rem;">
+                                        <i data-lucide="external-link" style="width:14px;height:14px;" class="me-1"></i>查看班次详情
+                                    </a>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    document.getElementById('dayDetailContent').innerHTML = html;
+                    // 重新初始化 Lucide 图标
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons();
+                    }
+                } else {
+                    document.getElementById('dayDetailContent').innerHTML = `
+                        <div class="text-center py-4 text-muted">
+                            <i data-lucide="calendar-x" style="width:48px;height:48px;" class="mb-3"></i>
+                            <p>该日期暂无课程安排</p>
+                        </div>
+                    `;
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons();
+                    }
+                }
+            });
+    }
+    
+    function getStatusBadge(status) {
+        const badges = {
+            'recruiting': '<span class="badge" style="background:linear-gradient(135deg,#a855f7,#7c3aed);">招生中</span>',
+            'ongoing': '<span class="badge" style="background:linear-gradient(135deg,#22c55e,#16a34a);">进行中</span>',
+            'ended': '<span class="badge" style="background:linear-gradient(135deg,#94a3b8,#64748b);">已结束</span>'
+        };
+        return badges[status] || '<span class="badge bg-secondary">未知</span>';
+    }
+});
+</script>
+{% endblock %}

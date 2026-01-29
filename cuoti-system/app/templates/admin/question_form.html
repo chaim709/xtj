@@ -1,0 +1,90 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ '编辑题目' if question else '添加题目' }} - 错题收集系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">{{ '编辑题目' if question else '添加题目' }}</h1>
+    <a href="{{ url_for('admin.questions') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> 返回
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <div class="mb-3">
+                <label class="form-label">题干 <span class="text-danger">*</span></label>
+                <textarea name="stem" class="form-control" rows="4" required>{{ question.stem if question else '' }}</textarea>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">选项A</label>
+                    <input type="text" name="option_a" class="form-control" value="{{ question.option_a if question else '' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">选项B</label>
+                    <input type="text" name="option_b" class="form-control" value="{{ question.option_b if question else '' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">选项C</label>
+                    <input type="text" name="option_c" class="form-control" value="{{ question.option_c if question else '' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">选项D</label>
+                    <input type="text" name="option_d" class="form-control" value="{{ question.option_d if question else '' }}">
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">正确答案</label>
+                    <select name="answer" class="form-select">
+                        <option value="">请选择</option>
+                        {% for opt in ['A', 'B', 'C', 'D'] %}
+                        <option value="{{ opt }}" {% if question and question.answer == opt %}selected{% endif %}>{{ opt }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">难度</label>
+                    <select name="difficulty" class="form-select">
+                        {% for d in ['简单', '中等', '困难'] %}
+                        <option value="{{ d }}" {% if question and question.difficulty == d %}selected{% endif %}>{{ d }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">一级分类</label>
+                    <input type="text" name="category" class="form-control" value="{{ question.category if question else '' }}" placeholder="如：常识判断">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">二级分类</label>
+                    <input type="text" name="subcategory" class="form-control" value="{{ question.subcategory if question else '' }}" placeholder="如：法律">
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">知识点</label>
+                    <input type="text" name="knowledge_point" class="form-control" value="{{ question.knowledge_point if question else '' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">来源</label>
+                    <input type="text" name="source" class="form-control" value="{{ question.source if question else '' }}" placeholder="如：2025年真题">
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="form-label">解析</label>
+                <textarea name="analysis" class="form-control" rows="4">{{ question.analysis if question else '' }}</textarea>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg"></i> 保存
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}发布作业 - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<!-- 页面标题 -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="font-heading mb-1">发布作业</h4>
+        <p class="text-muted mb-0">创建新的作业任务并分配给学员</p>
+    </div>
+</div>
+
+<div class="card" style="border-radius:16px;border:none;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+    <div class="card-body p-4">
+        <form method="POST">
+            <div class="row">
+                <!-- 左侧：作业信息 -->
+                <div class="col-lg-6">
+                    <h6 class="font-heading mb-3" style="color:var(--primary);">
+                        <i data-lucide="file-text" style="width:16px;height:16px;margin-right:8px;"></i>作业信息
+                    </h6>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">作业名称 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="task_name" 
+                               placeholder="如：图形推理专项练习" required style="border-radius:10px;">
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">作业类型</label>
+                            <select class="form-select" name="task_type" style="border-radius:10px;">
+                                <option value="">请选择</option>
+                                <option value="专项练习">专项练习</option>
+                                <option value="套卷测试">套卷测试</option>
+                                <option value="错题回顾">错题回顾</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">学习模块</label>
+                            <select class="form-select" name="module" id="moduleSelect" style="border-radius:10px;">
+                                <option value="">请选择</option>
+                                {% for m in modules.keys() %}
+                                <option value="{{ m }}">{{ m }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">子模块</label>
+                        <select class="form-select" name="sub_module" id="subModuleSelect" style="border-radius:10px;">
+                            <option value="">请先选择模块</option>
+                        </select>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">题量</label>
+                            <input type="number" class="form-control" name="question_count" 
+                                   min="1" max="200" placeholder="如：50" style="border-radius:10px;">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">建议用时(分钟)</label>
+                            <input type="number" class="form-control" name="suggested_time" 
+                                   min="1" max="300" placeholder="如：60" style="border-radius:10px;">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">截止时间</label>
+                            <input type="datetime-local" class="form-control" name="deadline" style="border-radius:10px;">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">作业说明</label>
+                        <textarea class="form-control" name="description" rows="3" 
+                                  placeholder="可选，添加作业说明或要求..." style="border-radius:10px;"></textarea>
+                    </div>
+                </div>
+                
+                <!-- 右侧：目标学员 -->
+                <div class="col-lg-6">
+                    <h6 class="font-heading mb-3" style="color:var(--primary);">
+                        <i data-lucide="users" style="width:16px;height:16px;margin-right:8px;"></i>目标学员
+                    </h6>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">发送对象</label>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <label class="target-option" style="cursor:pointer;">
+                                <input type="radio" name="target_type" value="all" id="targetAll" checked class="d-none">
+                                <div class="target-card px-4 py-2" style="border:2px solid var(--primary);border-radius:20px;background:#EFF6FF;color:var(--primary);transition:all 0.2s;">
+                                    全部学员
+                                </div>
+                            </label>
+                            <label class="target-option" style="cursor:pointer;">
+                                <input type="radio" name="target_type" value="class" id="targetClass" class="d-none">
+                                <div class="target-card px-4 py-2" style="border:2px solid #E2E8F0;border-radius:20px;transition:all 0.2s;">
+                                    指定班次
+                                </div>
+                            </label>
+                            <label class="target-option" style="cursor:pointer;">
+                                <input type="radio" name="target_type" value="students" id="targetStudents" class="d-none">
+                                <div class="target-card px-4 py-2" style="border:2px solid #E2E8F0;border-radius:20px;transition:all 0.2s;">
+                                    指定学员
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- 班次选择 -->
+                    <div class="mb-3" id="classSelectDiv" style="display: none;">
+                        <label class="form-label">选择班次</label>
+                        <select class="form-select" name="target_class" style="border-radius:10px;">
+                            <option value="">请选择班次</option>
+                            {% for c in classes %}
+                            <option value="{{ c }}">{{ c }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- 学员选择 -->
+                    <div class="mb-3" id="studentsSelectDiv" style="display: none;">
+                        <label class="form-label">选择学员</label>
+                        <div style="max-height:300px;overflow-y:auto;border:1px solid #E2E8F0;border-radius:12px;padding:1rem;">
+                            {% for s in students %}
+                            <div class="form-check py-1">
+                                <input class="form-check-input student-checkbox" type="checkbox" 
+                                       name="target_students" value="{{ s.id }}" id="student_{{ s.id }}">
+                                <label class="form-check-label" for="student_{{ s.id }}">
+                                    {{ s.name }} {% if s.class_name %}<span style="color:#94A3B8;font-size:0.85rem;">({{ s.class_name }})</span>{% endif %}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="selectAll()" style="border-radius:8px;">全选</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="selectNone()" style="border-radius:8px;">取消全选</button>
+                        </div>
+                    </div>
+                    
+                    <div class="p-3" style="background:#EFF6FF;border-radius:12px;border:1px solid #DBEAFE;">
+                        <div class="d-flex align-items-start">
+                            <i data-lucide="info" style="width:18px;height:18px;color:#2563EB;margin-right:10px;margin-top:2px;"></i>
+                            <span style="color:#1E40AF;font-size:0.9rem;">作业发布后，学员完成情况需要督学人员手动录入。</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 操作按钮 -->
+            <div class="d-flex justify-content-end gap-2 mt-4 pt-4 border-top">
+                <a href="{{ url_for('homework.list') }}" class="btn btn-outline-secondary" style="border-radius:10px;padding:0.6rem 1.5rem;">取消</a>
+                <button type="submit" class="btn btn-primary" style="border-radius:10px;padding:0.6rem 1.5rem;">
+                    <i data-lucide="send" style="width:16px;height:16px;margin-right:6px;"></i> 发布作业
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 模块数据
+var modules = {{ modules|tojson|safe }};
+
+$(document).ready(function() {
+    lucide.createIcons();
+});
+
+// 模块选择变化
+$('#moduleSelect').change(function() {
+    var module = $(this).val();
+    var subSelect = $('#subModuleSelect');
+    subSelect.empty().append('<option value="">请选择子模块（可选）</option>');
+    
+    if (module && modules[module]) {
+        modules[module].forEach(function(sub) {
+            subSelect.append('<option value="' + sub + '">' + sub + '</option>');
+        });
+    }
+});
+
+// 目标类型切换
+$('input[name="target_type"]').change(function() {
+    var type = $(this).val();
+    $('#classSelectDiv').hide();
+    $('#studentsSelectDiv').hide();
+    
+    // 更新样式
+    $('.target-card').css({'border-color': '#E2E8F0', 'background': 'white', 'color': '#64748B'});
+    $(this).siblings('.target-card').css({'border-color': 'var(--primary)', 'background': '#EFF6FF', 'color': 'var(--primary)'});
+    
+    if (type === 'class') {
+        $('#classSelectDiv').show();
+    } else if (type === 'students') {
+        $('#studentsSelectDiv').show();
+    }
+});
+
+// 全选
+function selectAll() {
+    $('.student-checkbox').prop('checked', true);
+}
+
+// 取消全选
+function selectNone() {
+    $('.student-checkbox').prop('checked', false);
+}
+</script>
+{% endblock %}

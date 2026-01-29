@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>提交错题 - {{ workbook.name }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f7fb;
+            min-height: 100vh;
+            padding-bottom: 100px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .container {
+            padding: 15px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 6px;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+            background: white;
+        }
+        
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .student-search {
+            position: relative;
+        }
+        
+        .student-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .student-list.show {
+            display: block;
+        }
+        
+        .student-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .student-item:last-child {
+            border-bottom: none;
+        }
+        
+        .student-item:hover, .student-item.active {
+            background: #f0f4ff;
+        }
+        
+        .student-item .name {
+            font-weight: 600;
+        }
+        
+        .student-item .phone {
+            font-size: 12px;
+            color: #888;
+        }
+        
+        .selected-student {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            background: #e8f4fd;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .selected-student .info {
+            font-weight: 600;
+            color: #1a73e8;
+        }
+        
+        .selected-student .clear {
+            color: #e74c3c;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .question-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .question-item {
+            width: calc(33.33% - 7px);
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .question-item.selected {
+            background: #fee2e2;
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+        
+        .question-item:active {
+            transform: scale(0.95);
+        }
+        
+        .hint {
+            font-size: 13px;
+            color: #888;
+            margin-top: 10px;
+        }
+        
+        .submit-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 15px 20px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .submit-info {
+            flex: 1;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .submit-info strong {
+            color: #ef4444;
+            font-size: 20px;
+        }
+        
+        .submit-btn {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .submit-btn:disabled {
+            opacity: 0.5;
+        }
+        
+        /* 结果弹窗 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            text-align: center;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .result-item {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        
+        .result-num {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            line-height: 28px;
+            text-align: center;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            font-size: 14px;
+            margin-right: 8px;
+        }
+        
+        .result-stem {
+            font-size: 15px;
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+        
+        .result-answer {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #dcfce7;
+            color: #16a34a;
+            border-radius: 4px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .result-analysis {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+        }
+        
+        .close-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-top: 15px;
+            cursor: pointer;
+        }
+        
+        .no-student-hint {
+            text-align: center;
+            color: #888;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ workbook.name }}</h1>
+        {% if subcategory %}
+        <p style="font-size: 16px; margin-bottom: 4px;">📂 {{ subcategory }}</p>
+        {% endif %}
+        <p>第{{ start_order }}-{{ end_order }}题（共{{ total_questions_in_range }}题）</p>
+        <!-- 答案查看功能需要先实现相应路由 -->
+    </div>
+    
+    <div class="container">
+        <!-- 学员选择 -->
+        <div class="card">
+            <div class="card-title">选择学员</div>
+            <div class="form-group student-search">
+                <input type="text" id="studentSearch" placeholder="输入姓名搜索学员..." oninput="searchStudents()">
+                <div class="student-list" id="studentList"></div>
+            </div>
+            <div id="selectedStudent" style="display: none;">
+                <div class="selected-student">
+                    <span class="info" id="selectedName"></span>
+                    <span class="clear" onclick="clearStudent()">✕ 取消选择</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 做题数量 -->
+        <div class="card">
+            <div class="card-title">📝 本次做了多少题？</div>
+            <div class="form-group">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="number" id="totalAttempted" value="{{ total_questions_in_range }}" 
+                           min="1" max="{{ total_questions_in_range }}" 
+                           style="width: 100px; text-align: center; font-size: 20px; font-weight: bold;"
+                           oninput="updateAccuracy()">
+                    <span style="color: #666;">/ {{ total_questions_in_range }} 题</span>
+                </div>
+                <p class="hint">如果没做完，请修改实际做题数量</p>
+            </div>
+        </div>
+        
+        <!-- 错题选择 -->
+        <div class="card">
+            <div class="card-title">选择做错的题目</div>
+            <div class="question-list" id="questionList">
+                {% for q in questions %}
+                <div class="question-item" data-order="{{ q.order }}" data-id="{{ q.id }}">
+                    {{ q.order }}
+                </div>
+                {% endfor %}
+            </div>
+            <p class="hint">点击题号标记为错题，再次点击取消</p>
+        </div>
+        
+        <!-- 实时正确率 -->
+        <div class="card" id="accuracyCard" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <div style="text-align: center;">
+                <div style="font-size: 14px; opacity: 0.9; margin-bottom: 8px;">本次正确率</div>
+                <div style="font-size: 36px; font-weight: bold;" id="accuracyDisplay">100%</div>
+                <div style="font-size: 14px; opacity: 0.9; margin-top: 8px;">
+                    <span id="correctCount">{{ total_questions_in_range }}</span> / <span id="totalDisplay">{{ total_questions_in_range }}</span> 题正确
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 提交栏 -->
+    <div class="submit-bar">
+        <div class="submit-info">
+            已选择 <strong id="selectedCount">0</strong> 道错题
+        </div>
+        <button class="submit-btn" id="submitBtn" onclick="submitMistakes()">提交</button>
+    </div>
+    
+    <!-- 结果弹窗 -->
+    <div class="modal" id="resultModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>错题解析</h3>
+            </div>
+            <div class="modal-body" id="resultBody">
+                <!-- 动态填充 -->
+            </div>
+            <div style="padding: 0 20px 20px;">
+                <button class="close-btn" onclick="closeModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const qrCode = '{{ qr_code }}';
+        const maxQuestions = {{ total_questions_in_range }};
+        let selectedMistakes = [];
+        let selectedStudentId = null;
+        let selectedStudentName = '';
+        let allStudents = [];
+        
+        // 更新正确率显示
+        function updateAccuracy() {
+            const totalAttempted = parseInt(document.getElementById('totalAttempted').value) || 0;
+            const mistakeCount = selectedMistakes.length;
+            const correctCount = Math.max(0, totalAttempted - mistakeCount);
+            const accuracy = totalAttempted > 0 ? (correctCount / totalAttempted * 100).toFixed(1) : 0;
+            
+            document.getElementById('accuracyDisplay').textContent = accuracy + '%';
+            document.getElementById('correctCount').textContent = correctCount;
+            document.getElementById('totalDisplay').textContent = totalAttempted;
+            
+            // 根据正确率变色
+            const card = document.getElementById('accuracyCard');
+            if (accuracy >= 85) {
+                card.style.background = 'linear-gradient(135deg, #16a34a 0%, #22c55e 100%)';
+            } else if (accuracy >= 70) {
+                card.style.background = 'linear-gradient(135deg, #eab308 0%, #facc15 100%)';
+            } else {
+                card.style.background = 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)';
+            }
+        }
+        
+        // 加载学员列表
+        function loadStudents() {
+            fetch('/api/students/list')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        allStudents = data.students;
+                    }
+                });
+        }
+        
+        // 搜索学员
+        function searchStudents() {
+            const keyword = document.getElementById('studentSearch').value.trim();
+            const listEl = document.getElementById('studentList');
+            
+            if (keyword.length === 0) {
+                listEl.classList.remove('show');
+                return;
+            }
+            
+            const filtered = allStudents.filter(s => 
+                s.name.includes(keyword) || (s.phone && s.phone.includes(keyword))
+            );
+            
+            if (filtered.length === 0) {
+                listEl.innerHTML = '<div class="no-student-hint">未找到学员</div>';
+            } else {
+                listEl.innerHTML = filtered.map(s => `
+                    <div class="student-item" onclick="selectStudent(${s.id}, '${s.name}')">
+                        <div class="name">${s.name}</div>
+                        <div class="phone">${s.phone || ''}</div>
+                    </div>
+                `).join('');
+            }
+            
+            listEl.classList.add('show');
+        }
+        
+        // 选择学员
+        function selectStudent(id, name) {
+            selectedStudentId = id;
+            selectedStudentName = name;
+            
+            document.getElementById('studentSearch').style.display = 'none';
+            document.getElementById('studentList').classList.remove('show');
+            document.getElementById('selectedStudent').style.display = 'block';
+            document.getElementById('selectedName').textContent = name;
+        }
+        
+        // 清除选择
+        function clearStudent() {
+            selectedStudentId = null;
+            selectedStudentName = '';
+            
+            document.getElementById('studentSearch').style.display = 'block';
+            document.getElementById('studentSearch').value = '';
+            document.getElementById('selectedStudent').style.display = 'none';
+        }
+        
+        // 题目点击事件
+        document.querySelectorAll('.question-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const order = this.dataset.order;
+                
+                if (this.classList.contains('selected')) {
+                    this.classList.remove('selected');
+                    selectedMistakes = selectedMistakes.filter(o => o !== order);
+                } else {
+                    this.classList.add('selected');
+                    selectedMistakes.push(order);
+                }
+                
+                document.getElementById('selectedCount').textContent = selectedMistakes.length;
+                updateAccuracy();  // 更新正确率
+            });
+        });
+        
+        // 提交
+        function submitMistakes() {
+            if (!selectedStudentId) {
+                alert('请先选择学员');
+                return;
+            }
+            
+            if (selectedMistakes.length === 0) {
+                if (!confirm('没有选择错题，确定全部做对了吗？')) {
+                    return;
+                }
+            }
+            
+            // 提交
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('submitBtn').textContent = '提交中...';
+            
+            const totalAttempted = parseInt(document.getElementById('totalAttempted').value) || maxQuestions;
+            
+            fetch('/h5/submit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    qr_code: qrCode,
+                    student_id: selectedStudentId,
+                    mistakes: selectedMistakes,
+                    total_attempted: totalAttempted
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showResult(data);
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(err => {
+                alert('提交失败，请重试');
+            })
+            .finally(() => {
+                document.getElementById('submitBtn').disabled = false;
+                document.getElementById('submitBtn').textContent = '提交';
+            });
+        }
+        
+        // 显示结果
+        function showResult(data) {
+            let html = '';
+            
+            // 显示统计卡片
+            if (data.stats) {
+                const s = data.stats;
+                const rateColor = s.accuracy_rate >= 85 ? '#16a34a' : (s.accuracy_rate >= 70 ? '#eab308' : '#dc2626');
+                html += `
+                    <div style="background: linear-gradient(135deg, ${rateColor} 0%, ${rateColor}dd 100%); 
+                                color: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: center;">
+                        <div style="font-size: 14px; opacity: 0.9;">本次正确率</div>
+                        <div style="font-size: 42px; font-weight: bold; margin: 8px 0;">${s.accuracy_rate}%</div>
+                        <div style="font-size: 14px; opacity: 0.9;">
+                            做了 ${s.total_attempted} 题，对 ${s.correct_count} 题，错 ${s.mistake_count} 题
+                        </div>
+                        ${s.subcategory ? `<div style="margin-top: 8px; font-size: 13px;">📂 ${s.subcategory}</div>` : ''}
+                    </div>
+                `;
+            }
+            
+            html += '<p style="text-align:center;color:#16a34a;margin-bottom:20px;">' + data.message + '</p>';
+            
+            if (data.questions && data.questions.length > 0) {
+                html += '<h4 style="margin-bottom: 15px; color: #333;">错题解析</h4>';
+                data.questions.forEach(q => {
+                    html += `
+                        <div class="result-item">
+                            <span class="result-num">${q.order}</span>
+                            <div class="result-stem">${q.stem}</div>
+                            <div class="result-answer">正确答案: ${q.answer || '未知'}</div>
+                            ${q.analysis ? `<div class="result-analysis">${q.analysis}</div>` : ''}
+                        </div>
+                    `;
+                });
+            } else {
+                html += '<p style="text-align:center;color:#888;">🎉 恭喜，全部做对！</p>';
+            }
+            
+            document.getElementById('resultBody').innerHTML = html;
+            document.getElementById('resultModal').classList.add('show');
+        }
+        
+        function closeModal() {
+            document.getElementById('resultModal').classList.remove('show');
+        }
+        
+        // 页面加载时获取学员列表
+        loadStudents();
+        
+        // 点击其他地方关闭下拉
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.student-search')) {
+                document.getElementById('studentList').classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>

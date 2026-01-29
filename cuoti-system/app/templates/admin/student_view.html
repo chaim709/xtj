@@ -1,0 +1,175 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ student.name }}的学习分析 - 错题收集系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">
+        <i class="bi bi-person-circle me-2"></i>{{ student.name }}的学习分析
+    </h1>
+    <div class="d-flex gap-2">
+        {% if mistakes|length > 0 %}
+        <a href="{{ url_for('admin.download_mistake_book', id=student.id) }}" class="btn btn-outline-primary">
+            <i class="bi bi-download"></i> 错题本
+        </a>
+        {% endif %}
+        
+        <!-- 学习报告下拉 -->
+        <div class="dropdown">
+            <button class="btn btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-file-earmark-pdf"></i> 生成学习报告
+            </button>
+            <ul class="dropdown-menu">
+                <li><h6 class="dropdown-header">选择统计时间范围</h6></li>
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('admin.download_learning_report', id=student.id, period='7d') }}">
+                        <i class="bi bi-calendar-week me-2"></i>最近7天
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('admin.download_learning_report', id=student.id, period='30d') }}">
+                        <i class="bi bi-calendar-month me-2"></i>最近30天
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('admin.download_learning_report', id=student.id, period='90d') }}">
+                        <i class="bi bi-calendar3 me-2"></i>最近90天
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('admin.download_learning_report', id=student.id, period='all') }}">
+                        <i class="bi bi-calendar-check me-2"></i>全部记录
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <a href="{{ url_for('admin.students') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> 返回
+        </a>
+    </div>
+</div>
+
+<!-- 统计概览 -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card" style="border-left: 4px solid #1a73e8;">
+            <div class="stat-value text-primary">{{ mistakes|length }}</div>
+            <div class="stat-label">错题总数</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card" style="border-left: 4px solid #34a853;">
+            <div class="stat-value text-success">{{ submissions|length }}</div>
+            <div class="stat-label">提交次数</div>
+        </div>
+    </div>
+    {% for cat, count in category_stats %}
+    <div class="col-md-3">
+        <div class="card stat-card" style="border-left: 4px solid #ea4335;">
+            <div class="stat-value text-danger">{{ count }}</div>
+            <div class="stat-label">{{ cat }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- 提交记录 -->
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="bi bi-clock-history me-2"></i>提交记录
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>习题册</th>
+                    <th width="120">板块</th>
+                    <th width="80">做题数</th>
+                    <th width="80">正确数</th>
+                    <th width="80">错题数</th>
+                    <th width="100">正确率</th>
+                    <th width="150">提交时间</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sub in submissions %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('admin.view_workbook', id=sub.workbook.id) }}">
+                            {{ sub.workbook.name }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if sub.subcategory %}
+                        <span class="badge bg-secondary">{{ sub.subcategory }}</span>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ sub.total_attempted or '-' }}</td>
+                    <td><span class="text-success">{{ sub.correct_count or '-' }}</span></td>
+                    <td><span class="text-danger">{{ sub.mistake_count }}</span></td>
+                    <td>
+                        {% if sub.accuracy_rate is not none %}
+                        {% if sub.accuracy_rate >= 85 %}
+                        <span class="badge bg-success">{{ sub.accuracy_rate }}%</span>
+                        {% elif sub.accuracy_rate >= 70 %}
+                        <span class="badge bg-warning text-dark">{{ sub.accuracy_rate }}%</span>
+                        {% else %}
+                        <span class="badge bg-danger">{{ sub.accuracy_rate }}%</span>
+                        {% endif %}
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td><small>{{ sub.created_at.strftime('%Y-%m-%d %H:%M') }}</small></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center py-3 text-muted">暂无提交记录</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 错题列表 -->
+<div class="card">
+    <div class="card-header">错题详情</div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th width="80">题号</th>
+                    <th>题干</th>
+                    <th width="120">习题册</th>
+                    <th width="100">分类</th>
+                    <th width="80">答案</th>
+                    <th width="120">日期</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in mistakes %}
+                <tr>
+                    <td><code>{{ m.question.uid }}</code></td>
+                    <td>{{ m.question.stem[:50] }}...</td>
+                    <td>
+                        {% if m.workbook %}
+                        <small>{{ m.workbook.name[:15] }}...</small>
+                        {% else %}
+                        <small class="text-muted">-</small>
+                        {% endif %}
+                    </td>
+                    <td><span class="badge badge-category">{{ m.question.category }}</span></td>
+                    <td><strong>{{ m.question.answer }}</strong></td>
+                    <td><small>{{ m.created_at.strftime('%m-%d %H:%M') }}</small></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,932 @@
+{% extends "base.html" %}
+
+{% block title %}全年排课计划 - 公考培训机构管理系统{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ========== 页面整体样式 ========== */
+    .page-header {
+        margin-bottom: 1.5rem;
+    }
+    .page-header h4 {
+        font-weight: 700;
+        color: #1a1a2e;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .page-header p {
+        color: #64748b;
+        font-size: 0.875rem;
+    }
+    
+    /* 年份选择器 */
+    .year-selector {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: white;
+        padding: 0.5rem 1rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .year-selector .btn {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f1f5f9;
+        border: none;
+        color: #475569;
+        transition: all 0.2s ease;
+    }
+    .year-selector .btn:hover {
+        background: #e2e8f0;
+        color: #1e293b;
+    }
+    .year-selector .year-display {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1a1a2e;
+        min-width: 80px;
+        text-align: center;
+    }
+    
+    /* ========== 统计卡片 ========== */
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.25rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 1px solid #f1f5f9;
+        transition: all 0.2s ease;
+    }
+    .stat-card:hover {
+        box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    .stat-card .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+    .stat-card .stat-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #1a1a2e;
+        line-height: 1.2;
+    }
+    .stat-card .stat-label {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-top: 0.25rem;
+    }
+    
+    /* ========== 热力图样式 ========== */
+    .heatmap-card {
+        background: white;
+        border-radius: var(--radius-lg, 16px);
+        box-shadow: var(--shadow-card, 0 4px 20px rgba(0,0,0,0.06));
+        border: 1px solid var(--border-light, #f1f5f9);
+        overflow: hidden;
+    }
+    .heatmap-card .card-header {
+        background: linear-gradient(135deg, #4361ee 0%, #3730a3 100%);
+        color: white;
+        padding: 1.25rem 1.5rem;
+        border: none;
+        position: relative;
+    }
+    .heatmap-card .card-header h6 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .heatmap-card .card-body {
+        padding: 1.5rem;
+        padding-top: 1.25rem;
+    }
+    
+    /* 热力图容器 */
+    .heatmap-container {
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* 自定义滚动条 */
+    .heatmap-container::-webkit-scrollbar {
+        height: 6px;
+    }
+    .heatmap-container::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 3px;
+    }
+    .heatmap-container::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+    }
+    .heatmap-container::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+    
+    .heatmap-wrapper {
+        display: flex;
+        flex-direction: column;
+        min-width: 900px;
+        gap: 12px;
+    }
+    
+    /* 月份标签 - 修复重叠问题 */
+    .month-labels {
+        display: block;
+        margin-left: 36px;
+        height: 24px;
+        position: relative;
+        margin-bottom: 4px;
+    }
+    .month-label {
+        font-size: 0.75rem;
+        color: #64748b;
+        font-weight: 600;
+        white-space: nowrap;
+        position: absolute;
+        top: 0;
+    }
+    
+    /* 热力图主体 */
+    .heatmap-grid {
+        display: flex;
+        align-items: flex-start;
+    }
+    
+    /* 星期标签 */
+    .weekday-labels {
+        display: flex;
+        flex-direction: column;
+        margin-right: 8px;
+        width: 28px;
+        flex-shrink: 0;
+    }
+    .weekday-label {
+        height: 14px;
+        margin-bottom: 3px;
+        font-size: 0.7rem;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding-right: 4px;
+        line-height: 14px;
+        font-weight: 500;
+    }
+    .weekday-label:last-child {
+        margin-bottom: 0;
+    }
+    
+    /* 日期格子 */
+    .weeks-container {
+        display: flex;
+        gap: 3px;
+    }
+    .week-column {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+    .day-cell {
+        width: 14px;
+        height: 14px;
+        border-radius: 3px;
+        background: #ebedf0;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        position: relative;
+    }
+    .day-cell:hover {
+        transform: scale(1.4);
+        z-index: 10;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+    }
+    .day-cell.empty {
+        visibility: hidden;
+    }
+    
+    /* 热力图颜色等级 - 更丰富的绿色渐变 */
+    .day-cell.level-0 { background: #ebedf0; }
+    .day-cell.level-1 { background: #9be9a8; }
+    .day-cell.level-2 { background: #40c463; }
+    .day-cell.level-3 { background: #30a14e; }
+    .day-cell.level-4 { background: #216e39; }
+    
+    /* 图例 */
+    .heatmap-legend {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #f1f5f9;
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+    .legend-cells {
+        display: flex;
+        gap: 4px;
+    }
+    .legend-cell {
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+    }
+    
+    /* Tooltip */
+    .heatmap-tooltip {
+        position: fixed;
+        background: #1a1a2e;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        pointer-events: none;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        opacity: 0;
+        transition: opacity 0.15s ease;
+    }
+    .heatmap-tooltip.show {
+        opacity: 1;
+    }
+    .heatmap-tooltip .tooltip-date {
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    .heatmap-tooltip .tooltip-count {
+        color: #a5b4fc;
+    }
+    
+    /* ========== 柱状图样式 ========== */
+    .chart-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 1px solid #f1f5f9;
+        overflow: hidden;
+    }
+    .chart-card .card-header {
+        background: #f8fafc;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .chart-card .card-header h6 {
+        margin: 0;
+        font-weight: 600;
+        color: #1a1a2e;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .chart-card .card-body {
+        padding: 1.5rem;
+    }
+    .chart-container {
+        height: 300px;
+    }
+    
+    /* ========== 班次时间线 ========== */
+    .timeline-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 1px solid #f1f5f9;
+        overflow: hidden;
+    }
+    .timeline-card .card-header {
+        background: #f8fafc;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .timeline-card .card-header h6 {
+        margin: 0;
+        font-weight: 600;
+        color: #1a1a2e;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .timeline-card .card-body {
+        padding: 1.5rem;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    /* 时间线条目 */
+    .timeline-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem;
+        background: #f8fafc;
+        border-radius: 10px;
+        margin-bottom: 0.5rem;
+        transition: all 0.2s ease;
+    }
+    .timeline-item:hover {
+        background: #f1f5f9;
+    }
+    .timeline-item:last-child {
+        margin-bottom: 0;
+    }
+    .timeline-item .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 0.75rem;
+        flex-shrink: 0;
+    }
+    .timeline-item .status-dot.recruiting {
+        background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+    }
+    .timeline-item .status-dot.ongoing {
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    }
+    .timeline-item .status-dot.ended {
+        background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+    }
+    .timeline-item .batch-info {
+        flex: 1;
+    }
+    .timeline-item .batch-name {
+        font-weight: 600;
+        color: #1a1a2e;
+        font-size: 0.9rem;
+    }
+    .timeline-item .batch-meta {
+        font-size: 0.75rem;
+        color: #64748b;
+        margin-top: 2px;
+    }
+    .timeline-item .batch-stats {
+        text-align: right;
+    }
+    .timeline-item .batch-stats .stat-num {
+        font-weight: 700;
+        font-size: 1rem;
+        color: #4361ee;
+    }
+    .timeline-item .batch-stats .stat-label {
+        font-size: 0.7rem;
+        color: #94a3b8;
+    }
+    
+    /* 导航返回按钮 */
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #64748b;
+        text-decoration: none;
+        font-size: 0.875rem;
+        margin-bottom: 1rem;
+        transition: color 0.2s ease;
+    }
+    .back-link:hover {
+        color: #4361ee;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- 返回链接 -->
+    <a href="{{ url_for('calendar.index') }}" class="back-link">
+        <i data-lucide="arrow-left" style="width:16px;height:16px;"></i>
+        返回课程日历
+    </a>
+    
+    <!-- 页面标题 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="page-header mb-0">
+            <h4>
+                <i data-lucide="calendar-range" style="width:28px;height:28px;color:#4361ee;"></i>
+                全年排课计划
+            </h4>
+            <p class="mb-0">可视化展示全年课程安排和工作负荷分布</p>
+        </div>
+        
+        <!-- 年份选择器 -->
+        <div class="year-selector">
+            <button class="btn" id="prevYear">
+                <i data-lucide="chevron-left" style="width:18px;height:18px;"></i>
+            </button>
+            <span class="year-display" id="yearDisplay">{{ year }}</span>
+            <button class="btn" id="nextYear">
+                <i data-lucide="chevron-right" style="width:18px;height:18px;"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- 统计卡片 -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #4361ee 0%, #3730a3 100%);">
+                    <i data-lucide="calendar-days" style="width:24px;height:24px;color:white;"></i>
+                </div>
+                <div class="stat-value" id="totalDays">-</div>
+                <div class="stat-label">授课天数</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);">
+                    <i data-lucide="book-open" style="width:24px;height:24px;color:white;"></i>
+                </div>
+                <div class="stat-value" id="totalSchedules">-</div>
+                <div class="stat-label">总课程数</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                    <i data-lucide="users" style="width:24px;height:24px;color:white;"></i>
+                </div>
+                <div class="stat-value" id="totalBatches">-</div>
+                <div class="stat-label">开课班次</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);">
+                    <i data-lucide="trending-up" style="width:24px;height:24px;color:white;"></i>
+                </div>
+                <div class="stat-value" id="avgDaysPerMonth">-</div>
+                <div class="stat-label">月均授课天数</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 热力图 -->
+    <div class="heatmap-card mb-4">
+        <div class="card-header">
+            <h6>
+                <i data-lucide="grid-3x3" style="width:18px;height:18px;"></i>
+                全年排课热力图
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="heatmap-container">
+                <div class="heatmap-wrapper">
+                    <!-- 月份标签 -->
+                    <div class="month-labels" id="monthLabels"></div>
+                    
+                    <div class="heatmap-grid">
+                        <!-- 星期标签 -->
+                        <div class="weekday-labels">
+                            <div class="weekday-label"></div>
+                            <div class="weekday-label">一</div>
+                            <div class="weekday-label"></div>
+                            <div class="weekday-label">三</div>
+                            <div class="weekday-label"></div>
+                            <div class="weekday-label">五</div>
+                            <div class="weekday-label"></div>
+                        </div>
+                        
+                        <!-- 日期格子 -->
+                        <div class="weeks-container" id="weeksContainer"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 图例 -->
+            <div class="heatmap-legend">
+                <span>少</span>
+                <div class="legend-cells">
+                    <div class="legend-cell" style="background:#ebedf0;"></div>
+                    <div class="legend-cell" style="background:#9be9a8;"></div>
+                    <div class="legend-cell" style="background:#40c463;"></div>
+                    <div class="legend-cell" style="background:#30a14e;"></div>
+                    <div class="legend-cell" style="background:#216e39;"></div>
+                </div>
+                <span>多</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row g-4 mb-4">
+        <!-- 月度统计柱状图 -->
+        <div class="col-lg-8">
+            <div class="chart-card h-100">
+                <div class="card-header">
+                    <h6>
+                        <i data-lucide="bar-chart-3" style="width:18px;height:18px;color:#4361ee;"></i>
+                        月度授课统计
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="monthlyChart" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 科目分布 -->
+        <div class="col-lg-4">
+            <div class="chart-card h-100">
+                <div class="card-header">
+                    <h6>
+                        <i data-lucide="pie-chart" style="width:18px;height:18px;color:#4361ee;"></i>
+                        科目分布
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="subjectChart" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 班次时间线 -->
+    <div class="timeline-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">
+                <i data-lucide="git-branch" style="width:18px;height:18px;color:#4361ee;"></i>
+                班次时间线
+            </h6>
+            <span class="badge bg-primary" id="batchCount">0 个班次</span>
+        </div>
+        <div class="card-body" id="timelineContainer">
+            <!-- 动态加载 -->
+        </div>
+    </div>
+</div>
+
+<!-- Tooltip -->
+<div class="heatmap-tooltip" id="heatmapTooltip">
+    <div class="tooltip-date"></div>
+    <div class="tooltip-count"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- ECharts -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentYear = {{ year }};
+    let monthlyChart, subjectChart;
+    const tooltip = document.getElementById('heatmapTooltip');
+    
+    // 初始化图表
+    monthlyChart = echarts.init(document.getElementById('monthlyChart'));
+    subjectChart = echarts.init(document.getElementById('subjectChart'));
+    
+    // 加载所有数据
+    loadAllData();
+    
+    // 年份切换
+    document.getElementById('prevYear').addEventListener('click', function() {
+        currentYear--;
+        document.getElementById('yearDisplay').textContent = currentYear;
+        loadAllData();
+    });
+    
+    document.getElementById('nextYear').addEventListener('click', function() {
+        currentYear++;
+        document.getElementById('yearDisplay').textContent = currentYear;
+        loadAllData();
+    });
+    
+    // 窗口大小变化时重绘图表
+    window.addEventListener('resize', function() {
+        if (monthlyChart) monthlyChart.resize();
+        if (subjectChart) subjectChart.resize();
+    });
+    
+    function loadAllData() {
+        loadHeatmapData();
+        loadMonthlyStats();
+        loadSubjectDistribution();
+        loadBatchTimeline();
+    }
+    
+    // 加载热力图数据
+    function loadHeatmapData() {
+        fetch(`/calendar/api/yearly/heatmap?year=${currentYear}`)
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    renderHeatmap(res.data);
+                    // 更新统计卡片
+                    document.getElementById('totalDays').textContent = res.data.total_days;
+                    document.getElementById('totalSchedules').textContent = res.data.total_schedules;
+                    document.getElementById('avgDaysPerMonth').textContent = 
+                        Math.round(res.data.total_days / 12);
+                }
+            });
+    }
+    
+    // 渲染热力图
+    function renderHeatmap(data) {
+        const container = document.getElementById('weeksContainer');
+        const monthLabels = document.getElementById('monthLabels');
+        container.innerHTML = '';
+        monthLabels.innerHTML = '';
+        
+        const maxCount = data.max_count || 1;
+        const heatmapData = data.data;
+        
+        // 按周分组
+        const weeks = {};
+        const monthPositions = {};
+        
+        heatmapData.forEach(d => {
+            const weekNum = getWeekNumber(d.date);
+            if (!weeks[weekNum]) {
+                weeks[weekNum] = Array(7).fill(null);
+            }
+            weeks[weekNum][d.weekday] = d;
+            
+            // 记录每月第一次出现的周
+            if (!monthPositions[d.month]) {
+                monthPositions[d.month] = weekNum;
+            }
+        });
+        
+        // 渲染月份标签
+        const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+        const weekNums = Object.keys(weeks).map(Number).sort((a, b) => a - b);
+        const totalWeeks = weekNums.length;
+        const weekWidth = 17; // 14px格子 + 3px间距
+        
+        Object.entries(monthPositions).forEach(([month, weekNum]) => {
+            const position = weekNums.indexOf(weekNum) * weekWidth;
+            const label = document.createElement('span');
+            label.className = 'month-label';
+            label.textContent = monthNames[month - 1];
+            label.style.position = 'absolute';
+            label.style.left = position + 'px';
+            monthLabels.appendChild(label);
+        });
+        monthLabels.style.position = 'relative';
+        monthLabels.style.width = (totalWeeks * weekWidth) + 'px';
+        
+        // 渲染周列
+        weekNums.forEach(weekNum => {
+            const weekCol = document.createElement('div');
+            weekCol.className = 'week-column';
+            
+            for (let day = 0; day < 7; day++) {
+                const dayData = weeks[weekNum][day];
+                const cell = document.createElement('div');
+                cell.className = 'day-cell';
+                
+                if (dayData) {
+                    const level = getColorLevel(dayData.count, maxCount);
+                    cell.classList.add(`level-${level}`);
+                    cell.dataset.date = dayData.date;
+                    cell.dataset.count = dayData.count;
+                    
+                    // 添加悬停事件
+                    cell.addEventListener('mouseenter', showTooltip);
+                    cell.addEventListener('mouseleave', hideTooltip);
+                    cell.addEventListener('click', () => {
+                        window.location.href = `/calendar/?date=${dayData.date}`;
+                    });
+                } else {
+                    cell.classList.add('empty');
+                }
+                
+                weekCol.appendChild(cell);
+            }
+            
+            container.appendChild(weekCol);
+        });
+    }
+    
+    // 计算ISO周数
+    function getWeekNumber(dateStr) {
+        const date = new Date(dateStr);
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    }
+    
+    // 获取颜色等级
+    function getColorLevel(count, max) {
+        if (count === 0) return 0;
+        if (max === 0) return 0;
+        const ratio = count / max;
+        if (ratio <= 0.25) return 1;
+        if (ratio <= 0.5) return 2;
+        if (ratio <= 0.75) return 3;
+        return 4;
+    }
+    
+    // 显示提示
+    function showTooltip(e) {
+        const cell = e.target;
+        const date = cell.dataset.date;
+        const count = cell.dataset.count;
+        
+        tooltip.querySelector('.tooltip-date').textContent = formatDate(date);
+        tooltip.querySelector('.tooltip-count').textContent = count > 0 ? `${count} 节课程` : '无课程';
+        
+        const rect = cell.getBoundingClientRect();
+        tooltip.style.left = (rect.left + rect.width / 2) + 'px';
+        tooltip.style.top = (rect.top - 50) + 'px';
+        tooltip.classList.add('show');
+    }
+    
+    // 隐藏提示
+    function hideTooltip() {
+        tooltip.classList.remove('show');
+    }
+    
+    // 格式化日期
+    function formatDate(dateStr) {
+        const date = new Date(dateStr);
+        const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+        return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${weekDays[date.getDay()]}`;
+    }
+    
+    // 加载月度统计
+    function loadMonthlyStats() {
+        fetch(`/calendar/api/yearly/monthly-stats?year=${currentYear}`)
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    renderMonthlyChart(res.data);
+                }
+            });
+    }
+    
+    // 渲染月度图表
+    function renderMonthlyChart(data) {
+        const option = {
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: { type: 'shadow' },
+                formatter: function(params) {
+                    const d = data[params[0].dataIndex];
+                    return `<strong>${d.month_name}</strong><br/>
+                            授课天数: ${d.teaching_days} 天<br/>
+                            课程数量: ${d.schedule_count} 节<br/>
+                            班次数量: ${d.batch_count} 个`;
+                }
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                top: '10%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                data: data.map(d => d.month_name),
+                axisLine: { lineStyle: { color: '#e2e8f0' } },
+                axisLabel: { color: '#64748b' }
+            },
+            yAxis: [
+                {
+                    type: 'value',
+                    name: '授课天数',
+                    axisLine: { show: false },
+                    axisTick: { show: false },
+                    splitLine: { lineStyle: { color: '#f1f5f9' } },
+                    axisLabel: { color: '#64748b' }
+                }
+            ],
+            series: [
+                {
+                    name: '授课天数',
+                    type: 'bar',
+                    data: data.map(d => d.teaching_days),
+                    barWidth: '50%',
+                    itemStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: '#4361ee' },
+                            { offset: 1, color: '#3730a3' }
+                        ]),
+                        borderRadius: [6, 6, 0, 0]
+                    }
+                }
+            ]
+        };
+        monthlyChart.setOption(option);
+    }
+    
+    // 加载科目分布
+    function loadSubjectDistribution() {
+        fetch(`/calendar/api/yearly/subject-distribution?year=${currentYear}`)
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    renderSubjectChart(res.data);
+                }
+            });
+    }
+    
+    // 渲染科目图表
+    function renderSubjectChart(data) {
+        const colors = ['#4361ee', '#22c55e', '#f59e0b', '#ec4899', '#06b6d4', '#8b5cf6', '#ef4444', '#14b8a6'];
+        
+        const option = {
+            tooltip: {
+                trigger: 'item',
+                formatter: '{b}: {c} 节 ({d}%)'
+            },
+            legend: {
+                orient: 'vertical',
+                right: '5%',
+                top: 'center',
+                itemWidth: 12,
+                itemHeight: 12,
+                textStyle: { fontSize: 12, color: '#64748b' }
+            },
+            series: [{
+                type: 'pie',
+                radius: ['45%', '70%'],
+                center: ['35%', '50%'],
+                avoidLabelOverlap: false,
+                itemStyle: {
+                    borderRadius: 6,
+                    borderColor: '#fff',
+                    borderWidth: 2
+                },
+                label: { show: false },
+                emphasis: {
+                    label: {
+                        show: true,
+                        fontSize: 14,
+                        fontWeight: 'bold'
+                    }
+                },
+                data: data.map((d, i) => ({
+                    name: d.name,
+                    value: d.count,
+                    itemStyle: { color: colors[i % colors.length] }
+                }))
+            }]
+        };
+        subjectChart.setOption(option);
+    }
+    
+    // 加载班次时间线
+    function loadBatchTimeline() {
+        fetch(`/calendar/api/yearly/batch-timeline?year=${currentYear}`)
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    renderTimeline(res.data);
+                    document.getElementById('totalBatches').textContent = res.data.length;
+                    document.getElementById('batchCount').textContent = res.data.length + ' 个班次';
+                }
+            });
+    }
+    
+    // 渲染时间线
+    function renderTimeline(data) {
+        const container = document.getElementById('timelineContainer');
+        
+        if (data.length === 0) {
+            container.innerHTML = '<div class="text-center py-4 text-muted">暂无班次数据</div>';
+            return;
+        }
+        
+        let html = '';
+        data.forEach(batch => {
+            html += `
+                <div class="timeline-item">
+                    <div class="status-dot ${batch.status}"></div>
+                    <div class="batch-info">
+                        <div class="batch-name">${batch.name}</div>
+                        <div class="batch-meta">
+                            ${batch.start_date} ~ ${batch.end_date} · ${batch.duration_days} 天
+                        </div>
+                    </div>
+                    <div class="batch-stats">
+                        <div class="stat-num">${batch.schedule_count}</div>
+                        <div class="stat-label">课程数</div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+});
+</script>
+{% endblock %}

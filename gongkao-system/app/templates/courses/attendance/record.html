@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}签到 - {{ schedule.schedule_date.strftime('%m月%d日') }} - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<!-- 页面标题 -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+        <a href="{{ url_for('courses.attendance_list', batch_id=batch.id) }}" class="btn btn-outline-secondary me-3">
+            <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+        </a>
+        <div>
+            <h4 class="mb-1 font-heading">签到 - Day {{ schedule.day_number }}</h4>
+            <p class="text-muted mb-0">
+                {{ batch.name }} · {{ schedule.schedule_date.strftime('%Y年%m月%d日') }}
+                {% if schedule.subject %} · {{ schedule.subject.name }}{% endif %}
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 font-heading"><i data-lucide="check-square" style="width:18px;height:18px;"></i> 学员签到</h6>
+        <div class="btn-group btn-group-sm">
+            <button type="button" class="btn btn-outline-success" onclick="setAllStatus('present')">全部出勤</button>
+            <button type="button" class="btn btn-outline-secondary" onclick="setAllStatus('absent')">全部缺勤</button>
+        </div>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            {% if students %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width:60px;">#</th>
+                            <th>学员</th>
+                            <th style="width:200px;">签到状态</th>
+                            <th>备注</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in students %}
+                        {% set att = existing.get(student.id) %}
+                        <tr>
+                            <td class="text-muted">{{ loop.index }}</td>
+                            <td class="fw-medium">{{ student.name }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm w-100" role="group">
+                                    <input type="radio" class="btn-check status-radio" name="status_{{ student.id }}" id="present_{{ student.id }}" value="present" {{ 'checked' if att and att.status == 'present' else ('checked' if not att else '') }}>
+                                    <label class="btn btn-outline-success" for="present_{{ student.id }}">出勤</label>
+                                    
+                                    <input type="radio" class="btn-check status-radio" name="status_{{ student.id }}" id="absent_{{ student.id }}" value="absent" {{ 'checked' if att and att.status == 'absent' else '' }}>
+                                    <label class="btn btn-outline-danger" for="absent_{{ student.id }}">缺勤</label>
+                                    
+                                    <input type="radio" class="btn-check status-radio" name="status_{{ student.id }}" id="late_{{ student.id }}" value="late" {{ 'checked' if att and att.status == 'late' else '' }}>
+                                    <label class="btn btn-outline-warning" for="late_{{ student.id }}">迟到</label>
+                                    
+                                    <input type="radio" class="btn-check status-radio" name="status_{{ student.id }}" id="leave_{{ student.id }}" value="leave" {{ 'checked' if att and att.status == 'leave' else '' }}>
+                                    <label class="btn btn-outline-info" for="leave_{{ student.id }}">请假</label>
+                                </div>
+                            </td>
+                            <td>
+                                <input type="text" name="remark_{{ student.id }}" class="form-control form-control-sm" value="{{ att.remark if att else '' }}" placeholder="备注">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="text-end mt-4 pt-4 border-top">
+                <a href="{{ url_for('courses.attendance_list', batch_id=batch.id) }}" class="btn btn-outline-secondary me-2">取消</a>
+                <button type="submit" class="btn btn-primary">
+                    <i data-lucide="save" style="width:18px;height:18px;"></i> 保存签到记录
+                </button>
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i data-lucide="users-x" style="width:48px;height:48px;" class="mb-3"></i>
+                <h6>该班次暂无学员</h6>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    lucide.createIcons();
+    
+    function setAllStatus(status) {
+        $('input[value="' + status + '"].status-radio').prop('checked', true);
+    }
+</script>
+{% endblock %}

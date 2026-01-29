@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ '编辑' if package else '新增' }}报名套餐 - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<!-- 页面标题 -->
+<div class="d-flex align-items-center mb-4">
+    <a href="{{ url_for('courses.package_list', project_id=current_project.id if current_project else '') }}" class="btn btn-outline-secondary me-3">
+        <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+    </a>
+    <div>
+        <h4 class="mb-1 font-heading">{{ '编辑' if package else '新增' }}报名套餐</h4>
+        <p class="text-muted mb-0">{{ current_project.name if current_project else '' }}</p>
+    </div>
+</div>
+
+<form method="POST">
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0">基本信息</h6>
+                </div>
+                <div class="card-body">
+                    {% if not package %}
+                    <input type="hidden" name="project_id" value="{{ current_project.id if current_project else '' }}">
+                    {% endif %}
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">套餐名称 <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" value="{{ package.name if package else '' }}" required placeholder="如：全程班、暑假班">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">套餐类型 <span class="text-danger">*</span></label>
+                            <select name="package_type" class="form-select" required>
+                                <option value="full" {{ 'selected' if package and package.package_type == 'full' else '' }}>全程班（按天数）</option>
+                                <option value="period" {{ 'selected' if package and package.package_type == 'period' else '' }}>期限班（按日期）</option>
+                                <option value="single_type" {{ 'selected' if package and package.package_type == 'single_type' else '' }}>单班型</option>
+                                <option value="single_subject" {{ 'selected' if package and package.package_type == 'single_subject' else '' }}>单科目</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">原价 (元) <span class="text-danger">*</span></label>
+                            <input type="number" name="price" class="form-control" value="{{ '%.0f' | format(package.price) if package else '' }}" required min="0" step="100">
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">有效天数</label>
+                            <input type="number" name="valid_days" class="form-control" value="{{ package.valid_days if package else '' }}" min="1" placeholder="全程班使用">
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">排序</label>
+                            <input type="number" name="sort_order" class="form-control" value="{{ package.sort_order if package else 0 }}" min="0">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">有效期开始</label>
+                            <input type="date" name="valid_start" class="form-control" value="{{ package.valid_start.strftime('%Y-%m-%d') if package and package.valid_start else '' }}">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">有效期结束</label>
+                            <input type="date" name="valid_end" class="form-control" value="{{ package.valid_end.strftime('%Y-%m-%d') if package and package.valid_end else '' }}">
+                        </div>
+                        
+                        <div class="col-12">
+                            <label class="form-label">套餐说明</label>
+                            <textarea name="description" class="form-control" rows="2">{{ package.description if package else '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 优惠规则 -->
+            <div class="card mt-4">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0">优惠规则</h6>
+                </div>
+                <div class="card-body">
+                    {% set rules = package.get_discount_rules() if package else {} %}
+                    
+                    <h6 class="text-muted small mb-3">团报优惠</h6>
+                    <div class="row g-2 mb-4">
+                        {% for i in range(1, 4) %}
+                        {% set group = rules.get('group_discount', [])[i-1] if rules.get('group_discount') and i <= rules.get('group_discount')|length else {} %}
+                        <div class="col-md-4">
+                            <div class="input-group input-group-sm">
+                                <input type="number" name="group_min_{{ i }}" class="form-control" placeholder="人数" min="2" value="{{ group.get('min_people', '') }}">
+                                <span class="input-group-text">人优惠</span>
+                                <input type="number" name="group_discount_{{ i }}" class="form-control" placeholder="金额" min="0" value="{{ '%.0f' | format(group.get('discount', 0)) if group.get('discount') else '' }}">
+                                <span class="input-group-text">元</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <h6 class="text-muted small mb-3">早鸟优惠</h6>
+                    {% set early_bird = rules.get('early_bird', {}) %}
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">截止日期</span>
+                                <input type="date" name="early_bird_end" class="form-control" value="{{ early_bird.get('end_date', '') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">优惠金额</span>
+                                <input type="number" name="early_bird_discount" class="form-control" placeholder="金额" min="0" value="{{ '%.0f' | format(early_bird.get('discount', 0)) if early_bird.get('discount') else '' }}">
+                                <span class="input-group-text">元</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h6 class="card-title"><i data-lucide="info" style="width:16px;height:16px;"></i> 套餐类型说明</h6>
+                    <ul class="mb-0 text-muted" style="font-size: 0.85rem;">
+                        <li class="mb-2"><strong>全程班</strong>：按有效天数计算，在有效期内可参加所有课程</li>
+                        <li class="mb-2"><strong>期限班</strong>：指定日期范围内的所有课程</li>
+                        <li class="mb-2"><strong>单班型</strong>：仅参加指定班型的课程</li>
+                        <li><strong>单科目</strong>：仅参加指定科目的课程</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i data-lucide="save" style="width:18px;height:18px;"></i> 保存套餐
+                        </button>
+                        <a href="{{ url_for('courses.package_list', project_id=current_project.id if current_project else '') }}" class="btn btn-outline-secondary">取消</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}

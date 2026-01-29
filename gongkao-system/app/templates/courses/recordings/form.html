@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ '编辑录播' if recording else '新增录播' }} - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<!-- 页面标题 -->
+<div class="d-flex align-items-center mb-4">
+    <a href="{{ url_for('courses.recording_list') }}" class="btn btn-outline-secondary me-3">
+        <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+    </a>
+    <div>
+        <h4 class="mb-1 font-heading">{{ '编辑录播' if recording else '新增录播' }}</h4>
+        <p class="text-muted mb-0">{{ '修改录播信息' if recording else '添加课程录播链接（腾讯会议等）' }}</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="return_to" value="{{ request.args.get('return_to', '') }}">
+                    
+                    <!-- 基本信息 -->
+                    <h6 class="mb-3 font-heading"><i data-lucide="video" style="width:16px;height:16px;"></i> 基本信息</h6>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">班次 <span class="text-danger">*</span></label>
+                            <select name="batch_id" class="form-select" required {{ 'disabled' if recording else '' }}>
+                                <option value="">选择班次</option>
+                                {% for batch in batches %}
+                                <option value="{{ batch.id }}" 
+                                    {{ 'selected' if (recording and recording.batch_id == batch.id) or (current_batch and current_batch.id == batch.id) else '' }}>
+                                    {{ batch.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            {% if recording %}
+                            <input type="hidden" name="batch_id" value="{{ recording.batch_id }}">
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">日期 <span class="text-danger">*</span></label>
+                            <input type="date" name="recording_date" class="form-control" required
+                                   value="{{ recording.recording_date.strftime('%Y-%m-%d') if recording else '' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">时段 <span class="text-danger">*</span></label>
+                            <select name="period" class="form-select" required>
+                                <option value="morning" {{ 'selected' if recording and recording.period == 'morning' else '' }}>上午</option>
+                                <option value="afternoon" {{ 'selected' if recording and recording.period == 'afternoon' else '' }}>下午</option>
+                                <option value="evening" {{ 'selected' if recording and recording.period == 'evening' else '' }}>晚间</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-12">
+                            <label class="form-label">录播标题 <span class="text-danger">*</span></label>
+                            <input type="text" name="title" class="form-control" required
+                                   placeholder="如：资料分析第一天上午 - 增长率专题"
+                                   value="{{ recording.title if recording else '' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-12">
+                            <label class="form-label">录播链接 <span class="text-danger">*</span></label>
+                            <input type="url" name="recording_url" class="form-control" required
+                                   placeholder="https://meeting.tencent.com/v2/cloud-record/..."
+                                   value="{{ recording.recording_url if recording else '' }}">
+                            <div class="form-text">粘贴腾讯会议、Zoom等平台的录播链接</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 课程信息 -->
+                    <h6 class="mb-3 font-heading"><i data-lucide="book-open" style="width:16px;height:16px;"></i> 课程信息</h6>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label">科目</label>
+                            <select name="subject_id" class="form-select">
+                                <option value="">选择科目</option>
+                                {% for subject in subjects %}
+                                <option value="{{ subject.id }}" {{ 'selected' if recording and recording.subject_id == subject.id else '' }}>
+                                    {{ subject.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">授课老师</label>
+                            <select name="teacher_id" class="form-select">
+                                <option value="">选择老师</option>
+                                {% for teacher in teachers %}
+                                <option value="{{ teacher.id }}" {{ 'selected' if recording and recording.teacher_id == teacher.id else '' }}>
+                                    {{ teacher.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">时长（分钟）</label>
+                            <input type="number" name="duration_minutes" class="form-control" min="1"
+                                   placeholder="如：120"
+                                   value="{{ recording.duration_minutes if recording and recording.duration_minutes else '' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-12">
+                            <label class="form-label">备注</label>
+                            <textarea name="remark" class="form-control" rows="3" 
+                                      placeholder="可选：添加备注信息">{{ recording.remark if recording else '' }}</textarea>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i data-lucide="save" style="width:16px;height:16px;"></i> 
+                            {{ '保存修改' if recording else '添加录播' }}
+                        </button>
+                        <a href="{{ url_for('courses.recording_list') }}" class="btn btn-outline-secondary">取消</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 右侧提示 -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0 font-heading"><i data-lucide="info" style="width:16px;height:16px;"></i> 使用说明</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0 small text-muted">
+                    <li class="mb-2">
+                        <i data-lucide="check-circle" style="width:14px;height:14px;" class="text-success me-1"></i>
+                        录播链接可以是腾讯会议、Zoom、钉钉等平台的录播地址
+                    </li>
+                    <li class="mb-2">
+                        <i data-lucide="check-circle" style="width:14px;height:14px;" class="text-success me-1"></i>
+                        建议填写科目和老师信息，方便后续查找
+                    </li>
+                    <li class="mb-2">
+                        <i data-lucide="check-circle" style="width:14px;height:14px;" class="text-success me-1"></i>
+                        时长可选填，用于统计学习时间
+                    </li>
+                    <li>
+                        <i data-lucide="check-circle" style="width:14px;height:14px;" class="text-success me-1"></i>
+                        录播将在班次详情页和学员详情页展示
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}
