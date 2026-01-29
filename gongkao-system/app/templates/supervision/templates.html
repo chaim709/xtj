@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}计划模板管理 - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<!-- 页面标题 -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="font-heading mb-1">计划模板管理</h4>
+        <p class="text-muted mb-0">创建和管理学习计划模板，支持批量应用到学员</p>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTemplateModal">
+        <i data-lucide="plus" style="width:16px;height:16px;margin-right:6px;"></i>
+        创建模板
+    </button>
+</div>
+
+<!-- 模板列表 -->
+<div class="row g-4">
+    {% if templates %}
+        {% for t in templates %}
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100" style="border-radius:var(--radius-lg);border:1px solid var(--border-light);">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 class="font-heading mb-1">{{ t.name }}</h5>
+                            <span class="badge bg-primary-subtle text-primary">{{ t.phase_display }}</span>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-light" data-bs-toggle="dropdown">
+                                <i data-lucide="more-vertical" style="width:16px;height:16px;"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#" onclick="editTemplate({{ t.id }}, '{{ t.name }}', '{{ t.phase }}', {{ t.duration_days }}, '{{ t.description|default('', true)|e }}')">编辑</a></li>
+                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteTemplate({{ t.id }}, '{{ t.name }}')">删除</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <p class="text-muted mb-3" style="font-size:0.9rem;">{{ t.description or '暂无描述' }}</p>
+                    
+                    <div class="d-flex justify-content-between text-muted mb-2" style="font-size:0.85rem;">
+                        <span><i data-lucide="calendar" style="width:14px;height:14px;margin-right:4px;"></i>{{ t.duration_days }}天</span>
+                        <span><i data-lucide="target" style="width:14px;height:14px;margin-right:4px;"></i>{{ t.goals_list|length }}个目标</span>
+                        <span><i data-lucide="list-checks" style="width:14px;height:14px;margin-right:4px;"></i>{{ t.tasks_list|length }}个任务</span>
+                    </div>
+                    
+                    {% if not t.is_active %}
+                    <span class="badge bg-secondary">已停用</span>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-transparent border-0 pt-0">
+                    <small class="text-muted">创建于 {{ t.created_at.strftime('%Y-%m-%d') if t.created_at else '-' }}</small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i data-lucide="layout-template" style="width:64px;height:64px;color:var(--text-muted);margin-bottom:1rem;"></i>
+                <h6 class="text-muted">暂无计划模板</h6>
+                <p class="text-muted">点击"创建模板"按钮添加第一个模板</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- 创建模板模态框 -->
+<div class="modal fade" id="createTemplateModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius:var(--radius-lg);">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title font-heading">创建计划模板</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('supervision.templates') }}">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">模板名称 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="name" required placeholder="如：基础阶段30天计划">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">学习阶段</label>
+                            <select class="form-select" name="phase">
+                                <option value="foundation">基础阶段</option>
+                                <option value="improvement">提高阶段</option>
+                                <option value="sprint">冲刺阶段</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">持续天数</label>
+                            <input type="number" class="form-control" name="duration_days" value="30" min="1" max="365">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">模板描述</label>
+                        <textarea class="form-control" name="description" rows="2" placeholder="简要描述这个模板的适用场景..."></textarea>
+                    </div>
+                    
+                    <div class="alert alert-info" style="border-radius:var(--radius-md);">
+                        <i data-lucide="info" style="width:16px;height:16px;margin-right:8px;"></i>
+                        <strong>提示：</strong>目标和任务模板可在创建后编辑添加，或者直接使用时为学员定制。
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i data-lucide="check" style="width:16px;height:16px;margin-right:6px;"></i>
+                        创建模板
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑模板模态框 -->
+<div class="modal fade" id="editTemplateModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius:var(--radius-lg);">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title font-heading">编辑计划模板</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editTemplateForm" method="POST">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">模板名称 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="name" id="editName" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">学习阶段</label>
+                            <select class="form-select" name="phase" id="editPhase">
+                                <option value="foundation">基础阶段</option>
+                                <option value="improvement">提高阶段</option>
+                                <option value="sprint">冲刺阶段</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">持续天数</label>
+                            <input type="number" class="form-control" name="duration_days" id="editDuration" min="1" max="365">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">模板描述</label>
+                        <textarea class="form-control" name="description" id="editDescription" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i data-lucide="check" style="width:16px;height:16px;margin-right:6px;"></i>
+                        保存修改
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteTemplateModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content" style="border-radius:var(--radius-lg);">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title font-heading">确认删除</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除模板 "<strong id="deleteTemplateName"></strong>" 吗？</p>
+                <p class="text-muted mb-0" style="font-size:0.9rem;">此操作不可恢复</p>
+            </div>
+            <div class="modal-footer border-0">
+                <form id="deleteTemplateForm" method="POST">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-danger">确认删除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    lucide.createIcons();
+});
+
+function editTemplate(id, name, phase, duration, description) {
+    $('#editName').val(name);
+    $('#editPhase').val(phase);
+    $('#editDuration').val(duration);
+    $('#editDescription').val(description);
+    $('#editTemplateForm').attr('action', '/supervision/templates/' + id + '/edit');
+    new bootstrap.Modal('#editTemplateModal').show();
+}
+
+function deleteTemplate(id, name) {
+    $('#deleteTemplateName').text(name);
+    $('#deleteTemplateForm').attr('action', '/supervision/templates/' + id + '/delete');
+    new bootstrap.Modal('#deleteTemplateModal').show();
+}
+</script>
+{% endblock %}

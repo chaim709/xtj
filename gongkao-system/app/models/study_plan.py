@@ -2,7 +2,81 @@
 学习计划模型 - 个性化学习计划、目标和任务管理
 """
 from datetime import datetime
+import json
 from app import db
+
+
+class PlanTemplate(db.Model):
+    """
+    计划模板模型
+    
+    预设常用学习计划模板，支持批量创建学员计划
+    """
+    __tablename__ = 'plan_templates'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, comment='模板名称')
+    phase = db.Column(db.String(20), default='foundation', comment='阶段: foundation/improvement/sprint')
+    duration_days = db.Column(db.Integer, default=30, comment='持续天数')
+    description = db.Column(db.Text, comment='模板描述')
+    goals_template = db.Column(db.Text, comment='目标模板(JSON)')
+    tasks_template = db.Column(db.Text, comment='任务模板(JSON)')
+    is_active = db.Column(db.Boolean, default=True, comment='是否启用')
+    
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), comment='创建人ID')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, comment='创建时间')
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment='更新时间')
+    
+    # 关系
+    creator = db.relationship('User', backref=db.backref('plan_templates', lazy='dynamic'))
+    
+    def __repr__(self):
+        return f'<PlanTemplate {self.name}>'
+    
+    @property
+    def phase_display(self):
+        """阶段显示名称"""
+        phase_map = {
+            'foundation': '基础阶段',
+            'improvement': '提高阶段',
+            'sprint': '冲刺阶段'
+        }
+        return phase_map.get(self.phase, self.phase)
+    
+    @property
+    def goals_list(self):
+        """解析目标模板JSON"""
+        if self.goals_template:
+            try:
+                return json.loads(self.goals_template)
+            except:
+                return []
+        return []
+    
+    @property
+    def tasks_list(self):
+        """解析任务模板JSON"""
+        if self.tasks_template:
+            try:
+                return json.loads(self.tasks_template)
+            except:
+                return []
+        return []
+    
+    def to_dict(self):
+        """转换为字典"""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'phase': self.phase,
+            'phase_display': self.phase_display,
+            'duration_days': self.duration_days,
+            'description': self.description,
+            'goals_template': self.goals_list,
+            'tasks_template': self.tasks_list,
+            'is_active': self.is_active,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
 
 
 class StudyPlan(db.Model):

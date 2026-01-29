@@ -1,0 +1,1154 @@
+{% extends "base.html" %}
+
+{% block title %}督学管理 - 公考培训管理系统{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* 统计卡片样式 */
+    .overview-card {
+        background: var(--card-bg);
+        border-radius: var(--radius-lg);
+        padding: 1.25rem;
+        text-align: center;
+        transition: all var(--transition-normal);
+        border: 1px solid var(--border-light);
+        cursor: pointer;
+    }
+    
+    .overview-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .overview-card.highlight {
+        background: var(--gradient-primary);
+        color: white;
+        border: none;
+    }
+    
+    .overview-card.highlight .overview-label {
+        color: rgba(255,255,255,0.85);
+    }
+    
+    .overview-card.highlight .overview-value {
+        color: white;
+    }
+    
+    .overview-card.warning {
+        border-color: var(--warning);
+        background: var(--warning-50);
+    }
+    
+    .overview-card.warning .overview-value {
+        color: var(--warning-600);
+    }
+    
+    .overview-label {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+    }
+    
+    .overview-value {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    /* Tab样式优化 */
+    .nav-tabs-custom {
+        border-bottom: 2px solid var(--border-light);
+        gap: 0.5rem;
+    }
+    
+    .nav-tabs-custom .nav-link {
+        border: none;
+        border-radius: var(--radius-md) var(--radius-md) 0 0;
+        padding: 0.75rem 1.5rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+        transition: all var(--transition-normal);
+        position: relative;
+    }
+    
+    .nav-tabs-custom .nav-link:hover {
+        color: var(--primary);
+        background: var(--primary-light);
+    }
+    
+    .nav-tabs-custom .nav-link.active {
+        color: var(--primary);
+        background: transparent;
+    }
+    
+    .nav-tabs-custom .nav-link.active::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--primary);
+        border-radius: 3px 3px 0 0;
+    }
+    
+    /* 学员卡片样式 */
+    .student-card {
+        background: var(--card-bg);
+        border-radius: var(--radius-lg);
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        border: 1px solid var(--border-light);
+        transition: all var(--transition-normal);
+    }
+    
+    .student-card:hover {
+        box-shadow: var(--shadow-md);
+        border-color: var(--primary);
+    }
+    
+    .student-card.needs-followup {
+        border-left: 4px solid var(--warning);
+        background: var(--warning-50);
+    }
+    
+    .student-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: var(--gradient-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+    
+    .student-name {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 2px;
+    }
+    
+    .student-meta {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+    }
+    
+    .mood-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: var(--radius-sm);
+    }
+    
+    .mood-badge.positive { background: var(--success-light); color: var(--success-text); }
+    .mood-badge.neutral { background: var(--slate-100); color: var(--slate-600); }
+    .mood-badge.warning { background: var(--warning-light); color: var(--warning-text); }
+    .mood-badge.negative { background: var(--danger-light); color: var(--danger-text); }
+    
+    /* 进度条样式 */
+    .progress-mini {
+        height: 6px;
+        background: var(--border-light);
+        border-radius: var(--radius-full);
+        overflow: hidden;
+    }
+    
+    .progress-mini .progress-bar {
+        background: var(--gradient-primary);
+        border-radius: var(--radius-full);
+    }
+    
+    /* 时间线样式 */
+    .timeline-item {
+        position: relative;
+        padding-left: 2rem;
+        padding-bottom: 1.5rem;
+        border-left: 2px solid var(--border-light);
+    }
+    
+    .timeline-item:last-child {
+        border-left-color: transparent;
+        padding-bottom: 0;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -6px;
+        top: 0;
+        width: 10px;
+        height: 10px;
+        background: var(--primary);
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 0 0 2px var(--primary);
+    }
+    
+    .timeline-date {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-bottom: 0.25rem;
+    }
+    
+    .timeline-content {
+        background: var(--card-bg);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        border: 1px solid var(--border-light);
+    }
+    
+    /* 快速操作按钮组 */
+    .quick-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .quick-actions .btn {
+        padding: 0.35rem 0.75rem;
+        font-size: 0.8rem;
+    }
+    
+    /* 筛选条样式 */
+    .filter-bar {
+        background: var(--background);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        margin-bottom: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: center;
+    }
+    
+    .filter-bar .form-select,
+    .filter-bar .form-control {
+        width: auto;
+        min-width: 150px;
+    }
+    
+    /* 图表容器 */
+    .chart-container {
+        position: relative;
+        height: 250px;
+    }
+    
+    /* 模态框内列表 */
+    .modal-student-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .modal-student-list .form-check {
+        padding: 0.5rem;
+        border-radius: var(--radius-sm);
+        transition: background var(--transition-fast);
+    }
+    
+    .modal-student-list .form-check:hover {
+        background: var(--background);
+    }
+    
+    /* 空状态 */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+    }
+    
+    .empty-state-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1rem;
+        color: var(--text-muted);
+    }
+    
+    /* 加载状态 */
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255,255,255,0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+    }
+    
+    /* 统计卡片小图标 */
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-icon.blue { background: var(--brand-100); color: var(--brand-600); }
+    .stat-icon.orange { background: var(--warning-100); color: var(--warning-600); }
+    .stat-icon.green { background: var(--success-100); color: var(--success-600); }
+    .stat-icon.purple { background: var(--purple-100); color: var(--purple-600); }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- 页面标题 -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="font-heading mb-1">督学管理</h4>
+        <p class="text-muted mb-0">一站式管理学员督学工作、学习计划和督学记录</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#batchPlanModal">
+            <i data-lucide="copy-plus" style="width:16px;height:16px;margin-right:6px;"></i>
+            批量创建计划
+        </button>
+        <a href="{{ url_for('supervision.log_form') }}" class="btn btn-primary">
+            <i data-lucide="plus" style="width:16px;height:16px;margin-right:6px;"></i>
+            记录日志
+        </a>
+    </div>
+</div>
+
+<!-- 概览统计卡片 -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="overview-card highlight" onclick="switchTab('students', 'pending')">
+            <div class="overview-label">待跟进学员</div>
+            <div class="overview-value" id="stat-pending">{{ overview.pending_followup }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="overview-card {% if overview.overdue_tasks > 0 %}warning{% endif %}" onclick="switchTab('plans')">
+            <div class="overview-label">逾期任务</div>
+            <div class="overview-value" id="stat-overdue">{{ overview.overdue_tasks }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="overview-card" onclick="switchTab('logs')">
+            <div class="overview-label">本周已联系</div>
+            <div class="overview-value" id="stat-contacted">{{ overview.week_contacted }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="overview-card" onclick="switchTab('stats')">
+            <div class="overview-label">计划完成率</div>
+            <div class="overview-value" id="stat-progress">{{ overview.avg_plan_progress }}%</div>
+        </div>
+    </div>
+</div>
+
+<!-- Tab导航 -->
+<ul class="nav nav-tabs nav-tabs-custom mb-4" id="manageTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="students-tab" data-bs-toggle="tab" data-bs-target="#students-pane" type="button">
+            <i data-lucide="users" style="width:16px;height:16px;margin-right:6px;"></i>
+            学员督学
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="plans-tab" data-bs-toggle="tab" data-bs-target="#plans-pane" type="button">
+            <i data-lucide="calendar-check" style="width:16px;height:16px;margin-right:6px;"></i>
+            学习计划
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs-pane" type="button">
+            <i data-lucide="file-text" style="width:16px;height:16px;margin-right:6px;"></i>
+            督学记录
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats-pane" type="button">
+            <i data-lucide="bar-chart-3" style="width:16px;height:16px;margin-right:6px;"></i>
+            业绩统计
+        </button>
+    </li>
+</ul>
+
+<!-- Tab内容 -->
+<div class="tab-content" id="manageTabContent">
+    <!-- 学员督学Tab -->
+    <div class="tab-pane fade show active" id="students-pane" role="tabpanel">
+        <!-- 筛选条 -->
+        <div class="filter-bar">
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-secondary" style="font-size:0.85rem;">筛选：</span>
+                <select class="form-select form-select-sm" id="studentFilter" style="width:auto;">
+                    <option value="all">全部学员</option>
+                    <option value="pending" selected>待跟进</option>
+                    <option value="contacted">本周已联系</option>
+                    <option value="overdue">有逾期任务</option>
+                </select>
+            </div>
+            {% if current_user.is_admin() %}
+            <div class="ms-auto d-flex gap-2">
+                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#assignModal">
+                    <i data-lucide="user-plus" style="width:14px;height:14px;margin-right:4px;"></i>
+                    分配学员
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- 学员列表 -->
+        <div class="row" id="studentList">
+            <div class="col-12 text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="text-muted mt-2">加载中...</p>
+            </div>
+        </div>
+        
+        <!-- 分页 -->
+        <nav id="studentPagination" class="mt-4"></nav>
+    </div>
+    
+    <!-- 学习计划Tab -->
+    <div class="tab-pane fade" id="plans-pane" role="tabpanel">
+        <!-- 筛选条 -->
+        <div class="filter-bar">
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-secondary" style="font-size:0.85rem;">状态：</span>
+                <select class="form-select form-select-sm" id="planStatusFilter" style="width:auto;">
+                    <option value="active">进行中</option>
+                    <option value="completed">已完成</option>
+                    <option value="paused">已暂停</option>
+                    <option value="">全部</option>
+                </select>
+            </div>
+            <div class="ms-auto">
+                <a href="{{ url_for('supervision.templates') }}" class="btn btn-sm btn-outline-primary">
+                    <i data-lucide="layout-template" style="width:14px;height:14px;margin-right:4px;"></i>
+                    管理模板
+                </a>
+            </div>
+        </div>
+        
+        <!-- 计划列表 -->
+        <div class="table-responsive">
+            <table class="table" id="plansTable">
+                <thead>
+                    <tr>
+                        <th>学员</th>
+                        <th>计划名称</th>
+                        <th>阶段</th>
+                        <th>任务进度</th>
+                        <th>逾期任务</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="plansList">
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status"></div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <nav id="planPagination" class="mt-4"></nav>
+    </div>
+    
+    <!-- 督学记录Tab -->
+    <div class="tab-pane fade" id="logs-pane" role="tabpanel">
+        <!-- 筛选条 -->
+        <div class="filter-bar">
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-secondary" style="font-size:0.85rem;">日期：</span>
+                <input type="date" class="form-control form-control-sm" id="logStartDate" style="width:auto;">
+                <span class="text-muted">至</span>
+                <input type="date" class="form-control form-control-sm" id="logEndDate" style="width:auto;">
+            </div>
+            <button class="btn btn-sm btn-primary" onclick="loadLogs()">筛选</button>
+        </div>
+        
+        <!-- 时间线视图 -->
+        <div id="logsTimeline" class="ps-3">
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status"></div>
+            </div>
+        </div>
+        
+        <nav id="logPagination" class="mt-4"></nav>
+    </div>
+    
+    <!-- 业绩统计Tab -->
+    <div class="tab-pane fade" id="stats-pane" role="tabpanel">
+        <div class="row g-4">
+            <!-- 工作量统计 -->
+            <div class="col-lg-6">
+                <div class="card" style="border-radius:var(--radius-lg);border:1px solid var(--border-light);">
+                    <div class="card-header bg-transparent border-0 pt-4 pb-0">
+                        <h6 class="font-heading mb-0">
+                            <i data-lucide="bar-chart" style="width:16px;height:16px;margin-right:8px;color:var(--primary);"></i>
+                            督学工作量
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="workloadChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 心态分布 -->
+            <div class="col-lg-6">
+                <div class="card" style="border-radius:var(--radius-lg);border:1px solid var(--border-light);">
+                    <div class="card-header bg-transparent border-0 pt-4 pb-0">
+                        <h6 class="font-heading mb-0">
+                            <i data-lucide="smile" style="width:16px;height:16px;margin-right:8px;color:var(--primary);"></i>
+                            学员心态分布
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="moodChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 日趋势 -->
+            <div class="col-12">
+                <div class="card" style="border-radius:var(--radius-lg);border:1px solid var(--border-light);">
+                    <div class="card-header bg-transparent border-0 pt-4 pb-0">
+                        <h6 class="font-heading mb-0">
+                            <i data-lucide="trending-up" style="width:16px;height:16px;margin-right:8px;color:var(--primary);"></i>
+                            督学工作趋势（近30天）
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="height:200px;">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 批量创建计划模态框 -->
+<div class="modal fade" id="batchPlanModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius:var(--radius-lg);">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title font-heading">批量创建学习计划</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="batchPlanForm">
+                    <div class="mb-3">
+                        <label class="form-label">选择计划模板</label>
+                        <select class="form-select" name="template_id" required>
+                            <option value="">请选择模板</option>
+                            {% for t in templates %}
+                            <option value="{{ t.id }}">{{ t.name }} ({{ t.phase_display }}, {{ t.duration_days }}天)</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">选择学员</label>
+                        <div class="modal-student-list border rounded p-2" id="batchStudentList">
+                            <p class="text-muted text-center my-3">加载学员列表...</p>
+                        </div>
+                        <small class="text-muted">已选择 <span id="selectedStudentCount">0</span> 名学员</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="submitBatchPlan()">
+                    <i data-lucide="check" style="width:16px;height:16px;margin-right:6px;"></i>
+                    创建计划
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 分配学员模态框 -->
+{% if current_user.is_admin() %}
+<div class="modal fade" id="assignModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius:var(--radius-lg);">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title font-heading">分配学员给督学老师</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="assignForm">
+                    <div class="mb-3">
+                        <label class="form-label">选择督学老师</label>
+                        <select class="form-select" name="supervisor_id" required>
+                            <option value="">请选择</option>
+                            {% for s in supervisors %}
+                            <option value="{{ s.id }}">{{ s.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">选择学员</label>
+                        <div class="modal-student-list border rounded p-2" id="assignStudentList">
+                            <p class="text-muted text-center my-3">加载学员列表...</p>
+                        </div>
+                        <small class="text-muted">已选择 <span id="assignStudentCount">0</span> 名学员</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="submitAssign()">
+                    <i data-lucide="check" style="width:16px;height:16px;margin-right:6px;"></i>
+                    确认分配
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- 快速记录日志模态框 -->
+<div class="modal fade" id="quickLogModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius:var(--radius-lg);">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title font-heading">快速记录</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="quickLogForm">
+                    <input type="hidden" name="student_id" id="quickLogStudentId">
+                    <div class="mb-3">
+                        <label class="form-label">学员：<strong id="quickLogStudentName"></strong></label>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">沟通方式</label>
+                        <select class="form-select" name="contact_type">
+                            <option value="微信">微信</option>
+                            <option value="电话">电话</option>
+                            <option value="面谈">面谈</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">学生心态</label>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <label class="btn btn-outline-secondary btn-sm">
+                                <input type="radio" name="student_mood" value="积极" class="d-none"> 😊 积极
+                            </label>
+                            <label class="btn btn-outline-secondary btn-sm">
+                                <input type="radio" name="student_mood" value="平稳" class="d-none"> 😐 平稳
+                            </label>
+                            <label class="btn btn-outline-secondary btn-sm">
+                                <input type="radio" name="student_mood" value="焦虑" class="d-none"> 😟 焦虑
+                            </label>
+                            <label class="btn btn-outline-secondary btn-sm">
+                                <input type="radio" name="student_mood" value="低落" class="d-none"> 😢 低落
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">学习状态</label>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <label class="btn btn-outline-secondary btn-sm">
+                                <input type="radio" name="study_status" value="优秀" class="d-none"> 优秀
+                            </label>
+                            <label class="btn btn-outline-secondary btn-sm">
+                                <input type="radio" name="study_status" value="良好" class="d-none"> 良好
+                            </label>
+                            <label class="btn btn-outline-secondary btn-sm">
+                                <input type="radio" name="study_status" value="一般" class="d-none"> 一般
+                            </label>
+                            <label class="btn btn-outline-secondary btn-sm">
+                                <input type="radio" name="study_status" value="较差" class="d-none"> 较差
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">沟通内容</label>
+                        <textarea class="form-control" name="content" rows="3" placeholder="简要记录沟通内容..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="submitQuickLog()">
+                    <i data-lucide="check" style="width:16px;height:16px;margin-right:6px;"></i>
+                    保存
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let studentsPage = 1;
+let plansPage = 1;
+let logsPage = 1;
+let workloadChart, moodChart, trendChart;
+
+$(document).ready(function() {
+    lucide.createIcons();
+    
+    // 初始加载
+    loadStudents();
+    
+    // Tab切换时加载数据
+    $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
+        const target = $(e.target).attr('data-bs-target');
+        if (target === '#plans-pane') loadPlans();
+        else if (target === '#logs-pane') loadLogs();
+        else if (target === '#stats-pane') loadStats();
+    });
+    
+    // 筛选变化
+    $('#studentFilter').change(function() {
+        studentsPage = 1;
+        loadStudents();
+    });
+    
+    $('#planStatusFilter').change(function() {
+        plansPage = 1;
+        loadPlans();
+    });
+    
+    // 心态/状态选择样式
+    $('#quickLogModal').on('show.bs.modal', function() {
+        $(this).find('label.btn').removeClass('btn-primary').addClass('btn-outline-secondary');
+    });
+    
+    $('#quickLogForm label.btn').click(function() {
+        const group = $(this).find('input').attr('name');
+        $(`#quickLogForm label.btn:has(input[name="${group}"])`).removeClass('btn-primary').addClass('btn-outline-secondary');
+        $(this).removeClass('btn-outline-secondary').addClass('btn-primary');
+    });
+    
+    // 模态框打开时加载学员列表
+    $('#batchPlanModal').on('show.bs.modal', loadBatchStudentList);
+    $('#assignModal').on('show.bs.modal', loadAssignStudentList);
+});
+
+function switchTab(tabName, filter) {
+    $(`#${tabName}-tab`).tab('show');
+    if (filter && tabName === 'students') {
+        $('#studentFilter').val(filter);
+        loadStudents();
+    }
+}
+
+// 加载学员列表
+function loadStudents() {
+    const filter = $('#studentFilter').val();
+    $.get('{{ url_for("supervision.manage_students") }}', {
+        filter: filter,
+        page: studentsPage
+    }, function(data) {
+        renderStudents(data);
+    });
+}
+
+function renderStudents(data) {
+    let html = '';
+    if (data.items.length === 0) {
+        html = `
+            <div class="col-12">
+                <div class="empty-state">
+                    <i data-lucide="users" class="empty-state-icon"></i>
+                    <h6>暂无学员</h6>
+                    <p class="text-muted">当前筛选条件下没有学员</p>
+                </div>
+            </div>
+        `;
+    } else {
+        data.items.forEach(function(s) {
+            const needsClass = s.needs_followup ? 'needs-followup' : '';
+            const moodClass = getMoodClass(s.last_mood);
+            const daysSince = s.days_since_contact !== null ? `${s.days_since_contact}天前` : '从未联系';
+            
+            html += `
+                <div class="col-lg-6 col-xl-4">
+                    <div class="student-card ${needsClass}">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="student-avatar">${s.name.charAt(0)}</div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="student-name">${s.name}</div>
+                                        <div class="student-meta">${s.phone || '未填写电话'}</div>
+                                    </div>
+                                    ${s.last_mood ? `<span class="mood-badge ${moodClass}">${s.last_mood}</span>` : ''}
+                                </div>
+                                <div class="mt-2">
+                                    <small class="text-muted">最后联系：${daysSince}</small>
+                                    ${s.current_plan ? `
+                                        <div class="mt-1">
+                                            <small class="text-muted">${s.current_plan}</small>
+                                            <div class="progress-mini mt-1">
+                                                <div class="progress-bar" style="width:${s.plan_progress}%"></div>
+                                            </div>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                <div class="quick-actions mt-3">
+                                    <button class="btn btn-primary btn-sm" onclick="openQuickLog(${s.id}, '${s.name}')">
+                                        <i data-lucide="edit-3" style="width:12px;height:12px;"></i> 记录
+                                    </button>
+                                    <a href="{{ url_for('students.detail', id=0) }}".replace('/0', '/' + s.id) class="btn btn-outline-secondary btn-sm">
+                                        <i data-lucide="user" style="width:12px;height:12px;"></i> 详情
+                                    </a>
+                                    <a href="{{ url_for('supervision.history', student_id=0) }}".replace('/0', '/' + s.id) class="btn btn-outline-secondary btn-sm">
+                                        <i data-lucide="history" style="width:12px;height:12px;"></i> 历史
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    $('#studentList').html(html);
+    lucide.createIcons();
+    renderPagination('#studentPagination', data, 'studentsPage', loadStudents);
+}
+
+function getMoodClass(mood) {
+    if (!mood) return '';
+    if (mood === '积极') return 'positive';
+    if (mood === '平稳') return 'neutral';
+    if (mood === '焦虑') return 'warning';
+    return 'negative';
+}
+
+// 加载学习计划
+function loadPlans() {
+    const status = $('#planStatusFilter').val();
+    $.get('{{ url_for("supervision.manage_plans") }}', {
+        status: status,
+        page: plansPage
+    }, function(data) {
+        renderPlans(data);
+    });
+}
+
+function renderPlans(data) {
+    let html = '';
+    if (data.items.length === 0) {
+        html = '<tr><td colspan="7" class="text-center py-4 text-muted">暂无学习计划</td></tr>';
+    } else {
+        data.items.forEach(function(p) {
+            const statusClass = p.status === 'active' ? 'success' : (p.status === 'paused' ? 'warning' : 'secondary');
+            html += `
+                <tr>
+                    <td><strong>${p.student_name || '-'}</strong></td>
+                    <td>${p.name}</td>
+                    <td><span class="badge bg-light text-dark">${p.phase_display}</span></td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="progress-mini flex-grow-1" style="width:100px;">
+                                <div class="progress-bar" style="width:${p.task_progress}%"></div>
+                            </div>
+                            <span class="text-muted" style="font-size:0.8rem;">${p.task_progress}%</span>
+                        </div>
+                    </td>
+                    <td>
+                        ${p.overdue_tasks > 0 ? `<span class="badge bg-danger">${p.overdue_tasks}</span>` : '<span class="text-muted">0</span>'}
+                    </td>
+                    <td><span class="badge bg-${statusClass}">${p.status_display}</span></td>
+                    <td>
+                        <a href="{{ url_for('plans.detail', plan_id=0) }}".replace('/0', '/' + p.id) class="btn btn-sm btn-outline-primary">查看</a>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+    
+    $('#plansList').html(html);
+    renderPagination('#planPagination', data, 'plansPage', loadPlans);
+}
+
+// 加载督学记录
+function loadLogs() {
+    const startDate = $('#logStartDate').val();
+    const endDate = $('#logEndDate').val();
+    
+    $.get('{{ url_for("supervision.manage_logs") }}', {
+        start_date: startDate,
+        end_date: endDate,
+        page: logsPage
+    }, function(data) {
+        renderLogs(data);
+    });
+}
+
+function renderLogs(data) {
+    let html = '';
+    if (data.items.length === 0) {
+        html = `
+            <div class="empty-state">
+                <i data-lucide="file-text" class="empty-state-icon"></i>
+                <h6>暂无督学记录</h6>
+                <p class="text-muted">当前筛选条件下没有记录</p>
+            </div>
+        `;
+    } else {
+        data.items.forEach(function(log) {
+            const moodClass = getMoodClass(log.student_mood);
+            html += `
+                <div class="timeline-item">
+                    <div class="timeline-date">${log.log_date}</div>
+                    <div class="timeline-content">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <strong>${log.student_name || '未知学员'}</strong>
+                            <div>
+                                ${log.student_mood ? `<span class="mood-badge ${moodClass}">${log.student_mood}</span>` : ''}
+                                ${log.study_status ? `<span class="mood-badge neutral ms-1">${log.study_status}</span>` : ''}
+                            </div>
+                        </div>
+                        <p class="mb-2 text-secondary" style="font-size:0.9rem;">${log.content || '无内容'}</p>
+                        <small class="text-muted">
+                            ${log.contact_type || ''} 
+                            ${log.contact_duration ? `· ${log.contact_duration}分钟` : ''}
+                        </small>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    $('#logsTimeline').html(html);
+    lucide.createIcons();
+    renderPagination('#logPagination', data, 'logsPage', loadLogs);
+}
+
+// 加载统计数据
+function loadStats() {
+    $.get('{{ url_for("supervision.manage_stats") }}', function(data) {
+        renderStats(data);
+    });
+}
+
+function renderStats(data) {
+    // 销毁旧图表
+    if (workloadChart) workloadChart.destroy();
+    if (moodChart) moodChart.destroy();
+    if (trendChart) trendChart.destroy();
+    
+    // 工作量图表
+    if (data.workload && data.workload.length > 0) {
+        const ctx1 = document.getElementById('workloadChart').getContext('2d');
+        workloadChart = new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: data.workload.map(w => w.supervisor_name),
+                datasets: [{
+                    label: '督学记录数',
+                    data: data.workload.map(w => w.log_count),
+                    backgroundColor: 'rgba(37, 99, 235, 0.8)',
+                }, {
+                    label: '联系学员数',
+                    data: data.workload.map(w => w.student_count),
+                    backgroundColor: 'rgba(139, 92, 246, 0.8)',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+    
+    // 心态分布图表
+    const moodLabels = Object.keys(data.mood_stats || {});
+    const moodValues = Object.values(data.mood_stats || {});
+    if (moodLabels.length > 0) {
+        const ctx2 = document.getElementById('moodChart').getContext('2d');
+        moodChart = new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: moodLabels,
+                datasets: [{
+                    data: moodValues,
+                    backgroundColor: ['#22C55E', '#64748B', '#F59E0B', '#EF4444'],
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'right' } }
+            }
+        });
+    }
+    
+    // 趋势图表
+    if (data.daily_trend && data.daily_trend.length > 0) {
+        const ctx3 = document.getElementById('trendChart').getContext('2d');
+        trendChart = new Chart(ctx3, {
+            type: 'line',
+            data: {
+                labels: data.daily_trend.map(d => d.date.substring(5)),
+                datasets: [{
+                    label: '督学记录数',
+                    data: data.daily_trend.map(d => d.count),
+                    borderColor: '#2563EB',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
+}
+
+// 分页渲染
+function renderPagination(selector, data, pageVar, loadFunc) {
+    if (data.pages <= 1) {
+        $(selector).html('');
+        return;
+    }
+    
+    let html = '<ul class="pagination justify-content-center">';
+    for (let i = 1; i <= data.pages; i++) {
+        const active = i === data.page ? 'active' : '';
+        html += `<li class="page-item ${active}"><a class="page-link" href="#" onclick="window['${pageVar}']=${i};${loadFunc.name}();return false;">${i}</a></li>`;
+    }
+    html += '</ul>';
+    $(selector).html(html);
+}
+
+// 快速记录日志
+function openQuickLog(studentId, studentName) {
+    $('#quickLogStudentId').val(studentId);
+    $('#quickLogStudentName').text(studentName);
+    $('#quickLogForm')[0].reset();
+    $('#quickLogForm label.btn').removeClass('btn-primary').addClass('btn-outline-secondary');
+    new bootstrap.Modal('#quickLogModal').show();
+}
+
+function submitQuickLog() {
+    const formData = new FormData($('#quickLogForm')[0]);
+    $.post('{{ url_for("supervision.quick_log") }}', Object.fromEntries(formData), function(res) {
+        if (res.success) {
+            bootstrap.Modal.getInstance('#quickLogModal').hide();
+            loadStudents();
+            alert('记录成功！');
+        } else {
+            alert(res.message);
+        }
+    });
+}
+
+// 批量创建计划
+function loadBatchStudentList() {
+    $.get('{{ url_for("supervision.manage_students") }}', { filter: 'all', page: 1 }, function(data) {
+        let html = '';
+        data.items.forEach(function(s) {
+            html += `
+                <div class="form-check">
+                    <input class="form-check-input batch-student-check" type="checkbox" name="student_ids" value="${s.id}" id="batch-${s.id}">
+                    <label class="form-check-label" for="batch-${s.id}">${s.name} ${s.current_plan ? '(有计划)' : ''}</label>
+                </div>
+            `;
+        });
+        $('#batchStudentList').html(html);
+        
+        $('.batch-student-check').change(function() {
+            $('#selectedStudentCount').text($('.batch-student-check:checked').length);
+        });
+    });
+}
+
+function submitBatchPlan() {
+    const templateId = $('#batchPlanForm select[name="template_id"]').val();
+    const studentIds = $('.batch-student-check:checked').map(function() { return $(this).val(); }).get();
+    
+    if (!templateId) {
+        alert('请选择模板');
+        return;
+    }
+    if (studentIds.length === 0) {
+        alert('请选择学员');
+        return;
+    }
+    
+    $.post('{{ url_for("supervision.batch_create_plan") }}', {
+        template_id: templateId,
+        'student_ids': studentIds
+    }, function(res) {
+        if (res.success) {
+            bootstrap.Modal.getInstance('#batchPlanModal').hide();
+            alert(res.message);
+            loadPlans();
+        } else {
+            alert(res.message);
+        }
+    });
+}
+
+// 分配学员
+function loadAssignStudentList() {
+    $.get('{{ url_for("supervision.manage_students") }}', { filter: 'all', page: 1 }, function(data) {
+        let html = '';
+        data.items.forEach(function(s) {
+            html += `
+                <div class="form-check">
+                    <input class="form-check-input assign-student-check" type="checkbox" name="student_ids" value="${s.id}" id="assign-${s.id}">
+                    <label class="form-check-label" for="assign-${s.id}">${s.name}</label>
+                </div>
+            `;
+        });
+        $('#assignStudentList').html(html);
+        
+        $('.assign-student-check').change(function() {
+            $('#assignStudentCount').text($('.assign-student-check:checked').length);
+        });
+    });
+}
+
+function submitAssign() {
+    const supervisorId = $('#assignForm select[name="supervisor_id"]').val();
+    const studentIds = $('.assign-student-check:checked').map(function() { return $(this).val(); }).get();
+    
+    if (!supervisorId) {
+        alert('请选择督学老师');
+        return;
+    }
+    if (studentIds.length === 0) {
+        alert('请选择学员');
+        return;
+    }
+    
+    $.post('{{ url_for("supervision.assign_students") }}', {
+        supervisor_id: supervisorId,
+        'student_ids': studentIds
+    }, function(res) {
+        if (res.success) {
+            bootstrap.Modal.getInstance('#assignModal').hide();
+            alert(res.message);
+            loadStudents();
+        } else {
+            alert(res.message);
+        }
+    });
+}
+</script>
+{% endblock %}

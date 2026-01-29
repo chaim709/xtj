@@ -1420,6 +1420,11 @@
             <div class="sidebar-section-title">督学服务</div>
             <ul class="nav flex-column">
                 <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'supervision.manage' %}active{% endif %}" href="{{ url_for('supervision.manage') }}">
+                        <i data-lucide="layout-dashboard"></i> 督学管理
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'supervision.log_form' %}active{% endif %}" href="{{ url_for('supervision.log_form') }}">
                         <i data-lucide="clipboard-list"></i> 督学日志
                     </a>
@@ -1427,6 +1432,11 @@
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'supervision.my_logs' %}active{% endif %}" href="{{ url_for('supervision.my_logs') }}">
                         <i data-lucide="file-text"></i> 督学记录
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'supervision.templates' %}active{% endif %}" href="{{ url_for('supervision.templates') }}">
+                        <i data-lucide="layout-template"></i> 计划模板
                     </a>
                 </li>
             </ul>
@@ -1495,12 +1505,12 @@
         <div class="sidebar-footer">
             <ul class="nav flex-column">
                 <li class="nav-item">
-                    <a class="nav-link" href="#">
+                    <a class="nav-link {% if request.endpoint == 'dashboard.settings' %}active{% endif %}" href="{{ url_for('dashboard.settings') }}">
                         <i data-lucide="settings"></i> 设置
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">
+                    <a class="nav-link {% if request.endpoint == 'dashboard.help_center' %}active{% endif %}" href="{{ url_for('dashboard.help_center') }}">
                         <i data-lucide="help-circle"></i> 帮助中心
                     </a>
                 </li>

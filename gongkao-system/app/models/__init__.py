@@ -24,6 +24,7 @@ from app.models.course import (
 
 # 学习计划模型
 from app.models.study_plan import (
+    PlanTemplate,
     StudyPlan,
     PlanGoal,
     PlanTask,
@@ -71,6 +72,7 @@ __all__ = [
     'Attendance',
     'CourseRecording',
     # 学习计划模型
+    'PlanTemplate',
     'StudyPlan',
     'PlanGoal',
     'PlanTask',

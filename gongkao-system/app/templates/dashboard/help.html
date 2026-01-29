@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}帮助中心 - 公考培训管理系统{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="font-heading mb-1">帮助中心</h4>
+        <p class="text-muted mb-0">系统更新日志和使用帮助</p>
+    </div>
+    <span class="badge bg-primary" style="font-size:0.9rem;">当前版本 v1.0.1</span>
+</div>
+
+<!-- 更新日志 -->
+<div class="card mb-4" style="border-radius:var(--radius-lg);border:1px solid var(--border-light);">
+    <div class="card-header bg-transparent border-0 pt-4">
+        <h5 class="font-heading mb-0">
+            <i data-lucide="history" style="width:20px;height:20px;margin-right:8px;color:var(--primary);"></i>
+            更新日志
+        </h5>
+    </div>
+    <div class="card-body pt-0">
+        {% for update in updates %}
+        <div class="update-item {% if not loop.last %}mb-4 pb-4 border-bottom{% endif %}">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <span class="badge {% if loop.first %}bg-primary{% else %}bg-secondary{% endif %}" style="font-size:0.85rem;">
+                    v{{ update.version }}
+                </span>
+                <span class="text-muted" style="font-size:0.9rem;">{{ update.date }}</span>
+                {% if loop.first %}
+                <span class="badge bg-success-subtle text-success">最新</span>
+                {% endif %}
+            </div>
+            <h6 class="font-heading mb-3">{{ update.title }}</h6>
+            <ul class="mb-0" style="padding-left:1.25rem;">
+                {% for change in update.changes %}
+                <li class="mb-2" style="color:var(--text-secondary);">{{ change }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- 快速入门 -->
+<div class="card mb-4" style="border-radius:var(--radius-lg);border:1px solid var(--border-light);">
+    <div class="card-header bg-transparent border-0 pt-4">
+        <h5 class="font-heading mb-0">
+            <i data-lucide="rocket" style="width:20px;height:20px;margin-right:8px;color:var(--primary);"></i>
+            快速入门
+        </h5>
+    </div>
+    <div class="card-body pt-0">
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="p-3 rounded" style="background:var(--primary-light);">
+                    <h6 class="font-heading mb-2">
+                        <i data-lucide="users" style="width:16px;height:16px;margin-right:6px;"></i>
+                        督学管理
+                    </h6>
+                    <ol class="mb-0 ps-3" style="font-size:0.9rem;color:var(--text-secondary);">
+                        <li>进入"督学服务 → 督学管理"</li>
+                        <li>查看待跟进学员，点击"记录"添加日志</li>
+                        <li>在"学习计划"Tab创建或管理计划</li>
+                        <li>在"业绩统计"Tab查看工作报表</li>
+                    </ol>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-3 rounded" style="background:var(--success-light);">
+                    <h6 class="font-heading mb-2">
+                        <i data-lucide="calendar-check" style="width:16px;height:16px;margin-right:6px;"></i>
+                        批量创建计划
+                    </h6>
+                    <ol class="mb-0 ps-3" style="font-size:0.9rem;color:var(--text-secondary);">
+                        <li>先在"计划模板"页面创建常用模板</li>
+                        <li>进入"督学管理"，点击"批量创建计划"</li>
+                        <li>选择模板和学员，一键生成</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 联系支持 -->
+<div class="card" style="border-radius:var(--radius-lg);border:1px solid var(--border-light);">
+    <div class="card-header bg-transparent border-0 pt-4">
+        <h5 class="font-heading mb-0">
+            <i data-lucide="headphones" style="width:20px;height:20px;margin-right:8px;color:var(--primary);"></i>
+            联系支持
+        </h5>
+    </div>
+    <div class="card-body pt-0">
+        <p class="text-muted mb-3">如有问题或建议，请联系技术支持：</p>
+        <div class="d-flex gap-4">
+            <div>
+                <i data-lucide="mail" style="width:16px;height:16px;margin-right:6px;color:var(--primary);"></i>
+                <span class="text-secondary">support@example.com</span>
+            </div>
+            <div>
+                <i data-lucide="phone" style="width:16px;height:16px;margin-right:6px;color:var(--primary);"></i>
+                <span class="text-secondary">400-XXX-XXXX</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    lucide.createIcons();
+});
+</script>
+{% endblock %}
