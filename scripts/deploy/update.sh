@@ -6,7 +6,7 @@
 
 set -e
 
-CODE_DIR="/home/ubuntu/gongkao"
+CODE_DIR="/root/gongkao"
 
 echo "=========================================="
 echo "公考系统 - 代码更新"
@@ -25,12 +25,12 @@ pip install -r requirements.txt
 
 # 3. 重启服务
 echo "[3/3] 重启服务..."
-sudo systemctl restart gongkao
+systemctl restart gongkao
 
 echo ""
 echo "=========================================="
 echo "✅ 更新完成！"
 echo "=========================================="
-echo "查看服务状态: sudo systemctl status gongkao"
-echo "查看日志: sudo journalctl -u gongkao -f"
+echo "查看服务状态: systemctl status gongkao"
+echo "查看日志: journalctl -u gongkao -f"
 echo ""

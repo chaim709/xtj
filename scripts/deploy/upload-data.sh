@@ -4,10 +4,10 @@
 # 在本地电脑（Mac）上运行此脚本上传数据到服务器
 # ============================================
 
-# ⚠️ 使用前请修改以下配置 ⚠️
-SERVER_IP="你的服务器IP"           # 例如: 123.45.67.89
-SERVER_USER="ubuntu"               # 服务器用户名
-SERVER_DATA_DIR="/home/ubuntu/gongkao-data"
+# 服务器配置
+SERVER_IP="142.171.42.2"
+SERVER_USER="root"
+SERVER_DATA_DIR="/root/gongkao-data"
 
 # 本地数据目录（相对于项目根目录）
 LOCAL_PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -19,10 +19,10 @@ echo "服务器: $SERVER_USER@$SERVER_IP"
 echo "本地目录: $LOCAL_PROJECT_DIR"
 echo ""
 
-# 检查配置
-if [ "$SERVER_IP" = "你的服务器IP" ]; then
-    echo "❌ 错误：请先编辑此脚本，修改 SERVER_IP 为你的服务器IP"
-    echo "   运行: nano scripts/deploy/upload-data.sh"
+# 检查连接
+echo "测试服务器连接..."
+if ! ssh -o ConnectTimeout=5 $SERVER_USER@$SERVER_IP "echo '连接成功'" 2>/dev/null; then
+    echo "❌ 无法连接服务器，请检查网络或 SSH 配置"
     exit 1
 fi
 
