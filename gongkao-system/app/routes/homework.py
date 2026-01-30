@@ -135,10 +135,20 @@ def detail(id):
     # 获取提交记录
     submissions = HomeworkService.get_submissions_by_task(id)
     
-    # 获取目标学员列表（用于录入）
+    # 获取目标学员列表（用于录入）- 兼容JSON数组和逗号分隔两种格式
     target_ids = []
     if task.target_students:
-        target_ids = [int(x) for x in task.target_students.split(',') if x.strip()]
+        ts = task.target_students.strip()
+        if ts.startswith('['):
+            # JSON数组格式
+            import json
+            try:
+                target_ids = json.loads(ts)
+            except json.JSONDecodeError:
+                target_ids = []
+        else:
+            # 逗号分隔格式
+            target_ids = [int(x) for x in ts.split(',') if x.strip()]
     
     target_students = Student.query.filter(Student.id.in_(target_ids)).all() if target_ids else []
     

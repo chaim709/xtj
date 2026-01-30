@@ -6,7 +6,7 @@ from decimal import Decimal
 from app import db
 from app.models.course import (
     Subject, Project, Package, ClassType, ClassBatch,
-    Schedule, ScheduleChangeLog, StudentBatch
+    Schedule, ScheduleChangeLog, StudentBatch, CourseRecording, Attendance
 )
 
 
@@ -649,6 +649,18 @@ class CourseService:
         
         if batch.student_batches.filter_by(status='active').count() > 0:
             raise ValueError('该班次有在学学员，无法删除')
+        
+        # 删除关联的录播记录
+        CourseRecording.query.filter_by(batch_id=batch_id).delete()
+        
+        # 删除关联的考勤记录
+        Attendance.query.filter_by(batch_id=batch_id).delete()
+        
+        # 删除关联的课表
+        Schedule.query.filter_by(batch_id=batch_id).delete()
+        
+        # 删除关联的学员班次记录
+        StudentBatch.query.filter_by(batch_id=batch_id).delete()
         
         db.session.delete(batch)
         db.session.commit()

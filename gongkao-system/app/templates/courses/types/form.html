@@ -54,6 +54,11 @@
                             <i data-lucide="save" style="width:18px;height:18px;"></i> 保存
                         </button>
                         <a href="{{ url_for('courses.type_list', project_id=current_project.id if current_project else '') }}" class="btn btn-outline-secondary">取消</a>
+                        {% if class_type and current_user.is_admin() %}
+                        <button type="button" class="btn btn-outline-danger ms-auto" onclick="deleteType()">
+                            <i data-lucide="trash-2" style="width:18px;height:18px;"></i> 删除
+                        </button>
+                        {% endif %}
                     </div>
                 </form>
             </div>
@@ -79,5 +84,22 @@
 {% block extra_js %}
 <script>
     lucide.createIcons();
+    
+    {% if class_type %}
+    function deleteType() {
+        if (confirm('确定要删除班型 "{{ class_type.name }}" 吗？\n\n注意：该班型下的班次也会被删除！')) {
+            $.post('/courses/types/{{ class_type.id }}/delete', function(response) {
+                if (response.success) {
+                    alert('删除成功');
+                    window.location.href = '{{ url_for("courses.type_list", project_id=current_project.id if current_project else "") }}';
+                } else {
+                    alert('删除失败：' + response.message);
+                }
+            }).fail(function() {
+                alert('删除失败，请重试');
+            });
+        }
+    }
+    {% endif %}
 </script>
 {% endblock %}

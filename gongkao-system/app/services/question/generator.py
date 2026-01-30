@@ -27,18 +27,40 @@ from reportlab.graphics.shapes import Drawing, Line
 CHINESE_FONT = 'Helvetica'
 CHINESE_FONT_BOLD = 'Helvetica-Bold'
 
-try:
-    # macOS 系统字体
-    pdfmetrics.registerFont(TTFont('PingFang', '/System/Library/Fonts/PingFang.ttc'))
-    CHINESE_FONT = 'PingFang'
-    CHINESE_FONT_BOLD = 'PingFang'
-except:
-    try:
-        pdfmetrics.registerFont(TTFont('STHeiti', '/System/Library/Fonts/STHeiti Light.ttc'))
-        CHINESE_FONT = 'STHeiti'
-        CHINESE_FONT_BOLD = 'STHeiti'
-    except:
-        pass
+def register_chinese_fonts():
+    """注册中文字体，支持 macOS 和 Linux"""
+    global CHINESE_FONT, CHINESE_FONT_BOLD
+    
+    # 字体路径列表（按优先级排序）
+    font_paths = [
+        # macOS 字体
+        ('/System/Library/Fonts/PingFang.ttc', 'PingFang'),
+        ('/System/Library/Fonts/STHeiti Light.ttc', 'STHeiti'),
+        # Linux 字体 - Noto CJK
+        ('/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc', 'NotoSansCJK'),
+        ('/usr/share/fonts/opentype/noto/NotoSerifCJK-Regular.ttc', 'NotoSerifCJK'),
+        # Linux 字体 - 文泉驿
+        ('/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc', 'WenQuanYi'),
+        ('/usr/share/fonts/truetype/wqy/wqy-microhei.ttc', 'WQYMicroHei'),
+    ]
+    
+    for font_path, font_name in font_paths:
+        if os.path.exists(font_path):
+            try:
+                pdfmetrics.registerFont(TTFont(font_name, font_path))
+                CHINESE_FONT = font_name
+                CHINESE_FONT_BOLD = font_name
+                print(f"[PDF] 成功加载中文字体: {font_name} from {font_path}")
+                return True
+            except Exception as e:
+                print(f"[PDF] 加载字体 {font_path} 失败: {e}")
+                continue
+    
+    print("[PDF] 警告: 未找到中文字体，PDF 可能显示乱码")
+    return False
+
+# 初始化时注册字体
+register_chinese_fonts()
 
 
 class HorizontalLine(Flowable):

@@ -8,7 +8,7 @@
         <h4 class="font-heading mb-1">帮助中心</h4>
         <p class="text-muted mb-0">系统更新日志和使用帮助</p>
     </div>
-    <span class="badge bg-primary" style="font-size:0.9rem;">当前版本 v1.0.1</span>
+    <span class="badge bg-primary" style="font-size:0.9rem;">当前版本 v1.0.2</span>
 </div>
 
 <!-- 更新日志 -->
@@ -83,6 +83,59 @@
     </div>
 </div>
 
+<!-- 数据管理 -->
+{% if current_user.is_admin() %}
+<div class="card mb-4" style="border-radius:var(--radius-lg);border:1px solid var(--border-light);">
+    <div class="card-header bg-transparent border-0 pt-4">
+        <h5 class="font-heading mb-0">
+            <i data-lucide="database" style="width:20px;height:20px;margin-right:8px;color:var(--primary);"></i>
+            数据管理
+        </h5>
+    </div>
+    <div class="card-body pt-0">
+        <p class="text-muted mb-3">导出和导入系统数据，用于备份和恢复。</p>
+        
+        <div class="row g-4">
+            <!-- 导出数据 -->
+            <div class="col-md-6">
+                <div class="p-3 rounded" style="background:var(--primary-light);">
+                    <h6 class="font-heading mb-2">
+                        <i data-lucide="download" style="width:16px;height:16px;margin-right:6px;"></i>
+                        导出数据
+                    </h6>
+                    <p class="text-muted small mb-3">导出所有数据为Excel文件，包括学员、班次、课表、录播等。</p>
+                    <a href="{{ url_for('dashboard.export_data') }}" class="btn btn-primary btn-sm">
+                        <i data-lucide="download" style="width:14px;height:14px;"></i> 导出全部数据
+                    </a>
+                </div>
+            </div>
+            
+            <!-- 导入数据 -->
+            <div class="col-md-6">
+                <div class="p-3 rounded" style="background:var(--warning-light);">
+                    <h6 class="font-heading mb-2">
+                        <i data-lucide="upload" style="width:16px;height:16px;margin-right:6px;"></i>
+                        导入数据
+                    </h6>
+                    <p class="text-muted small mb-3">从备份文件恢复数据。<span class="text-danger">注意：会覆盖现有数据！</span></p>
+                    <form id="importForm" enctype="multipart/form-data">
+                        <input type="file" name="file" id="importFile" accept=".xlsx" class="form-control form-control-sm mb-2" required>
+                        <button type="submit" class="btn btn-warning btn-sm">
+                            <i data-lucide="upload" style="width:14px;height:14px;"></i> 导入数据
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="alert alert-info mt-3 mb-0" style="font-size:0.85rem;">
+            <i data-lucide="info" style="width:16px;height:16px;margin-right:6px;"></i>
+            <strong>提示：</strong>建议定期导出数据备份，导入前请确保备份文件完整。
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- 联系支持 -->
 <div class="card" style="border-radius:var(--radius-lg);border:1px solid var(--border-light);">
     <div class="card-header bg-transparent border-0 pt-4">
@@ -111,6 +164,36 @@
 <script>
 $(document).ready(function() {
     lucide.createIcons();
+    
+    // 导入表单提交
+    $('#importForm').submit(function(e) {
+        e.preventDefault();
+        
+        if (!confirm('确定要导入数据吗？这将覆盖现有的部分数据！\n\n建议先导出当前数据作为备份。')) {
+            return;
+        }
+        
+        var formData = new FormData(this);
+        
+        $.ajax({
+            url: '{{ url_for("dashboard.import_data") }}',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    alert('导入成功！\n\n' + response.message);
+                    location.reload();
+                } else {
+                    alert('导入失败：' + response.message);
+                }
+            },
+            error: function() {
+                alert('导入失败，请检查文件格式是否正确');
+            }
+        });
+    });
 });
 </script>
 {% endblock %}

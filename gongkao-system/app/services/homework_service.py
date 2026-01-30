@@ -183,10 +183,19 @@ class HomeworkService:
         
         submissions = task.submissions.all()
         
-        # 目标学员
+        # 目标学员 - 兼容两种格式：逗号分隔和JSON数组
         target_ids = []
         if task.target_students:
-            target_ids = [int(x) for x in task.target_students.split(',') if x.strip()]
+            ts = task.target_students.strip()
+            if ts.startswith('['):
+                # JSON数组格式
+                try:
+                    target_ids = json.loads(ts)
+                except json.JSONDecodeError:
+                    target_ids = []
+            else:
+                # 逗号分隔格式
+                target_ids = [int(x) for x in ts.split(',') if x.strip()]
         
         total_target = len(target_ids) if target_ids else 0
         completed = len(submissions)

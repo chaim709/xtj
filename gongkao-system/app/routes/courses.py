@@ -853,6 +853,65 @@ def batch_delete(id):
         return jsonify({'success': False, 'message': str(e)})
 
 
+@courses_bp.route('/batches/<int:id>/add-student', methods=['POST'])
+@login_required
+def batch_add_student(id):
+    """添加学员到班次"""
+    if not current_user.is_admin():
+        return jsonify({'success': False, 'message': '没有权限'})
+    
+    student_id = request.form.get('student_id', type=int)
+    if not student_id:
+        return jsonify({'success': False, 'message': '请选择学员'})
+    
+    try:
+        CourseService.add_student_to_batch(student_id, id)
+        return jsonify({'success': True, 'message': '学员添加成功'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@courses_bp.route('/batches/<int:id>/remove-student', methods=['POST'])
+@login_required
+def batch_remove_student(id):
+    """从班次移除学员"""
+    if not current_user.is_admin():
+        return jsonify({'success': False, 'message': '没有权限'})
+    
+    student_id = request.form.get('student_id', type=int)
+    if not student_id:
+        return jsonify({'success': False, 'message': '请选择学员'})
+    
+    try:
+        CourseService.remove_student_from_batch(student_id, id)
+        return jsonify({'success': True, 'message': '学员已移除'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@courses_bp.route('/api/students-not-in-batch/<int:batch_id>')
+@login_required
+def api_students_not_in_batch(batch_id):
+    """获取不在该班次的学员列表"""
+    from app.models.student import Student
+    
+    # 获取已在该班次的学员ID
+    existing_ids = [sb.student_id for sb in StudentBatch.query.filter_by(batch_id=batch_id, status='active').all()]
+    
+    # 获取不在该班次的学员
+    query = Student.query.filter(Student.status == 'active')
+    if existing_ids:
+        query = query.filter(~Student.id.in_(existing_ids))
+    
+    students = query.order_by(Student.name).limit(100).all()
+    
+    return jsonify([{
+        'id': s.id,
+        'name': s.name,
+        'phone': s.phone[-4:] if s.phone else ''
+    } for s in students])
+
+
 # ==================== 老师管理 ====================
 
 @courses_bp.route('/teachers')

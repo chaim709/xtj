@@ -139,7 +139,7 @@
                             <tr>
                                 <th style="width:50px;">天</th>
                                 <th style="width:90px;">日期</th>
-                                <th>科目</th>
+                                <th>晨读</th>
                                 <th>上午</th>
                                 <th>下午</th>
                                 <th>晚间</th>
@@ -148,15 +148,50 @@
                         </thead>
                         <tbody>
                             {% for schedule in schedules %}
+                            {% set remark_parts = {} %}
+                            {% if schedule.remark %}
+                                {% for part in schedule.remark.split(' | ') %}
+                                    {% set kv = part.split(':') %}
+                                    {% if kv|length == 2 %}
+                                        {% set _ = remark_parts.update({kv[0]: kv[1]}) %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
                             <tr class="schedule-row">
                                 <td class="text-center"><span class="badge bg-primary">{{ schedule.day_number }}</span></td>
                                 <td>{{ schedule.schedule_date.strftime('%m/%d') }}</td>
-                                <td class="fw-medium">{{ schedule.subject.short_name or schedule.subject.name if schedule.subject else '-' }}</td>
-                                <td>{{ schedule.morning_teacher.name if schedule.morning_teacher else '-' }}</td>
-                                <td>{{ schedule.afternoon_teacher.name if schedule.afternoon_teacher else '-' }}</td>
+                                <td class="fw-medium">
+                                    {% if remark_parts.get('晨读') %}
+                                    <span class="badge bg-light text-dark">{{ remark_parts.get('晨读') }}</span>
+                                    {% else %}
+                                    {{ schedule.subject.short_name or schedule.subject.name if schedule.subject else '-' }}
+                                    {% endif %}
+                                </td>
                                 <td>
+                                    {% if remark_parts.get('上午') %}
+                                    {{ remark_parts.get('上午') }}
+                                    {% elif schedule.morning_teacher %}
+                                    {{ schedule.morning_teacher.name }}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if remark_parts.get('下午') %}
+                                    {{ remark_parts.get('下午') }}
+                                    {% elif schedule.afternoon_teacher %}
+                                    {{ schedule.afternoon_teacher.name }}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if remark_parts.get('晚上') %}
+                                    {{ remark_parts.get('晚上') }}
+                                    {% else %}
                                     <span class="badge bg-light text-dark">{{ schedule.evening_type_display }}</span>
                                     {% if schedule.evening_teacher %}{{ schedule.evening_teacher.name }}{% endif %}
+                                    {% endif %}
                                 </td>
                                 <td>
                                     {% if current_user.is_admin() %}
@@ -186,28 +221,42 @@
         <div class="card">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 font-heading"><i data-lucide="users" style="width:18px;height:18px;"></i> 学员名单</h6>
-                <span class="badge bg-primary">{{ students|length }}人</span>
+                <div>
+                    <span class="badge bg-primary me-2">{{ students|length }}人</span>
+                    {% if current_user.is_admin() %}
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                        <i data-lucide="user-plus" style="width:14px;height:14px;"></i>
+                    </button>
+                    {% endif %}
+                </div>
             </div>
             <div class="card-body p-0">
                 {% if students %}
-                <ul class="list-group list-group-flush">
-                    {% for student in students[:10] %}
+                <ul class="list-group list-group-flush" id="studentList">
+                    {% for student in students %}
                     <li class="list-group-item d-flex justify-content-between align-items-center">
                         <a href="{{ url_for('students.detail', id=student.id) }}" class="text-decoration-none">
                             {{ student.name }}
                         </a>
-                        <span class="badge bg-light text-dark">{{ student.phone[-4:] if student.phone else '-' }}</span>
+                        <div>
+                            <span class="badge bg-light text-dark me-1">{{ student.phone[-4:] if student.phone else '-' }}</span>
+                            {% if current_user.is_admin() %}
+                            <button type="button" class="btn btn-sm btn-link text-danger p-0 btn-remove-student" data-id="{{ student.id }}" data-name="{{ student.name }}" title="移除">
+                                <i data-lucide="x" style="width:14px;height:14px;"></i>
+                            </button>
+                            {% endif %}
+                        </div>
                     </li>
                     {% endfor %}
                 </ul>
-                {% if students|length > 10 %}
-                <div class="text-center py-2">
-                    <a href="{{ url_for('students.list', batch_id=batch.id) }}" class="small text-muted">查看全部 {{ students|length }} 名学员</a>
-                </div>
-                {% endif %}
                 {% else %}
-                <div class="text-center py-4 text-muted">
-                    <p class="mb-0">暂无学员</p>
+                <div class="text-center py-4 text-muted" id="noStudentTip">
+                    <p class="mb-2">暂无学员</p>
+                    {% if current_user.is_admin() %}
+                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                        <i data-lucide="user-plus" style="width:14px;height:14px;"></i> 添加学员
+                    </button>
+                    {% endif %}
                 </div>
                 {% endif %}
             </div>
@@ -359,6 +408,37 @@
                     <button type="submit" class="btn btn-primary">添加</button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- 添加学员模态框 -->
+<div class="modal fade" id="addStudentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">添加学员到班次</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label mb-0">选择学员（可多选）</label>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAllStudents()">全选</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="deselectAllStudents()">取消全选</button>
+                        </div>
+                    </div>
+                    <div id="studentCheckList" style="max-height: 400px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 0.5rem;">
+                        <div class="text-center text-muted py-3">加载中...</div>
+                    </div>
+                    <div class="mt-2 text-muted small">已选择 <span id="selectedCount">0</span> 名学员</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="addStudents()">批量添加</button>
+            </div>
         </div>
     </div>
 </div>
@@ -538,6 +618,94 @@
         e.preventDefault();
         // TODO: 实现添加课表API
         alert('功能开发中...');
+    });
+    
+    // 加载可添加的学员列表
+    $('#addStudentModal').on('show.bs.modal', function() {
+        $('#studentCheckList').html('<div class="text-center text-muted py-3">加载中...</div>');
+        $('#selectedCount').text('0');
+        $.get('/courses/api/students-not-in-batch/{{ batch.id }}', function(data) {
+            if (data.length === 0) {
+                $('#studentCheckList').html('<div class="text-center text-muted py-3">暂无可添加的学员</div>');
+                return;
+            }
+            var html = '';
+            data.forEach(function(s) {
+                html += '<div class="form-check py-1 border-bottom">';
+                html += '<input class="form-check-input student-checkbox" type="checkbox" value="' + s.id + '" id="student_' + s.id + '" onchange="updateSelectedCount()">';
+                html += '<label class="form-check-label" for="student_' + s.id + '">' + s.name + ' <span class="text-muted">(' + s.phone + ')</span></label>';
+                html += '</div>';
+            });
+            $('#studentCheckList').html(html);
+        });
+    });
+    
+    // 更新已选数量
+    function updateSelectedCount() {
+        var count = $('.student-checkbox:checked').length;
+        $('#selectedCount').text(count);
+    }
+    
+    // 全选
+    function selectAllStudents() {
+        $('.student-checkbox').prop('checked', true);
+        updateSelectedCount();
+    }
+    
+    // 取消全选
+    function deselectAllStudents() {
+        $('.student-checkbox').prop('checked', false);
+        updateSelectedCount();
+    }
+    
+    // 批量添加学员
+    function addStudents() {
+        var studentIds = [];
+        $('.student-checkbox:checked').each(function() {
+            studentIds.push($(this).val());
+        });
+        
+        if (studentIds.length === 0) {
+            alert('请至少选择一名学员');
+            return;
+        }
+        
+        // 逐个添加
+        var successCount = 0;
+        var failCount = 0;
+        var total = studentIds.length;
+        var completed = 0;
+        
+        studentIds.forEach(function(studentId) {
+            $.post('/courses/batches/{{ batch.id }}/add-student', {student_id: studentId}, function(data) {
+                if (data.success) {
+                    successCount++;
+                } else {
+                    failCount++;
+                }
+            }).always(function() {
+                completed++;
+                if (completed === total) {
+                    alert('添加完成！成功 ' + successCount + ' 人' + (failCount > 0 ? '，失败 ' + failCount + ' 人' : ''));
+                    location.reload();
+                }
+            });
+        });
+    }
+    
+    // 移除学员
+    $('.btn-remove-student').click(function() {
+        var studentId = $(this).data('id');
+        var studentName = $(this).data('name');
+        if (confirm('确定要将学员 "' + studentName + '" 从班次中移除吗？')) {
+            $.post('/courses/batches/{{ batch.id }}/remove-student', {student_id: studentId}, function(data) {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message || '移除失败');
+                }
+            });
+        }
     });
 </script>
 {% endblock %}

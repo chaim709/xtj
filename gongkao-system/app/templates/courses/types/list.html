@@ -59,9 +59,12 @@
                         <i data-lucide="plus" style="width:14px;height:14px;"></i> 开班
                     </a>
                     {% if current_user.is_admin() %}
-                    <a href="{{ url_for('courses.type_edit', id=ct.id) }}" class="btn btn-sm btn-outline-secondary">
+                    <a href="{{ url_for('courses.type_edit', id=ct.id) }}" class="btn btn-sm btn-outline-secondary me-1">
                         <i data-lucide="edit-2" style="width:14px;height:14px;"></i>
                     </a>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteType({{ ct.id }}, '{{ ct.name }}')">
+                        <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                    </button>
                     {% endif %}
                 </div>
             </li>
@@ -89,5 +92,20 @@
 {% block extra_js %}
 <script>
     lucide.createIcons();
+    
+    function deleteType(id, name) {
+        if (confirm('确定要删除班型 "' + name + '" 吗？\n\n注意：该班型下的班次也会被删除！')) {
+            $.post('/courses/types/' + id + '/delete', function(response) {
+                if (response.success) {
+                    alert('删除成功');
+                    location.reload();
+                } else {
+                    alert('删除失败：' + response.message);
+                }
+            }).fail(function() {
+                alert('删除失败，请重试');
+            });
+        }
+    }
 </script>
 {% endblock %}

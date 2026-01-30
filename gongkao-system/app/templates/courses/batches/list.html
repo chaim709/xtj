@@ -99,6 +99,9 @@
                     <a href="{{ url_for('courses.batch_edit', id=batch.id) }}" class="btn btn-sm btn-outline-secondary">
                         <i data-lucide="edit-2" style="width:14px;height:14px;"></i>
                     </a>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteBatch({{ batch.id }}, '{{ batch.name }}')">
+                        <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                    </button>
                     {% endif %}
                 </div>
             </div>
@@ -163,6 +166,21 @@
             });
             $('#typeSelect').html(html);
         });
+    }
+    
+    function deleteBatch(id, name) {
+        if (confirm('确定要删除班次 "' + name + '" 吗？\n\n注意：该班次下的课表、考勤等记录也会被删除！')) {
+            $.post('/courses/batches/' + id + '/delete', function(response) {
+                if (response.success) {
+                    alert('删除成功');
+                    location.reload();
+                } else {
+                    alert('删除失败：' + response.message);
+                }
+            }).fail(function() {
+                alert('删除失败，请重试');
+            });
+        }
     }
 </script>
 {% endblock %}
