@@ -1,0 +1,108 @@
+<view class="page">
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-container">
+    <van-loading size="48rpx" color="#1890FF">加载中...</van-loading>
+  </view>
+
+  <view wx:else class="container">
+    <!-- 用户信息卡片 -->
+    <view class="user-card">
+      <view class="user-info">
+        <view class="avatar">
+          <text class="avatar-text">{{userInfo.name[0] || '学'}}</text>
+        </view>
+        <view class="info">
+          <view class="name">{{userInfo.name || '学员'}}</view>
+          <view class="class-name">{{userInfo.className || '暂无班级'}}</view>
+        </view>
+      </view>
+      
+      <view class="checkin-section">
+        <view class="checkin-stats">
+          <text class="streak">🔥 连续{{checkinStats.consecutiveDays}}天</text>
+          <text class="total">累计{{checkinStats.totalDays}}天</text>
+        </view>
+        <van-button
+          size="small"
+          type="{{checkinStats.todayChecked ? 'default' : 'primary'}}"
+          round
+          disabled="{{checkinStats.todayChecked}}"
+          bind:click="handleCheckin"
+        >
+          {{checkinStats.todayChecked ? '已打卡 ✓' : '今日打卡'}}
+        </van-button>
+      </view>
+    </view>
+
+    <!-- 今日课程 -->
+    <view class="section">
+      <view class="section-header" bind:tap="goToSchedule">
+        <text class="section-title">📅 今日课程</text>
+        <text class="section-more">查看全部 ></text>
+      </view>
+      
+      <view class="schedule-list" wx:if="{{todaySchedule.length > 0}}">
+        <view class="schedule-item" wx:for="{{todaySchedule}}" wx:key="id">
+          <view class="schedule-time">
+            <text class="time-label">第{{item.dayNumber}}天</text>
+          </view>
+          <view class="schedule-content">
+            <view class="subject">{{item.subjectName}}</view>
+            <view class="teachers">
+              <text wx:if="{{item.morningTeacher}}">上午: {{item.morningTeacher}}</text>
+              <text wx:if="{{item.afternoonTeacher}}"> | 下午: {{item.afternoonTeacher}}</text>
+            </view>
+            <view class="evening" wx:if="{{item.eveningType}}">
+              <van-tag type="primary" plain size="medium">晚间: {{item.eveningType}}</van-tag>
+            </view>
+          </view>
+        </view>
+      </view>
+      
+      <van-empty wx:else description="今日无课程安排" image="search" />
+    </view>
+
+    <!-- 待办任务 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">✅ 待办任务</text>
+      </view>
+      
+      <view class="task-list">
+        <view class="task-item">
+          <van-icon name="todo-list-o" size="36rpx" color="#1890FF" />
+          <text class="task-text">完成今日作业</text>
+          <van-tag type="warning" size="medium">待完成</van-tag>
+        </view>
+        <view class="task-item">
+          <van-icon name="replay" size="36rpx" color="#52C41A" />
+          <text class="task-text">复习昨日错题</text>
+          <van-tag type="success" size="medium">5道</van-tag>
+        </view>
+      </view>
+    </view>
+
+    <!-- 督学消息 -->
+    <view class="section">
+      <view class="section-header" bind:tap="goToMessages">
+        <text class="section-title">💬 督学消息</text>
+        <text class="section-more" wx:if="{{messages.length > 0}}">查看全部 ></text>
+      </view>
+      
+      <view class="message-list" wx:if="{{messages.length > 0}}">
+        <view class="message-item" wx:for="{{messages}}" wx:key="id" bind:tap="goToMessages">
+          <view class="message-avatar">
+            <van-icon name="chat-o" size="40rpx" color="#1890FF" />
+          </view>
+          <view class="message-content">
+            <view class="message-title">{{item.title}}</view>
+            <view class="message-text">{{item.content}}</view>
+            <view class="message-time">{{item.logDate}}</view>
+          </view>
+        </view>
+      </view>
+      
+      <van-empty wx:else description="暂无消息" image="search" />
+    </view>
+  </view>
+</view>

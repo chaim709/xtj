@@ -1,0 +1,8 @@
+{
+  "name": "gongkao-miniprogram",
+  "version": "1.0.0",
+  "description": "公考学员服务小程序",
+  "dependencies": {
+    "@vant/weapp": "^1.11.3"
+  }
+}

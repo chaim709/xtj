@@ -1,0 +1,77 @@
+.login-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #E6F7FF 0%, #FFFFFF 50%);
+  padding: 0 48rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-section {
+  padding-top: 160rpx;
+  text-align: center;
+}
+
+.logo-circle {
+  width: 160rpx;
+  height: 160rpx;
+  background: linear-gradient(135deg, #1890FF 0%, #40A9FF 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 32rpx;
+  box-shadow: 0 8rpx 24rpx rgba(24, 144, 255, 0.3);
+}
+
+.logo-text {
+  color: #fff;
+  font-size: 48rpx;
+  font-weight: bold;
+}
+
+.app-name {
+  font-size: 44rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 16rpx;
+}
+
+.app-desc {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.features {
+  display: flex;
+  justify-content: space-around;
+  padding: 80rpx 0;
+  margin-top: 60rpx;
+}
+
+.feature-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.feature-item text {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.login-section {
+  margin-top: auto;
+  padding-bottom: 80rpx;
+}
+
+.agreement {
+  text-align: center;
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 32rpx;
+}
+
+.agreement .link {
+  color: #1890FF;
+}

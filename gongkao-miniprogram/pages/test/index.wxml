@@ -1,0 +1,14 @@
+<view class="container">
+  <view class="title">{{message}}</view>
+  <view class="content">
+    <text>这是一个简单的测试页面，不使用任何组件库</text>
+  </view>
+  <view class="counter">
+    <text>点击次数: {{count}}</text>
+  </view>
+  <button bindtap="handleClick" type="primary">点击测试</button>
+  
+  <view class="tips">
+    <text>如果能看到这个页面，说明小程序基础功能正常</text>
+  </view>
+</view>

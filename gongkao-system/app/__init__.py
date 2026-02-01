@@ -58,6 +58,9 @@ def create_app(config_name='default'):
     from app.routes.workbooks import workbooks_bp
     from app.routes.h5 import h5_bp
     from app.routes.admin import admin_bp
+    # 微信小程序API蓝图
+    from app.routes.wx_api import wx_api_bp
+    from app.routes.student_api import student_api_bp
     
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
@@ -78,6 +81,9 @@ def create_app(config_name='default'):
     app.register_blueprint(workbooks_bp)
     app.register_blueprint(h5_bp)
     app.register_blueprint(admin_bp)
+    # 微信小程序API蓝图注册
+    app.register_blueprint(wx_api_bp)
+    app.register_blueprint(student_api_bp)
     
     # 根路由重定向到工作台
     @app.route('/')

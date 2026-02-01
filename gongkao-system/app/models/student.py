@@ -73,6 +73,17 @@ class Student(db.Model):
     need_attention = db.Column(db.Boolean, default=False, comment='需重点关注')
     last_contact_date = db.Column(db.Date, comment='最后联系日期')
     
+    # 微信小程序相关字段
+    wx_openid = db.Column(db.String(64), unique=True, index=True, nullable=True, comment='微信OpenID')
+    wx_unionid = db.Column(db.String(64), nullable=True, comment='微信UnionID')
+    wx_avatar_url = db.Column(db.String(500), nullable=True, comment='微信头像URL')
+    wx_nickname = db.Column(db.String(100), nullable=True, comment='微信昵称')
+    
+    # 打卡统计字段
+    last_checkin_date = db.Column(db.Date, nullable=True, comment='最后打卡日期')
+    total_checkin_days = db.Column(db.Integer, default=0, comment='累计打卡天数')
+    consecutive_checkin_days = db.Column(db.Integer, default=0, comment='连续打卡天数')
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow, comment='创建时间')
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment='更新时间')
     
@@ -120,6 +131,15 @@ class Student(db.Model):
             'hukou_city': self.hukou_city,
             'gender': self.gender,
             'birth_date': self.birth_date.isoformat() if self.birth_date else None,
+            # 微信相关字段
+            'wx_openid': self.wx_openid,
+            'wx_unionid': self.wx_unionid,
+            'wx_avatar_url': self.wx_avatar_url,
+            'wx_nickname': self.wx_nickname,
+            # 打卡统计字段
+            'last_checkin_date': self.last_checkin_date.isoformat() if self.last_checkin_date else None,
+            'total_checkin_days': self.total_checkin_days,
+            'consecutive_checkin_days': self.consecutive_checkin_days,
         }
     
     @property

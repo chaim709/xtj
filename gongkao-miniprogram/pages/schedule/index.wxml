@@ -1,0 +1,123 @@
+<view class="page">
+  <!-- 顶部切换 -->
+  <view class="header">
+    <view class="view-switch">
+      <view
+        class="switch-item {{viewMode === 'day' ? 'active' : ''}}"
+        data-mode="day"
+        bind:tap="switchView"
+      >今日</view>
+      <view
+        class="switch-item {{viewMode === 'week' ? 'active' : ''}}"
+        data-mode="week"
+        bind:tap="switchView"
+      >本周</view>
+    </view>
+  </view>
+
+  <!-- 日期导航 -->
+  <view class="date-nav">
+    <van-icon name="arrow-left" size="40rpx" bind:tap="prevDay" />
+    
+    <picker mode="date" value="{{currentDate}}" bind:change="onDateChange">
+      <view class="date-display">
+        <text class="date-text">{{currentDate}}</text>
+        <van-icon name="arrow-down" size="24rpx" color="#666" />
+      </view>
+    </picker>
+    
+    <van-icon name="arrow" size="40rpx" bind:tap="nextDay" />
+    
+    <van-button size="mini" plain type="primary" bind:tap="goToday">今天</van-button>
+  </view>
+
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-container">
+    <van-loading size="48rpx" color="#1890FF">加载中...</van-loading>
+  </view>
+
+  <!-- 日视图 -->
+  <view wx:elif="{{viewMode === 'day'}}" class="day-view">
+    <view wx:if="{{schedules.length > 0}}" class="schedule-list">
+      <view class="schedule-card" wx:for="{{schedules}}" wx:key="id">
+        <view class="card-header">
+          <view class="day-badge">第{{item.dayNumber}}天</view>
+          <view class="subject-name">{{item.subjectName}}</view>
+        </view>
+        
+        <view class="card-content">
+          <view class="time-slot" wx:if="{{item.morningTeacher}}">
+            <view class="slot-label">上午</view>
+            <view class="slot-teacher">
+              <van-icon name="manager-o" size="28rpx" />
+              <text>{{item.morningTeacher}}</text>
+            </view>
+          </view>
+          
+          <view class="time-slot" wx:if="{{item.afternoonTeacher}}">
+            <view class="slot-label">下午</view>
+            <view class="slot-teacher">
+              <van-icon name="manager-o" size="28rpx" />
+              <text>{{item.afternoonTeacher}}</text>
+            </view>
+          </view>
+          
+          <view class="time-slot evening" wx:if="{{item.eveningType}}">
+            <view class="slot-label">晚间</view>
+            <view class="slot-type">
+              <van-tag type="primary" plain>{{item.eveningType}}</van-tag>
+            </view>
+          </view>
+        </view>
+        
+        <view class="card-footer" wx:if="{{item.remark}}">
+          <van-icon name="info-o" size="24rpx" color="#999" />
+          <text class="remark">{{item.remark}}</text>
+        </view>
+      </view>
+    </view>
+    
+    <van-empty wx:else description="当日无课程安排" image="search" />
+  </view>
+
+  <!-- 周视图 -->
+  <view wx:elif="{{viewMode === 'week'}}" class="week-view">
+    <view class="week-header">
+      <view
+        class="week-day {{day.isToday ? 'today' : ''}}"
+        wx:for="{{weekDays}}"
+        wx:for-item="day"
+        wx:key="date"
+      >
+        <text class="day-name">{{day.day}}</text>
+        <text class="day-num">{{day.dayNum}}</text>
+      </view>
+    </view>
+    
+    <scroll-view scroll-y class="week-content">
+      <view wx:if="{{schedules.length > 0}}">
+        <view class="week-day-group" wx:for="{{weekDays}}" wx:for-item="day" wx:key="date">
+          <view class="day-label {{day.isToday ? 'today' : ''}}">
+            <text>{{day.day}} {{day.dayNum}}日</text>
+          </view>
+          
+          <view wx:if="{{day.schedules.length > 0}}">
+            <view class="mini-card" wx:for="{{day.schedules}}" wx:for-item="s" wx:key="id">
+              <view class="mini-subject">{{s.subjectName}}</view>
+              <view class="mini-teachers">
+                <text wx:if="{{s.morningTeacher}}">上: {{s.morningTeacher}}</text>
+                <text wx:if="{{s.afternoonTeacher}}"> 下: {{s.afternoonTeacher}}</text>
+              </view>
+            </view>
+          </view>
+          
+          <view wx:else class="no-class">
+            <text>休息</text>
+          </view>
+        </view>
+      </view>
+      
+      <van-empty wx:else description="本周无课程安排" image="search" />
+    </scroll-view>
+  </view>
+</view>

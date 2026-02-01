@@ -60,6 +60,14 @@ class Config:
     API_KEY_HEADER = 'X-API-Key'
     API_RATE_LIMIT = 100  # 每分钟请求限制
     
+    # 微信小程序配置
+    WX_APPID = os.environ.get('WX_APPID', '')
+    WX_SECRET = os.environ.get('WX_SECRET', '')
+    
+    # JWT配置
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', SECRET_KEY)
+    JWT_EXPIRES_DAYS = int(os.environ.get('JWT_EXPIRES_DAYS', 7))
+    
     # 跟进提醒配置
     FOLLOW_UP_REMINDER_DAYS = 7  # 超过N天未跟进则提醒
     

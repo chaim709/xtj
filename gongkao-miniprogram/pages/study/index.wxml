@@ -1,0 +1,80 @@
+<view class="page">
+  <!-- 科目筛选 -->
+  <view class="filter-bar">
+    <scroll-view scroll-x class="filter-scroll">
+      <view class="filter-list">
+        <view
+          class="filter-item {{currentSubject === item.id ? 'active' : ''}}"
+          wx:for="{{subjects}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          bind:tap="onSubjectChange"
+        >
+          {{item.name}}
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 统计信息 -->
+  <view class="stats-bar">
+    <text>共 {{total}} 个录播课</text>
+  </view>
+
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-container">
+    <van-loading size="48rpx" color="#1890FF">加载中...</van-loading>
+  </view>
+
+  <!-- 录播课列表 -->
+  <view wx:else class="recording-list">
+    <view wx:if="{{recordings.length > 0}}">
+      <view
+        class="recording-card"
+        wx:for="{{recordings}}"
+        wx:key="id"
+        data-item="{{item}}"
+        bind:tap="playRecording"
+      >
+        <view class="card-cover">
+          <view class="play-icon">
+            <van-icon name="play-circle-o" size="80rpx" color="#fff" />
+          </view>
+          <view class="duration">{{item.duration}}</view>
+        </view>
+        
+        <view class="card-info">
+          <view class="title">{{item.title}}</view>
+          <view class="meta">
+            <view class="meta-item">
+              <van-icon name="calendar-o" size="24rpx" />
+              <text>{{item.recordingDate}}</text>
+            </view>
+            <view class="meta-item">
+              <van-icon name="clock-o" size="24rpx" />
+              <text>{{item.period}}</text>
+            </view>
+          </view>
+          <view class="teacher">
+            <van-icon name="manager-o" size="24rpx" />
+            <text>{{item.teacherName || '未知老师'}}</text>
+          </view>
+          <view class="subject-tag">
+            <van-tag type="primary" plain size="medium">{{item.subjectName}}</van-tag>
+          </view>
+        </view>
+      </view>
+
+      <!-- 加载更多 -->
+      <view class="load-more" wx:if="{{loadingMore}}">
+        <van-loading size="24rpx">加载中...</van-loading>
+      </view>
+      
+      <view class="no-more" wx:elif="{{!hasMore}}">
+        <text>没有更多了</text>
+      </view>
+    </view>
+    
+    <van-empty wx:else description="暂无录播课" image="search" />
+  </view>
+</view>

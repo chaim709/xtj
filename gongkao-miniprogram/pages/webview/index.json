@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "视频播放",
+  "usingComponents": {
+    "van-loading": "../../miniprogram_npm/@vant/weapp/loading/index",
+    "van-empty": "../../miniprogram_npm/@vant/weapp/empty/index",
+    "van-button": "../../miniprogram_npm/@vant/weapp/button/index"
+  }
+}

@@ -50,6 +50,10 @@ from app.models.question import (
     StudentClass,
 )
 
+# 打卡与消息模型
+from app.models.checkin import CheckinRecord
+from app.models.message import StudentMessage, WxSubscribeTemplate
+
 __all__ = [
     # 第一阶段模型
     'User',
@@ -94,4 +98,8 @@ __all__ = [
     'MistakeReview',
     'StudentStats',
     'StudentClass',
+    # 打卡与消息模型
+    'CheckinRecord',
+    'StudentMessage',
+    'WxSubscribeTemplate',
 ]

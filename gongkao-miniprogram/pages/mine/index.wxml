@@ -1,0 +1,79 @@
+<view class="page">
+  <!-- 用户信息区域 -->
+  <view class="user-section">
+    <view wx:if="{{userInfo}}" class="user-card">
+      <view class="avatar">
+        <text class="avatar-text">{{userInfo.name[0] || '学'}}</text>
+      </view>
+      <view class="info">
+        <view class="name">{{userInfo.name}}</view>
+        <view class="class">{{userInfo.className || '暂无班级'}}</view>
+      </view>
+    </view>
+    
+    <view wx:else class="login-prompt" bind:tap="handleLogin">
+      <view class="avatar guest">
+        <van-icon name="user-o" size="60rpx" color="#999" />
+      </view>
+      <view class="info">
+        <view class="name">点击登录</view>
+        <view class="desc">登录后查看更多功能</view>
+      </view>
+      <van-icon name="arrow" size="32rpx" color="#999" />
+    </view>
+  </view>
+
+  <!-- 学习数据 -->
+  <view wx:if="{{userInfo}}" class="stats-section">
+    <view class="stats-grid">
+      <view class="stat-item">
+        <view class="stat-value">{{userInfo.checkinStats.totalDays || 0}}</view>
+        <view class="stat-label">累计打卡</view>
+      </view>
+      <view class="stat-item">
+        <view class="stat-value">{{userInfo.checkinStats.consecutiveDays || 0}}</view>
+        <view class="stat-label">连续天数</view>
+      </view>
+      <view class="stat-item">
+        <view class="stat-value">--</view>
+        <view class="stat-label">学习时长</view>
+      </view>
+      <view class="stat-item">
+        <view class="stat-value">--</view>
+        <view class="stat-label">完成作业</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 功能菜单 -->
+  <view class="menu-section">
+    <van-cell-group>
+      <van-cell
+        wx:for="{{menuList}}"
+        wx:key="title"
+        title="{{item.title}}"
+        icon="{{item.icon}}"
+        is-link
+        data-url="{{item.url}}"
+        bind:click="handleMenuTap"
+      />
+    </van-cell-group>
+  </view>
+
+  <!-- 退出登录 -->
+  <view wx:if="{{userInfo}}" class="logout-section">
+    <van-button
+      block
+      plain
+      type="danger"
+      bind:click="handleLogout"
+    >
+      退出登录
+    </van-button>
+  </view>
+
+  <!-- 版本信息 -->
+  <view class="version">
+    <text>公考学员助手 v1.0.0</text>
+  </view>
+</view>

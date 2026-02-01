@@ -1,0 +1,63 @@
+<view class="bind-page">
+  <view class="header">
+    <view class="icon-circle">
+      <van-icon name="phone-o" size="80rpx" color="#1890FF" />
+    </view>
+    <view class="title">绑定手机号</view>
+    <view class="desc">请绑定您报名时使用的手机号</view>
+  </view>
+
+  <view class="content">
+    <view class="tips-card">
+      <van-icon name="info-o" size="32rpx" color="#FAAD14" />
+      <text>绑定手机号后，您可以查看课表、录播课和接收督学消息</text>
+    </view>
+
+    <!-- 微信授权方式（正式环境） -->
+    <view class="auth-section" wx:if="{{!devMode}}">
+      <button
+        class="phone-btn"
+        open-type="getPhoneNumber"
+        bindgetphonenumber="getPhoneNumber"
+        loading="{{loading}}"
+      >
+        <van-icon name="phone-o" style="margin-right: 16rpx;" />
+        授权手机号
+      </button>
+    </view>
+
+    <!-- 开发模式：手动输入 -->
+    <view class="dev-section" wx:else>
+      <view class="dev-tip">
+        <van-tag type="warning">开发模式</van-tag>
+        <text>请输入报名时的手机号</text>
+      </view>
+      
+      <van-field
+        value="{{ inputPhone }}"
+        type="number"
+        placeholder="请输入手机号"
+        maxlength="11"
+        clearable
+        bind:change="onPhoneInput"
+      />
+      
+      <van-button
+        type="primary"
+        block
+        round
+        loading="{{loading}}"
+        loading-text="绑定中..."
+        disabled="{{inputPhone.length !== 11}}"
+        bind:click="handleDevBind"
+        custom-style="margin-top: 32rpx;"
+      >
+        确认绑定
+      </van-button>
+    </view>
+  </view>
+
+  <view class="footer">
+    <text class="footer-text">如遇问题，请联系机构老师</text>
+  </view>
+</view>

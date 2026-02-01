@@ -1,0 +1,30 @@
+<view class="page">
+  <!-- 加载状态 -->
+  <view wx:if="{{loading && !error}}" class="loading-overlay">
+    <van-loading size="48rpx" color="#1890FF" vertical>
+      视频加载中...
+    </van-loading>
+  </view>
+
+  <!-- 错误状态 -->
+  <view wx:if="{{error}}" class="error-container">
+    <van-empty description="视频加载失败">
+      <view class="error-actions">
+        <van-button type="primary" size="small" bind:tap="copyUrl">
+          复制链接
+        </van-button>
+        <van-button size="small" bind:tap="goBack">
+          返回
+        </van-button>
+      </view>
+    </van-empty>
+  </view>
+
+  <!-- Webview -->
+  <web-view
+    wx:if="{{url && !error}}"
+    src="{{url}}"
+    bindload="onWebviewLoad"
+    binderror="onWebviewError"
+  />
+</view>

@@ -1,0 +1,67 @@
+<view class="page">
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-container">
+    <van-loading size="48rpx" color="#1890FF">加载中...</van-loading>
+  </view>
+
+  <!-- 消息列表 -->
+  <view wx:else class="message-container">
+    <view wx:if="{{messages.length > 0}}" class="message-list">
+      <view
+        class="message-card"
+        wx:for="{{messages}}"
+        wx:key="id"
+        data-item="{{item}}"
+        bind:tap="viewDetail"
+      >
+        <view class="message-icon">
+          <view class="icon-circle {{item.type}}">
+            <van-icon
+              name="{{item.type === 'supervision' ? 'chat-o' : item.type === 'homework' ? 'todo-list-o' : 'volume-o'}}"
+              size="36rpx"
+              color="#fff"
+            />
+          </view>
+        </view>
+        
+        <view class="message-content">
+          <view class="message-header">
+            <text class="message-title">{{item.title}}</text>
+            <text class="message-time">{{item.logDate || item.createdAt}}</text>
+          </view>
+          
+          <view class="message-body">
+            <text>{{item.content}}</text>
+          </view>
+          
+          <view class="message-meta" wx:if="{{item.supervisorName}}">
+            <van-icon name="manager-o" size="24rpx" color="#999" />
+            <text>{{item.supervisorName}}</text>
+          </view>
+          
+          <view class="message-tags" wx:if="{{item.mood || item.studyStatus}}">
+            <van-tag wx:if="{{item.mood}}" type="primary" plain size="medium">
+              心态: {{item.mood}}
+            </van-tag>
+            <van-tag wx:if="{{item.studyStatus}}" type="success" plain size="medium">
+              状态: {{item.studyStatus}}
+            </van-tag>
+          </view>
+        </view>
+      </view>
+
+      <!-- 加载更多 -->
+      <view class="load-more" wx:if="{{loadingMore}}">
+        <van-loading size="24rpx">加载中...</van-loading>
+      </view>
+      
+      <view class="no-more" wx:elif="{{!hasMore}}">
+        <text>没有更多消息了</text>
+      </view>
+    </view>
+    
+    <van-empty wx:else description="暂无督学消息" image="search">
+      <view class="empty-tip">督学老师的消息将在这里显示</view>
+    </van-empty>
+  </view>
+</view>
