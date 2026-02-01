@@ -1,5 +1,5 @@
-const { request } = require('../../utils/request');
-const { checkLogin } = require('../../utils/auth');
+var request = require('../../utils/request').request;
+var checkLogin = require('../../utils/auth').checkLogin;
 
 Page({
   data: {
@@ -12,7 +12,7 @@ Page({
     total: 0
   },
 
-  onShow() {
+  onShow: function() {
     if (!checkLogin()) {
       wx.navigateTo({ url: '/pages/login/index' });
       return;
@@ -20,62 +20,66 @@ Page({
     this.loadMessages(true);
   },
 
-  onPullDownRefresh() {
-    this.loadMessages(true).finally(() => {
+  onPullDownRefresh: function() {
+    var that = this;
+    that.loadMessages(true);
+    setTimeout(function() {
       wx.stopPullDownRefresh();
-    });
+    }, 1500);
   },
 
-  onReachBottom() {
+  onReachBottom: function() {
     if (this.data.hasMore && !this.data.loadingMore) {
       this.loadMessages(false);
     }
   },
 
-  async loadMessages(reset = false) {
+  loadMessages: function(reset) {
+    var that = this;
+    
     if (reset) {
-      this.setData({
+      that.setData({
         page: 1,
         messages: [],
         hasMore: true,
         loading: true
       });
     } else {
-      this.setData({ loadingMore: true });
+      that.setData({ loadingMore: true });
     }
 
-    try {
-      const res = await request({
-        url: '/students/me/messages',
-        data: {
-          page: this.data.page,
-          limit: this.data.limit
-        }
-      });
-
-      const newMessages = res.data.items || [];
-      const total = res.data.total || 0;
+    request({
+      url: '/students/me/messages',
+      data: {
+        page: that.data.page,
+        limit: that.data.limit
+      }
+    }).then(function(res) {
+      console.log('消息数据:', res.data);
       
-      this.setData({
-        messages: reset ? newMessages : [...this.data.messages, ...newMessages],
+      var newMessages = res.data.items || [];
+      var total = res.data.total || 0;
+      
+      var allMessages = reset ? newMessages : that.data.messages.concat(newMessages);
+      
+      that.setData({
+        messages: allMessages,
         total: total,
-        hasMore: this.data.messages.length + newMessages.length < total,
-        page: this.data.page + 1
-      });
-    } catch (err) {
-      console.error('获取消息失败:', err);
-      wx.showToast({ title: '获取失败', icon: 'none' });
-    } finally {
-      this.setData({
+        hasMore: allMessages.length < total,
+        page: that.data.page + 1,
         loading: false,
         loadingMore: false
       });
-    }
+    }).catch(function(err) {
+      console.error('获取消息失败:', err);
+      wx.showToast({ title: '获取失败', icon: 'none' });
+      that.setData({ loading: false, loadingMore: false });
+    });
   },
 
-  viewDetail(e) {
-    const message = e.currentTarget.dataset.item;
-    // 可以跳转到详情页或显示弹窗
+  viewDetail: function(e) {
+    var message = e.currentTarget.dataset.item;
+    console.log('查看消息详情:', message);
     wx.showModal({
       title: message.title,
       content: message.fullContent || message.content || '暂无内容',

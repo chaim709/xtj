@@ -19,7 +19,7 @@ Page({
 
   onLoad: function() {
     this.setData({ today: getToday() });
-    console.log('首页加载');
+    console.log('首页加载, 今日:', this.data.today);
   },
 
   onShow: function() {
@@ -37,31 +37,33 @@ Page({
     setTimeout(function() {
       wx.stopPullDownRefresh();
       that.setData({ refreshing: false });
-    }, 1000);
+    }, 1500);
   },
 
   loadData: function() {
     var that = this;
-    that.setData({ loading: false });
-    // 暂时注释API调用，先显示静态页面
-    // that.loadUserInfo();
-    // that.loadTodaySchedule();
-    // that.loadMessages();
+    // 并行加载三个接口
+    that.loadUserInfo();
+    that.loadTodaySchedule();
+    that.loadMessages();
   },
 
   loadUserInfo: function() {
     var that = this;
     request({ url: '/students/me' }).then(function(res) {
+      console.log('用户信息:', res.data);
       that.setData({
         userInfo: res.data,
         checkinStats: res.data.checkinStats || {
           totalDays: 0,
           consecutiveDays: 0,
           todayChecked: false
-        }
+        },
+        loading: false
       });
     }).catch(function(err) {
       console.error('获取用户信息失败:', err);
+      that.setData({ loading: false });
     });
   },
 
@@ -71,6 +73,7 @@ Page({
       url: '/students/me/schedule',
       data: { date: that.data.today }
     }).then(function(res) {
+      console.log('今日课表:', res.data.schedules);
       that.setData({
         todaySchedule: res.data.schedules || []
       });
@@ -85,6 +88,7 @@ Page({
       url: '/students/me/messages',
       data: { limit: 3 }
     }).then(function(res) {
+      console.log('督学消息:', res.data.items);
       that.setData({
         messages: res.data.items || []
       });
@@ -105,6 +109,7 @@ Page({
       method: 'POST',
       data: {}
     }).then(function(res) {
+      console.log('打卡结果:', res);
       if (res.success) {
         var newStats = {
           todayChecked: true,
@@ -119,6 +124,10 @@ Page({
       }
     }).catch(function(err) {
       console.error('打卡失败:', err);
+      wx.showToast({
+        title: err.message || '打卡失败',
+        icon: 'none'
+      });
     });
   },
 

@@ -1,73 +1,64 @@
-const { request } = require('../../utils/request');
-const { saveLoginInfo } = require('../../utils/auth');
+var request = require('../../utils/request').request;
+var saveLoginInfo = require('../../utils/auth').saveLoginInfo;
 
 Page({
   data: {
     sessionKey: '',
     openid: '',
     loading: false,
-    devMode: true,  // 开发模式
+    devMode: true,
     inputPhone: ''
   },
 
-  onLoad(options) {
+  onLoad: function(options) {
+    console.log('绑定页面加载', options);
     this.setData({
       sessionKey: options.sessionKey || '',
       openid: options.openid || ''
     });
   },
 
-  // 获取手机号（微信授权方式）
-  async getPhoneNumber(e) {
-    if (e.detail.errMsg !== 'getPhoneNumber:ok') {
-      wx.showToast({
-        title: '需要授权手机号才能使用',
-        icon: 'none'
-      });
-      return;
-    }
-
-    const { encryptedData, iv } = e.detail;
-    await this.bindPhone({
-      encryptedData,
-      iv
-    });
+  onPhoneInput: function(e) {
+    var value = e.detail.value || e.detail || '';
+    console.log('输入手机号:', value);
+    this.setData({ inputPhone: value });
   },
 
-  // 开发模式：手动输入手机号
-  onPhoneInput(e) {
-    this.setData({ inputPhone: e.detail.value });
-  },
-
-  async handleDevBind() {
-    const phone = this.data.inputPhone.trim();
+  handleDevBind: function() {
+    var that = this;
+    var phone = (that.data.inputPhone || '').trim();
+    
+    console.log('准备绑定手机号:', phone);
+    
     if (!phone || phone.length !== 11) {
       wx.showToast({
-        title: '请输入正确的手机号',
+        title: '请输入11位手机号',
         icon: 'none'
       });
       return;
     }
-    await this.bindPhone({ phone });
+    
+    that.bindPhone({ phone: phone });
   },
 
-  // 绑定手机号
-  async bindPhone(phoneData) {
-    if (this.data.loading) return;
+  bindPhone: function(phoneData) {
+    var that = this;
+    if (that.data.loading) return;
     
-    this.setData({ loading: true });
+    that.setData({ loading: true });
+    console.log('开始绑定:', phoneData);
 
-    try {
-      const res = await request({
-        url: '/wx/bind-phone',
-        method: 'POST',
-        data: {
-          openid: this.data.openid,
-          sessionKey: this.data.sessionKey,
-          ...phoneData
-        }
-      });
-
+    request({
+      url: '/wx/bind-phone',
+      method: 'POST',
+      data: {
+        openid: that.data.openid,
+        sessionKey: that.data.sessionKey,
+        phone: phoneData.phone
+      }
+    }).then(function(res) {
+      console.log('绑定返回:', res);
+      
       if (res.success) {
         saveLoginInfo(res.data.token, res.data.userInfo);
         
@@ -76,18 +67,18 @@ Page({
           icon: 'success'
         });
 
-        setTimeout(() => {
+        setTimeout(function() {
           wx.switchTab({ url: '/pages/index/index' });
         }, 1000);
       }
-    } catch (err) {
+      that.setData({ loading: false });
+    }).catch(function(err) {
       console.error('绑定失败:', err);
       wx.showToast({
         title: err.message || '绑定失败',
         icon: 'none'
       });
-    } finally {
-      this.setData({ loading: false });
-    }
+      that.setData({ loading: false });
+    });
   }
 });

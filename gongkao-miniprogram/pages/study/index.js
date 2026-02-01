@@ -1,5 +1,5 @@
-const { request } = require('../../utils/request');
-const { checkLogin } = require('../../utils/auth');
+var request = require('../../utils/request').request;
+var checkLogin = require('../../utils/auth').checkLogin;
 
 Page({
   data: {
@@ -22,7 +22,7 @@ Page({
     total: 0
   },
 
-  onShow() {
+  onShow: function() {
     if (!checkLogin()) {
       wx.navigateTo({ url: '/pages/login/index' });
       return;
@@ -30,78 +30,88 @@ Page({
     this.loadRecordings(true);
   },
 
-  onPullDownRefresh() {
-    this.loadRecordings(true).finally(() => {
+  onPullDownRefresh: function() {
+    var that = this;
+    that.loadRecordings(true);
+    setTimeout(function() {
       wx.stopPullDownRefresh();
-    });
+    }, 1500);
   },
 
-  onReachBottom() {
+  onReachBottom: function() {
     if (this.data.hasMore && !this.data.loadingMore) {
       this.loadRecordings(false);
     }
   },
 
-  async loadRecordings(reset = false) {
+  loadRecordings: function(reset) {
+    var that = this;
+    
     if (reset) {
-      this.setData({
+      that.setData({
         page: 1,
         recordings: [],
         hasMore: true,
         loading: true
       });
     } else {
-      this.setData({ loadingMore: true });
+      that.setData({ loadingMore: true });
     }
 
-    try {
-      const res = await request({
-        url: '/students/me/recordings',
-        data: {
-          page: this.data.page,
-          limit: this.data.limit,
-          subject_id: this.data.currentSubject || undefined
-        }
-      });
+    var params = {
+      page: that.data.page,
+      limit: that.data.limit
+    };
+    
+    if (that.data.currentSubject) {
+      params.subject_id = that.data.currentSubject;
+    }
 
-      const newRecordings = res.data.items || [];
-      const total = res.data.total || 0;
+    request({
+      url: '/students/me/recordings',
+      data: params
+    }).then(function(res) {
+      console.log('录播课数据:', res.data);
       
-      this.setData({
-        recordings: reset ? newRecordings : [...this.data.recordings, ...newRecordings],
+      var newRecordings = res.data.items || [];
+      var total = res.data.total || 0;
+      
+      var allRecordings = reset ? newRecordings : that.data.recordings.concat(newRecordings);
+      
+      that.setData({
+        recordings: allRecordings,
         total: total,
-        hasMore: this.data.recordings.length + newRecordings.length < total,
-        page: this.data.page + 1
-      });
-    } catch (err) {
-      console.error('获取录播课失败:', err);
-      wx.showToast({ title: '获取失败', icon: 'none' });
-    } finally {
-      this.setData({
+        hasMore: allRecordings.length < total,
+        page: that.data.page + 1,
         loading: false,
         loadingMore: false
       });
-    }
+    }).catch(function(err) {
+      console.error('获取录播课失败:', err);
+      wx.showToast({ title: '获取失败', icon: 'none' });
+      that.setData({ loading: false, loadingMore: false });
+    });
   },
 
-  onSubjectChange(e) {
-    const subjectId = e.currentTarget.dataset.id;
+  onSubjectChange: function(e) {
+    var subjectId = e.currentTarget.dataset.id;
     this.setData({ currentSubject: subjectId });
     this.loadRecordings(true);
   },
 
-  playRecording(e) {
-    const recording = e.currentTarget.dataset.item;
-    const url = recording.recordingUrl;
+  playRecording: function(e) {
+    var recording = e.currentTarget.dataset.item;
+    var url = recording.recordingUrl;
+    
+    console.log('播放录播:', recording.title, url);
     
     if (!url) {
       wx.showToast({ title: '视频链接不存在', icon: 'none' });
       return;
     }
 
-    // 跳转到webview页面播放
     wx.navigateTo({
-      url: `/pages/webview/index?url=${encodeURIComponent(url)}&title=${encodeURIComponent(recording.title)}`
+      url: '/pages/webview/index?url=' + encodeURIComponent(url) + '&title=' + encodeURIComponent(recording.title)
     });
   }
 });

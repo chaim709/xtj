@@ -18,18 +18,17 @@ Page({
 
   onShow: function() {
     console.log('我的页面显示');
-    this.setData({ loading: false });
-    // 暂时不调用API
-    // if (!checkLogin()) {
-    //   this.setData({ loading: false });
-    //   return;
-    // }
-    // this.loadUserInfo();
+    if (!checkLogin()) {
+      this.setData({ loading: false, userInfo: null });
+      return;
+    }
+    this.loadUserInfo();
   },
 
   loadUserInfo: function() {
     var that = this;
     request({ url: '/students/me' }).then(function(res) {
+      console.log('我的-用户信息:', res.data);
       that.setData({
         userInfo: res.data,
         loading: false
