@@ -1,0 +1,99 @@
+<view class="page">
+  <!-- Tab切换 -->
+  <view class="tabs">
+    <view 
+      class="tab-item {{activeTab === 'pending' ? 'active' : ''}}"
+      data-tab="pending"
+      bind:tap="switchTab"
+    >
+      待完成 ({{pendingList.length}})
+    </view>
+    <view 
+      class="tab-item {{activeTab === 'completed' ? 'active' : ''}}"
+      data-tab="completed"
+      bind:tap="switchTab"
+    >
+      已完成 ({{completedList.length}})
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-box">
+    <van-loading size="24px">加载中...</van-loading>
+  </view>
+
+  <!-- 作业列表 -->
+  <view wx:else class="homework-list">
+    <!-- 待完成列表 -->
+    <view wx:if="{{activeTab === 'pending'}}">
+      <view wx:if="{{pendingList.length > 0}}">
+        <view 
+          class="homework-card"
+          wx:for="{{pendingList}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          bind:tap="viewDetail"
+        >
+          <view class="card-header">
+            <text class="title">{{item.title}}</text>
+            <van-tag type="warning">待完成</van-tag>
+          </view>
+          
+          <view class="card-body" wx:if="{{item.description}}">
+            <text class="desc">{{item.description}}</text>
+          </view>
+          
+          <view class="card-footer">
+            <view class="deadline" wx:if="{{item.deadlineFormatted}}">
+              <van-icon name="clock-o" size="12px" />
+              <text>截止: {{item.deadlineFormatted}}</text>
+            </view>
+            <van-button 
+              size="small" 
+              type="primary" 
+              round
+              catchtap="markComplete"
+              data-id="{{item.id}}"
+            >
+              标记完成
+            </van-button>
+          </view>
+        </view>
+      </view>
+      <van-empty wx:else description="暂无待完成作业" />
+    </view>
+
+    <!-- 已完成列表 -->
+    <view wx:else>
+      <view wx:if="{{completedList.length > 0}}">
+        <view 
+          class="homework-card completed"
+          wx:for="{{completedList}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          bind:tap="viewDetail"
+        >
+          <view class="card-header">
+            <text class="title">{{item.title}}</text>
+            <van-tag type="success">已完成</van-tag>
+          </view>
+          
+          <view class="card-body" wx:if="{{item.description}}">
+            <text class="desc">{{item.description}}</text>
+          </view>
+          
+          <view class="card-footer">
+            <view class="submit-time">
+              <van-icon name="success" size="12px" color="#52C41A" />
+              <text>提交于: {{item.submitTimeFormatted}}</text>
+            </view>
+            <view wx:if="{{item.accuracyRate != null}}" class="accuracy">
+              <text>正确率: {{item.accuracyRate}}%</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      <van-empty wx:else description="暂无已完成作业" />
+    </view>
+  </view>
+</view>

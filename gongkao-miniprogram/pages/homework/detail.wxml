@@ -1,0 +1,113 @@
+<view class="page">
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-box">
+    <van-loading size="24px">加载中...</van-loading>
+  </view>
+
+  <!-- 作业详情 -->
+  <view wx:else class="detail-container">
+    <!-- 头部状态 -->
+    <view class="status-header {{isSubmitted ? 'submitted' : ''}}">
+      <van-icon 
+        name="{{isSubmitted ? 'checked' : 'todo-list-o'}}" 
+        size="40px" 
+      />
+      <text class="status-text">{{isSubmitted ? '已完成' : '待完成'}}</text>
+    </view>
+
+    <!-- 作业标题 -->
+    <view class="title-section">
+      <text class="title">{{detail.title}}</text>
+      <van-tag wx:if="{{detail.taskType}}" type="primary" plain>
+        {{detail.taskType}}
+      </van-tag>
+    </view>
+
+    <!-- 作业信息 -->
+    <view class="info-section">
+      <view class="info-item" wx:if="{{detail.module}}">
+        <text class="label">学习模块</text>
+        <text class="value">{{detail.module}}</text>
+      </view>
+      
+      <view class="info-item" wx:if="{{detail.subModule}}">
+        <text class="label">子模块</text>
+        <text class="value">{{detail.subModule}}</text>
+      </view>
+
+      <view class="info-item" wx:if="{{detail.questionCount}}">
+        <text class="label">题量</text>
+        <text class="value">{{detail.questionCount}} 题</text>
+      </view>
+
+      <view class="info-item" wx:if="{{detail.suggestedTime}}">
+        <text class="label">建议用时</text>
+        <text class="value">{{detail.suggestedTime}} 分钟</text>
+      </view>
+
+      <view class="info-item" wx:if="{{detail.deadlineFormatted}}">
+        <text class="label">截止时间</text>
+        <text class="value deadline-text">{{detail.deadlineFormatted}}</text>
+      </view>
+
+      <view class="info-item" wx:if="{{detail.publishTimeFormatted}}">
+        <text class="label">发布时间</text>
+        <text class="value">{{detail.publishTimeFormatted}}</text>
+      </view>
+    </view>
+
+    <!-- 作业说明 -->
+    <view class="description-section" wx:if="{{detail.description}}">
+      <view class="section-title">作业说明</view>
+      <view class="description-content">
+        <text>{{detail.description}}</text>
+      </view>
+    </view>
+
+    <!-- 提交信息（已提交时显示） -->
+    <view class="submission-section" wx:if="{{isSubmitted && detail.submission}}">
+      <view class="section-title">提交信息</view>
+      
+      <view class="submission-info">
+        <view class="info-item">
+          <text class="label">提交时间</text>
+          <text class="value">{{detail.submission.submitTimeFormatted}}</text>
+        </view>
+
+        <view class="info-item" wx:if="{{detail.submission.accuracyRate != null}}">
+          <text class="label">正确率</text>
+          <text class="value success">{{detail.submission.accuracyRate}}%</text>
+        </view>
+
+        <view class="info-item" wx:if="{{detail.submission.completedCount}}">
+          <text class="label">完成题量</text>
+          <text class="value">{{detail.submission.completedCount}} 题</text>
+        </view>
+
+        <view class="info-item" wx:if="{{detail.submission.correctCount != null}}">
+          <text class="label">正确数量</text>
+          <text class="value">{{detail.submission.correctCount}} 题</text>
+        </view>
+
+        <view class="feedback-item" wx:if="{{detail.submission.feedback}}">
+          <text class="label">备注</text>
+          <view class="feedback-content">
+            <text>{{detail.submission.feedback}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 底部提交按钮 -->
+    <view class="footer-actions" wx:if="{{!isSubmitted}}">
+      <van-button 
+        type="primary" 
+        block 
+        round
+        bind:tap="submitHomework"
+      >
+        标记完成
+      </van-button>
+    </view>
+  </view>
+</view>

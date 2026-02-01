@@ -1,0 +1,50 @@
+<view class="page">
+  <!-- 消息列表 -->
+  <scroll-view scroll-y class="message-list" scroll-into-view="{{scrollId}}">
+    <view class="message-item {{msg.role}}" wx:for="{{messages}}" wx:key="id" wx:for-item="msg">
+      <view wx:if="{{msg.role === 'user'}}" class="user-message">
+        <view class="message-content">{{msg.content}}</view>
+        <view class="avatar user-avatar">我</view>
+      </view>
+      
+      <view wx:else class="assistant-message">
+        <view class="avatar bot-avatar">AI</view>
+        <view class="message-content">{{msg.content}}</view>
+      </view>
+      
+      <view class="message-time">{{msg.time}}</view>
+    </view>
+    
+    <view wx:if="{{sending}}" class="typing">
+      <view class="avatar bot-avatar">AI</view>
+      <view class="typing-indicator">
+        <text>正在输入</text>
+        <view class="dots">
+          <text class="dot"></text>
+          <text class="dot"></text>
+          <text class="dot"></text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 输入框 -->
+  <view class="input-bar">
+    <input
+      class="input-field"
+      type="text"
+      placeholder="输入消息..."
+      value="{{inputText}}"
+      bindinput="onInputChange"
+      confirm-type="send"
+      bindconfirm="sendMessage"
+    />
+    <button 
+      class="send-btn {{inputText ? 'active' : ''}}"
+      disabled="{{!inputText || sending}}"
+      bindtap="sendMessage"
+    >
+      发送
+    </button>
+  </view>
+</view>

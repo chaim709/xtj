@@ -1,0 +1,51 @@
+<view class="page">
+  <!-- 统计卡片 -->
+  <view class="stats-card">
+    <view class="stat-item">
+      <view class="stat-value">{{stats.consecutiveDays}}</view>
+      <view class="stat-label">连续天数</view>
+    </view>
+    <view class="stat-divider"></view>
+    <view class="stat-item">
+      <view class="stat-value">{{stats.totalDays}}</view>
+      <view class="stat-label">累计天数</view>
+    </view>
+  </view>
+
+  <!-- 月份导航 -->
+  <view class="month-nav">
+    <van-icon name="arrow-left" size="40rpx" bind:tap="prevMonth" />
+    <text class="month-text">{{currentYear}}年{{currentMonth}}月</text>
+    <van-icon name="arrow" size="40rpx" bind:tap="nextMonth" />
+  </view>
+
+  <!-- 日历 -->
+  <view class="calendar">
+    <!-- 星期标题 -->
+    <view class="week-header">
+      <view class="week-day" wx:for="{{weekDays}}" wx:key="*this">{{item}}</view>
+    </view>
+
+    <!-- 日期网格 -->
+    <view class="calendar-body">
+      <view class="calendar-week" wx:for="{{calendar}}" wx:for-item="week" wx:key="index">
+        <view 
+          class="calendar-day {{day.checked ? 'checked' : ''}} {{day.isToday ? 'today' : ''}}"
+          wx:for="{{week}}"
+          wx:for-item="day"
+          wx:key="day"
+        >
+          <text class="day-num">{{day.day}}</text>
+          <view wx:if="{{day.checked}}" class="check-mark">✓</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 快捷按钮 -->
+  <view class="actions">
+    <van-button type="primary" block round bind:click="goToCheckin">
+      今日打卡
+    </van-button>
+  </view>
+</view>

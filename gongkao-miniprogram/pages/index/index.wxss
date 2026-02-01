@@ -177,6 +177,11 @@
   color: #333;
 }
 
+.quick-action {
+  margin-top: 24rpx;
+  text-align: center;
+}
+
 /* 消息列表 */
 .message-list {
   display: flex;

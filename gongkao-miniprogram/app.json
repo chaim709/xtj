@@ -7,7 +7,11 @@
     "pages/login/index",
     "pages/bind-phone/index",
     "pages/webview/index",
-    "pages/messages/index"
+    "pages/messages/index",
+    "pages/checkin/index",
+    "pages/homework/index",
+    "pages/homework/detail",
+    "pages/coze/index"
   ],
   "window": {
     "backgroundTextStyle": "light",

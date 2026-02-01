@@ -1,8 +1,8 @@
-const app = getApp();
+var app = getApp();
 
-const request = (options) => {
-  return new Promise((resolve, reject) => {
-    const token = wx.getStorageSync('token');
+var request = function(options) {
+  return new Promise(function(resolve, reject) {
+    var token = wx.getStorageSync('token');
     
     wx.showLoading({ title: '加载中...', mask: true });
     
@@ -12,14 +12,22 @@ const request = (options) => {
       data: options.data,
       header: {
         'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : ''
+        'Authorization': token ? ('Bearer ' + token) : ''
       },
-      success: (res) => {
+      success: function(res) {
         wx.hideLoading();
+        
+        console.log('API请求:', options.url, '状态:', res.statusCode);
         
         if (res.statusCode === 401) {
           wx.removeStorageSync('token');
-          wx.navigateTo({ url: '/pages/login/index' });
+          wx.showToast({
+            title: '登录已过期',
+            icon: 'none'
+          });
+          setTimeout(function() {
+            wx.navigateTo({ url: '/pages/login/index' });
+          }, 1500);
           reject(new Error('登录已过期，请重新登录'));
           return;
         }
@@ -28,7 +36,10 @@ const request = (options) => {
           if (res.data.success) {
             resolve(res.data);
           } else {
-            wx.showToast({ title: res.data.message || '请求失败', icon: 'none' });
+            wx.showToast({ 
+              title: res.data.message || '请求失败', 
+              icon: 'none' 
+            });
             reject(new Error(res.data.message));
           }
         } else {
@@ -36,8 +47,9 @@ const request = (options) => {
           reject(new Error('网络错误'));
         }
       },
-      fail: (err) => {
+      fail: function(err) {
         wx.hideLoading();
+        console.error('请求失败:', err);
         wx.showToast({ title: '网络连接失败', icon: 'none' });
         reject(err);
       }
@@ -45,4 +57,4 @@ const request = (options) => {
   });
 };
 
-module.exports = { request };
+module.exports = { request: request };

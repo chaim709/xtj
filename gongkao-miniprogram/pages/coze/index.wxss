@@ -1,0 +1,148 @@
+.page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f5f5f5;
+}
+
+.message-list {
+  flex: 1;
+  padding: 24rpx;
+}
+
+.message-item {
+  margin-bottom: 32rpx;
+}
+
+.user-message,
+.assistant-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+}
+
+.user-message {
+  flex-direction: row-reverse;
+}
+
+.avatar {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.user-avatar {
+  background: #1890FF;
+}
+
+.bot-avatar {
+  background: #52C41A;
+}
+
+.message-content {
+  max-width: 480rpx;
+  padding: 20rpx 24rpx;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  line-height: 1.5;
+}
+
+.user-message .message-content {
+  background: #1890FF;
+  color: #fff;
+}
+
+.assistant-message .message-content {
+  background: #fff;
+  color: #333;
+}
+
+.message-time {
+  font-size: 20rpx;
+  color: #999;
+  text-align: center;
+  margin-top: 8rpx;
+}
+
+.typing {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+}
+
+.typing-indicator {
+  background: #fff;
+  padding: 20rpx 24rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.dots {
+  display: flex;
+  gap: 6rpx;
+}
+
+.dot {
+  width: 8rpx;
+  height: 8rpx;
+  background: #999;
+  border-radius: 50%;
+  animation: bounce 1.4s infinite;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-10rpx); }
+}
+
+.input-bar {
+  background: #fff;
+  padding: 16rpx 24rpx;
+  border-top: 1rpx solid #e8e8e8;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+}
+
+.input-field {
+  flex: 1;
+  background: #f5f5f5;
+  border-radius: 40rpx;
+  padding: 16rpx 24rpx;
+  font-size: 28rpx;
+}
+
+.send-btn {
+  background: #e8e8e8;
+  color: #999;
+  border: none;
+  padding: 16rpx 32rpx;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+}
+
+.send-btn.active {
+  background: #1890FF;
+  color: #fff;
+}
+
+.send-btn[disabled] {
+  opacity: 0.6;
+}

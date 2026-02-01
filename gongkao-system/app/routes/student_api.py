@@ -290,6 +290,8 @@ def do_checkin():
     Returns:
         打卡结果、连续天数、累计天数
     """
+    from app.models.checkin import CheckinRecord
+    
     student = g.student
     data = request.get_json() or {}
     
@@ -322,6 +324,16 @@ def do_checkin():
         student.last_checkin_date = today
         student.consecutive_checkin_days = consecutive_days
         student.total_checkin_days = total_days
+        
+        # 创建打卡记录
+        checkin_record = CheckinRecord(
+            student_id=student.id,
+            checkin_date=today,
+            checkin_time=datetime.now(),
+            study_minutes=data.get('studyMinutes', 0),
+            note=data.get('note', '')
+        )
+        db.session.add(checkin_record)
         
         db.session.commit()
         
@@ -397,5 +409,247 @@ def get_my_homework():
         'success': True,
         'data': {
             'items': items
+        }
+    })
+
+
+@student_api_bp.route('/me/checkin-history', methods=['GET'])
+@require_student_auth
+def get_checkin_history():
+    """
+    获取打卡历史记录
+    
+    Query Params:
+        year: 年份，默认当前年
+        month: 月份，默认当前月
+    
+    Returns:
+        打卡记录列表
+    """
+    from app.models.checkin import CheckinRecord
+    from calendar import monthrange
+    
+    student = g.student
+    
+    year = request.args.get('year', date.today().year, type=int)
+    month = request.args.get('month', date.today().month, type=int)
+    
+    # 获取该月的第一天和最后一天
+    first_day = date(year, month, 1)
+    last_day = date(year, month, monthrange(year, month)[1])
+    
+    # 查询该月的打卡记录
+    records = CheckinRecord.query.filter(
+        CheckinRecord.student_id == student.id,
+        CheckinRecord.checkin_date >= first_day,
+        CheckinRecord.checkin_date <= last_day
+    ).order_by(CheckinRecord.checkin_date).all()
+    
+    # 转换为字典
+    checkin_dates = {}
+    for r in records:
+        date_str = r.checkin_date.isoformat() if r.checkin_date else ''
+        checkin_dates[date_str] = {
+            'id': r.id,
+            'studyMinutes': r.study_minutes,
+            'note': r.note,
+            'checkinTime': r.checkin_time.isoformat() if r.checkin_time else None
+        }
+    
+    return jsonify({
+        'success': True,
+        'data': {
+            'year': year,
+            'month': month,
+            'checkinDates': checkin_dates,
+            'totalDays': len(records),
+            'currentStats': {
+                'consecutiveDays': student.consecutive_checkin_days or 0,
+                'totalDays': student.total_checkin_days or 0
+            }
+        }
+    })
+
+
+@student_api_bp.route('/me/checkin-stats', methods=['GET'])
+@require_student_auth
+def get_checkin_stats():
+    """
+    获取打卡统计数据
+    
+    Returns:
+        打卡统计、趋势图数据
+    """
+    from app.models.checkin import CheckinRecord
+    from sqlalchemy import func, extract
+    
+    student = g.student
+    
+    # 最近7天打卡记录
+    seven_days_ago = date.today() - timedelta(days=6)
+    recent_records = CheckinRecord.query.filter(
+        CheckinRecord.student_id == student.id,
+        CheckinRecord.checkin_date >= seven_days_ago
+    ).order_by(CheckinRecord.checkin_date).all()
+    
+    # 生成最近7天的数据（含未打卡日期）
+    recent_days = []
+    for i in range(7):
+        d = seven_days_ago + timedelta(days=i)
+        record = next((r for r in recent_records if r.checkin_date == d), None)
+        recent_days.append({
+            'date': d.isoformat(),
+            'checked': record is not None,
+            'studyMinutes': record.study_minutes if record else 0
+        })
+    
+    # 本月打卡天数
+    today = date.today()
+    month_count = CheckinRecord.query.filter(
+        CheckinRecord.student_id == student.id,
+        extract('year', CheckinRecord.checkin_date) == today.year,
+        extract('month', CheckinRecord.checkin_date) == today.month
+    ).count()
+    
+    return jsonify({
+        'success': True,
+        'data': {
+            'consecutiveDays': student.consecutive_checkin_days or 0,
+            'totalDays': student.total_checkin_days or 0,
+            'monthDays': month_count,
+            'recentDays': recent_days
+        }
+    })
+
+
+@student_api_bp.route('/me/homework/<int:task_id>/complete', methods=['POST'])
+@require_student_auth
+def complete_homework(task_id):
+    """
+    标记作业完成
+    
+    Args:
+        task_id: 作业ID
+    
+    Request Body:
+        accuracy_rate: 正确率（可选）
+        note: 备注（可选）
+        score: 分数（可选）
+    
+    Returns:
+        完成状态
+    """
+    from app.models.homework import HomeworkTask, HomeworkSubmission
+    
+    student = g.student
+    data = request.get_json() or {}
+    
+    # 检查作业是否存在
+    task = HomeworkTask.query.get(task_id)
+    if not task:
+        return jsonify({
+            'success': False,
+            'message': '作业不存在',
+            'error_code': 'TASK_NOT_FOUND'
+        }), 404
+    
+    # 检查是否已提交
+    existing = HomeworkSubmission.query.filter_by(
+        task_id=task_id,
+        student_id=student.id
+    ).first()
+    
+    if existing:
+        return jsonify({
+            'success': False,
+            'message': '已提交过该作业',
+            'error_code': 'ALREADY_SUBMITTED'
+        }), 400
+    
+    try:
+        # 创建提交记录
+        submission = HomeworkSubmission(
+            task_id=task_id,
+            student_id=student.id,
+            submit_time=datetime.now(),
+            accuracy_rate=data.get('accuracy_rate'),
+            feedback=data.get('note', '已完成'),
+            status='submitted'
+        )
+        
+        db.session.add(submission)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': '提交成功',
+            'data': {
+                'submissionId': submission.id,
+                'submitTime': submission.submit_time.isoformat()
+            }
+        })
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': '提交失败',
+            'error_code': 'SUBMIT_FAILED'
+        }), 500
+
+
+@student_api_bp.route('/me/homework/<int:task_id>', methods=['GET'])
+@require_student_auth
+def get_homework_detail(task_id):
+    """
+    获取作业详情
+    
+    Args:
+        task_id: 作业ID
+    
+    Returns:
+        作业详细信息
+    """
+    from app.models.homework import HomeworkTask, HomeworkSubmission
+    
+    student = g.student
+    
+    task = HomeworkTask.query.get(task_id)
+    if not task:
+        return jsonify({
+            'success': False,
+            'message': '作业不存在'
+        }), 404
+    
+    # 检查提交状态
+    submission = HomeworkSubmission.query.filter_by(
+        task_id=task_id,
+        student_id=student.id
+    ).first()
+    
+    return jsonify({
+        'success': True,
+        'data': {
+            'id': task.id,
+            'title': task.task_name,
+            'description': task.description,
+            'taskType': task.task_type,
+            'deadline': task.deadline.isoformat() if task.deadline else None,
+            'publishTime': task.publish_time.isoformat() if task.publish_time else None,
+            'status': task.status,
+            'questionCount': task.question_count,
+            'suggestedTime': task.suggested_time,
+            'module': task.module,
+            'subModule': task.sub_module,
+            'submission': {
+                'submitted': True,
+                'submitTime': submission.submit_time.isoformat() if submission.submit_time else None,
+                'accuracyRate': submission.accuracy_rate,
+                'feedback': submission.feedback,
+                'completedCount': submission.completed_count,
+                'correctCount': submission.correct_count
+            } if submission else {
+                'submitted': False
+            }
         }
     })

@@ -64,21 +64,37 @@
 
     <!-- 待办任务 -->
     <view class="section">
-      <view class="section-header">
+      <view class="section-header" bind:tap="goToHomework">
         <text class="section-title">✅ 待办任务</text>
+        <text class="section-more" wx:if="{{pendingHomework > 0}}">查看全部 ></text>
       </view>
       
       <view class="task-list">
-        <view class="task-item">
+        <view class="task-item" bind:tap="goToHomework">
           <van-icon name="todo-list-o" size="36rpx" color="#1890FF" />
           <text class="task-text">完成今日作业</text>
-          <van-tag type="warning" size="medium">待完成</van-tag>
+          <van-tag type="{{pendingHomework > 0 ? 'warning' : 'success'}}" size="medium">
+            {{pendingHomework > 0 ? pendingHomework + '个待完成' : '已完成'}}
+          </van-tag>
         </view>
         <view class="task-item">
           <van-icon name="replay" size="36rpx" color="#52C41A" />
           <text class="task-text">复习昨日错题</text>
           <van-tag type="success" size="medium">5道</van-tag>
         </view>
+      </view>
+      
+      <!-- 智能督学入口 -->
+      <view class="quick-action">
+        <van-button 
+          type="primary" 
+          icon="chat-o" 
+          round 
+          size="small"
+          bind:click="goToCoze"
+        >
+          智能督学
+        </van-button>
       </view>
     </view>
 

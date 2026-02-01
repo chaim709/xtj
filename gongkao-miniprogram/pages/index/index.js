@@ -9,6 +9,7 @@ Page({
     userInfo: null,
     todaySchedule: [],
     messages: [],
+    pendingHomework: 0,
     checkinStats: {
       totalDays: 0,
       consecutiveDays: 0,
@@ -42,10 +43,11 @@ Page({
 
   loadData: function() {
     var that = this;
-    // 并行加载三个接口
+    // 并行加载四个接口
     that.loadUserInfo();
     that.loadTodaySchedule();
     that.loadMessages();
+    that.loadHomework();
   },
 
   loadUserInfo: function() {
@@ -97,6 +99,25 @@ Page({
     });
   },
 
+  loadHomework: function() {
+    var that = this;
+    request({
+      url: '/students/me/homework'
+    }).then(function(res) {
+      console.log('作业列表:', res.data.items);
+      var items = res.data.items || [];
+      var pending = 0;
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].status !== 'completed') {
+          pending++;
+        }
+      }
+      that.setData({ pendingHomework: pending });
+    }).catch(function(err) {
+      console.error('获取作业失败:', err);
+    });
+  },
+
   handleCheckin: function() {
     var that = this;
     if (that.data.checkinStats.todayChecked) {
@@ -137,5 +158,13 @@ Page({
 
   goToSchedule: function() {
     wx.switchTab({ url: '/pages/schedule/index' });
+  },
+
+  goToHomework: function() {
+    wx.navigateTo({ url: '/pages/homework/index' });
+  },
+
+  goToCoze: function() {
+    wx.navigateTo({ url: '/pages/coze/index' });
   }
 });

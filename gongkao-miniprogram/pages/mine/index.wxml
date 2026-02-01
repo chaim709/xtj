@@ -53,8 +53,9 @@
         wx:key="title"
         title="{{item.title}}"
         icon="{{item.icon}}"
-        is-link
+        is-link="{{!item.action}}"
         data-url="{{item.url}}"
+        data-action="{{item.action}}"
         bind:click="handleMenuTap"
       />
     </van-cell-group>

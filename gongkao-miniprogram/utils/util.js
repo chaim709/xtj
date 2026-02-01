@@ -1,5 +1,4 @@
-// 格式化日期
-function formatDate(date, format) {
+var formatDate = function(date, format) {
   if (!date) return '';
   format = format || 'YYYY-MM-DD';
   
@@ -10,7 +9,6 @@ function formatDate(date, format) {
   var hour = String(d.getHours());
   var minute = String(d.getMinutes());
   
-  // 补零
   if (month.length < 2) month = '0' + month;
   if (day.length < 2) day = '0' + day;
   if (hour.length < 2) hour = '0' + hour;
@@ -22,15 +20,13 @@ function formatDate(date, format) {
     .replace('DD', day)
     .replace('HH', hour)
     .replace('mm', minute);
-}
+};
 
-// 获取今天日期
-function getToday() {
+var getToday = function() {
   return formatDate(new Date());
-}
+};
 
-// 获取本周日期范围
-function getWeekRange() {
+var getWeekRange = function() {
   var now = new Date();
   var dayOfWeek = now.getDay() || 7;
   var monday = new Date(now);
@@ -42,7 +38,7 @@ function getWeekRange() {
     start: formatDate(monday),
     end: formatDate(sunday)
   };
-}
+};
 
 module.exports = {
   formatDate: formatDate,
