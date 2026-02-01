@@ -1,53 +1,60 @@
 # 公考学员助手 - 微信小程序
 
-公考培训机构学员服务小程序，聚焦督学互动和课程学习。
+[![版本](https://img.shields.io/badge/版本-v2.0.0-blue)](https://github.com/chaim709/xtj)
+[![状态](https://img.shields.io/badge/状态-开发完成-success)](https://github.com/chaim709/xtj)
 
-## 功能特性
+公考培训机构学员服务小程序，聚焦**督学互动**和**课程学习**。
 
-### 第一期（已完成）
+---
+
+## 🌟 核心功能
+
+### 第一期（基础功能）✅
 - ✅ 微信登录 + 手机号绑定
-- ✅ 学员首页（今日课程、打卡、消息预览）
-- ✅ 课表查询（今日/本周视图）
-- ✅ 录播课列表（科目筛选、分页加载）
-- ✅ 督学消息列表
-- ✅ 我的页面（信息展示、退出登录）
+- ✅ 学员首页（课程、打卡、消息）
+- ✅ 课表查询（今日/本周）
+- ✅ 录播课学习
+- ✅ 督学消息
+- ✅ 个人中心
 
-### 第二期（规划中）
-- 每日打卡日历
-- 作业提交
-- 订阅消息推送
-- 扣子智能督学
+### 第二期（增强功能）✅
+- ✅ 打卡日历（可视化记录）
+- ✅ 作业管理（提交/完成）
+- ✅ 订阅消息（推送提醒）
+- ✅ 扣子智能督学（AI对话）
 
-## 技术栈
+---
 
-- 微信小程序原生开发
-- Vant Weapp UI组件库
-- Flask后端API
-
-## 项目结构
+## 📁 项目结构
 
 ```
 gongkao-miniprogram/
+├── README.md              # 本文档
+├── 完整功能测试指南.md    # 测试指南
+│
 ├── app.js                 # 应用入口
 ├── app.json               # 全局配置
 ├── app.wxss               # 全局样式
-├── project.config.json    # 项目配置
 ├── package.json           # npm依赖
+├── project.config.json    # 项目配置
 │
-├── pages/                 # 页面目录
-│   ├── index/             # 首页
-│   ├── schedule/          # 课表
-│   ├── study/             # 学习（录播课）
-│   ├── mine/              # 我的
+├── pages/                 # 页面（11个）
+│   ├── index/             # 首页 ⭐
 │   ├── login/             # 登录
 │   ├── bind-phone/        # 绑定手机号
-│   ├── messages/          # 消息列表
-│   └── webview/           # 内嵌网页
+│   ├── schedule/          # 课表 ⭐
+│   ├── study/             # 学习（录播课）⭐
+│   ├── mine/              # 我的 ⭐
+│   ├── messages/          # 督学消息
+│   ├── checkin/           # 打卡日历 🆕
+│   ├── homework/          # 作业管理 🆕
+│   ├── coze/              # 智能督学 🆕
+│   └── webview/           # 视频播放
 │
 ├── utils/                 # 工具函数
-│   ├── request.js         # HTTP请求封装
-│   ├── auth.js            # 认证相关
-│   └── util.js            # 通用工具
+│   ├── request.js         # 请求封装
+│   ├── auth.js            # 认证管理
+│   └── util.js            # 工具函数
 │
 ├── styles/                # 公共样式
 │   ├── variables.wxss     # 样式变量
@@ -57,63 +64,221 @@ gongkao-miniprogram/
     └── tabbar/            # TabBar图标
 ```
 
-## 开发指南
+---
 
-### 环境准备
+## 🚀 快速开始
 
-1. 安装 [微信开发者工具](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html)
-2. 注册微信小程序账号，获取AppID
+### 1. 安装微信开发者工具
 
-### 本地开发
+下载地址：https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html
 
-1. 用微信开发者工具打开项目
-2. 在 `project.config.json` 中填入真实AppID
-3. 安装npm依赖：
-   ```bash
-   npm install
-   ```
-4. 在开发者工具中点击 "工具" → "构建npm"
-5. 配置后端地址（app.js中的baseUrl）
+### 2. 导入项目
 
-### 配置TabBar图标
+```
+1. 打开微信开发者工具
+2. 点击「导入项目」
+3. 选择项目目录: gongkao-miniprogram
+4. AppID: 选择「测试号」（或填入正式AppID）
+5. 点击「导入」
+```
 
-在 `images/tabbar/` 目录放置8个PNG图标（81x81px）：
-- home.png / home-active.png
-- schedule.png / schedule-active.png
-- study.png / study-active.png
-- mine.png / mine-active.png
+### 3. 构建npm包
 
-推荐从 [iconfont.cn](https://www.iconfont.cn/) 获取图标。
+```bash
+# 在项目根目录
+npm install
 
-## 后端API
+# 然后在微信开发者工具中：
+工具 → 构建npm
+```
 
-小程序依赖以下API接口（Flask后端）：
+### 4. 配置开发环境
 
-| 接口 | 方法 | 说明 |
-|------|------|------|
-| `/api/v1/wx/login` | POST | 微信登录 |
-| `/api/v1/wx/bind-phone` | POST | 绑定手机号 |
-| `/api/v1/students/me` | GET | 获取当前学员信息 |
-| `/api/v1/students/me/schedule` | GET | 获取课表 |
-| `/api/v1/students/me/recordings` | GET | 获取录播课 |
-| `/api/v1/students/me/messages` | GET | 获取督学消息 |
-| `/api/v1/students/me/checkin` | POST | 每日打卡 |
+在开发者工具 → 详情 → 本地设置：
+- ✅ 不校验合法域名
+- ✅ 使用 npm 模块
+- ✅ ES6 转 ES5
+- ✅ 增强编译
 
-后端地址: `https://shxtj.chaim.top/api/v1`
+### 5. 开始测试
 
-## 部署上线
+点击「编译」按钮，小程序启动成功！
 
-1. 在微信公众平台完成小程序认证（300元/年）
-2. 配置服务器域名白名单
-3. 配置业务域名（视频外链）
-4. 提交审核
+---
 
-## 版本历史
+## 🎨 功能导航
+
+### 底部TabBar
+
+```
+┌─────┬─────┬─────┬─────┐
+│ 首页 │ 课表 │ 学习 │ 我的 │
+└─────┴─────┴─────┴─────┘
+```
+
+### 首页功能入口
+
+```
+首页
+├── 用户卡片
+│   └── 今日打卡按钮
+├── 今日课程
+│   └── 点击查看全部 → 课表Tab
+├── 待办任务
+│   ├── 完成今日作业 → 作业列表
+│   └── 智能督学 → AI对话
+└── 督学消息
+    └── 查看全部 → 消息列表
+```
+
+### 我的页面菜单
+
+```
+我的
+├── 打卡日历 🆕
+├── 学习记录
+├── 我的作业 🆕
+├── 督学消息
+├── 消息提醒设置 🆕
+├── 常见问题
+├── 联系客服
+└── 设置
+```
+
+---
+
+## 🔧 技术栈
+
+| 层级 | 技术 | 说明 |
+|-----|------|------|
+| 小程序框架 | 原生微信小程序 | 官方支持 |
+| UI组件库 | Vant Weapp 1.11.3 | 美观易用 |
+| 后端服务 | Flask | 复用现有 |
+| 数据库 | SQLite | 轻量高效 |
+| 认证方式 | JWT Token | 安全标准 |
+| 后端地址 | https://shxtj.chaim.top | 线上环境 |
+
+---
+
+## 📡 API接口清单
+
+### 认证接口
+- `POST /api/v1/wx/login` - 微信登录
+- `POST /api/v1/wx/bind-phone` - 绑定手机号
+
+### 学员接口
+- `GET /api/v1/students/me` - 获取学员信息
+- `GET /api/v1/students/me/schedule` - 获取课表
+- `GET /api/v1/students/me/recordings` - 获取录播课
+- `GET /api/v1/students/me/messages` - 获取督学消息
+- `POST /api/v1/students/me/checkin` - 每日打卡
+- `GET /api/v1/students/me/checkin-history` - 打卡记录 🆕
+- `GET /api/v1/students/me/checkin-stats` - 打卡统计 🆕
+- `GET /api/v1/students/me/homework` - 获取作业列表
+- `POST /api/v1/students/me/homework/<id>/complete` - 完成作业 🆕
+- `GET /api/v1/students/me/homework/<id>` - 作业详情 🆕
+
+### 订阅消息接口 🆕
+- `POST /api/v1/wx/send-subscribe` - 发送订阅消息
+- `GET /api/v1/wx/subscribe-templates` - 获取模板
+
+### 扣子接口 🆕
+- `POST /api/v1/coze/chat` - AI对话
+
+---
+
+## 🎯 开发指南
+
+### 本地调试
+
+1. **修改代码**：在 Cursor 或其他编辑器中修改
+2. **保存文件**：微信开发者工具自动刷新
+3. **查看效果**：模拟器实时预览
+4. **调试问题**：打开调试器 → Console/Network
+
+### 真机测试
+
+```
+1. 点击「预览」按钮
+2. 用微信扫码
+3. 在手机上测试
+```
+
+### 代码提交
+
+```bash
+git add .
+git commit -m "描述修改内容"
+git push origin main
+```
+
+### 部署到服务器
+
+```bash
+# 自动部署（代码已在服务器）
+ssh racknerd "cd /var/www/gongkao-system && git pull && systemctl restart gongkao"
+```
+
+---
+
+## 📚 文档导航
+
+| 文档 | 路径 | 说明 |
+|-----|------|------|
+| 完整测试指南 | `完整功能测试指南.md` | 逐步测试所有功能 |
+| 开发者工具指南 | `docs/微信小程序/微信开发者工具使用指南.md` | 工具使用教程 |
+| 订阅消息指南 | `docs/微信小程序/订阅消息配置指南.md` | 订阅消息配置 |
+| 架构设计 | `docs/微信小程序/DESIGN_微信小程序.md` | 技术架构 |
+| 待办事项 | `docs/微信小程序/TODO_微信小程序.md` | 上线前配置 |
+
+---
+
+## 🔐 环境配置
+
+### 小程序端
+在 `project.config.json` 中配置真实AppID（上线前）
+
+### 服务器端
+在 `.env` 文件中配置：
+```bash
+# 微信小程序
+WX_APPID=你的小程序AppID
+WX_SECRET=你的小程序密钥
+
+# 扣子智能体（可选）
+COZE_BOT_ID=你的Bot ID
+COZE_TOKEN=你的扣子Token
+```
+
+---
+
+## 📊 版本历史
 
 | 版本 | 日期 | 说明 |
-|------|------|------|
-| v1.0.0 | 2026-02-01 | 初始版本，基础功能 |
+|-----|------|------|
+| v2.0.0 | 2026-02-01 | 第二期功能完成（打卡日历、作业、订阅、扣子） |
+| v1.0.0 | 2026-02-01 | 第一期基础功能完成 |
 
-## 联系方式
+---
 
-如有问题，请联系开发者。
+## 🎓 学员使用说明
+
+详见小程序内的帮助中心（计划中）或联系机构老师。
+
+---
+
+## 📞 技术支持
+
+- 项目文档：`docs/微信小程序/`
+- 后端仓库：https://github.com/chaim709/xtj
+- 问题反馈：查看Console错误信息
+
+---
+
+## 📜 开源协议
+
+本项目为教育培训机构内部使用项目。
+
+---
+
+**开发完成！可以开始完整测试和上线准备。** 🎉
