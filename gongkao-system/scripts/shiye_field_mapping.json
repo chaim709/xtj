@@ -1,0 +1,102 @@
+{
+  "序号": {
+    "keywords": ["序号"],
+    "priority": 3,
+    "target_field": "index"
+  },
+  "岗位名称": {
+    "keywords": ["岗位名称", "职位名称", "岗位"],
+    "priority": 1,
+    "target_field": "position_name"
+  },
+  "岗位代码": {
+    "keywords": ["岗位代码", "职位代码", "代码"],
+    "priority": 1,
+    "target_field": "position_code"
+  },
+  "招聘单位": {
+    "keywords": ["招聘单位", "单位名称", "用人单位"],
+    "priority": 1,
+    "target_field": "department_name"
+  },
+  "主管部门": {
+    "keywords": ["主管部门", "主管单位"],
+    "priority": 2,
+    "target_field": "department_name_alt"
+  },
+  "拟聘人数": {
+    "keywords": ["拟聘人数", "招聘人数", "计划数", "人数"],
+    "priority": 1,
+    "target_field": "recruit_count"
+  },
+  "专业": {
+    "keywords": ["专业", "专业要求", "专业条件"],
+    "priority": 1,
+    "target_field": "major_requirement"
+  },
+  "学历": {
+    "keywords": ["学历", "学历要求", "学历条件"],
+    "priority": 1,
+    "target_field": "education"
+  },
+  "学位": {
+    "keywords": ["学位", "学位要求"],
+    "priority": 2,
+    "target_field": "degree"
+  },
+  "年龄": {
+    "keywords": ["年龄", "年龄要求", "年龄条件"],
+    "priority": 2,
+    "target_field": "age"
+  },
+  "其他条件": {
+    "keywords": ["其他", "其他条件", "其他要求"],
+    "priority": 2,
+    "target_field": "other_requirements"
+  },
+  "备注": {
+    "keywords": ["备注", "说明"],
+    "priority": 3,
+    "target_field": "remark"
+  },
+  "公共科目类别": {
+    "keywords": ["公共科目类别", "考试类别", "科目类别", "笔试科目类别"],
+    "priority": 1,
+    "target_field": "exam_category"
+  },
+  "公共科目代码": {
+    "keywords": ["公共科目代码", "考试类别代码"],
+    "priority": 3,
+    "target_field": "exam_category_code"
+  },
+  "单位类别": {
+    "keywords": ["单位类别", "单位性质"],
+    "priority": 2,
+    "target_field": "unit_type"
+  },
+  "财政拨款": {
+    "keywords": ["财政拨款", "经费来源"],
+    "priority": 3,
+    "target_field": "financial_type"
+  },
+  "联系电话": {
+    "keywords": ["联系电话", "咨询电话", "联系方式", "联系人及联系电话"],
+    "priority": 3,
+    "target_field": "contact"
+  },
+  "是否自主组织面试": {
+    "keywords": ["是否自主组织面试", "面试方式"],
+    "priority": 3,
+    "target_field": "interview_type"
+  },
+  "笔试科目": {
+    "keywords": ["笔试科目"],
+    "priority": 3,
+    "target_field": "exam_subject"
+  },
+  "招聘岗位所需资格条件": {
+    "keywords": ["招聘岗位所需资格条件", "资格条件"],
+    "priority": 2,
+    "target_field": "qualifications"
+  }
+}

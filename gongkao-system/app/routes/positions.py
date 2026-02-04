@@ -14,6 +14,8 @@ from app.services.position_service import PositionService
 from app.services.major_service import MajorService
 from app.services.import_service import ImportService
 from app.services.position_dashboard_service import PositionDashboardService
+from app.services.position_analysis_service import PositionAnalysisService
+from app.services.position_recommend_service import PositionRecommendService
 
 positions_bp = Blueprint('positions', __name__, url_prefix='/positions')
 
@@ -713,3 +715,237 @@ def api_sihong_year_trend():
     
     data = PositionDashboardService.get_sihong_year_trend(exam_type)
     return jsonify(data)
+
+
+# ==================== 数据分析集成 - 新增API ====================
+
+@positions_bp.route('/api/analysis/<int:position_id>')
+@login_required
+def api_position_analysis(position_id):
+    """
+    API: 岗位详细分析
+    
+    返回岗位的竞争度、性价比等分析数据
+    
+    Returns:
+        {
+            "success": true,
+            "data": {
+                "position_id": 123,
+                "position_name": "...",
+                "competition": {...},  # 竞争度分析
+                "value": {...},        # 性价比分析
+                "city_rating": 8,
+                "recommendation": "..."
+            }
+        }
+    """
+    try:
+        position = Position.query.get(position_id)
+        if not position:
+            return jsonify({
+                'success': False,
+                'error': '岗位不存在'
+            }), 404
+        
+        # 分析岗位
+        analysis = PositionAnalysisService.analyze_position(position)
+        
+        return jsonify({
+            'success': True,
+            'data': analysis
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'分析失败：{str(e)}'
+        }), 500
+
+
+@positions_bp.route('/api/recommend/<int:student_id>')
+@login_required
+def api_position_recommend(student_id):
+    """
+    API: 智能推荐岗位
+    
+    为学员智能推荐适合的岗位
+    
+    Args:
+        student_id: 学员ID
+        
+    Query Parameters:
+        - year: 年份（默认2026）
+        - exam_type: 考试类型（默认'事业单位'）
+        - cities: 偏好城市（逗号分隔）
+        - department_type: 偏好单位类型
+        - min_recruit: 最少招录人数
+        - strategy: 推荐策略 aggressive/balanced/conservative（默认balanced）
+        - limit: 推荐总数限制（默认20）
+    
+    Returns:
+        {
+            "success": true,
+            "student": {...},
+            "total_matched": 156,
+            "sprint": [...],   # 冲刺岗位
+            "stable": [...],   # 稳妥岗位
+            "safe": [...],     # 保底岗位
+            "summary": {...}
+        }
+    """
+    try:
+        # 获取参数
+        year = request.args.get('year', 2026, type=int)
+        exam_type = request.args.get('exam_type', '事业单位')
+        strategy = request.args.get('strategy', 'balanced')
+        limit = request.args.get('limit', 20, type=int)
+        
+        # 构建偏好设置
+        preferences = {}
+        
+        # 城市偏好
+        cities_str = request.args.get('cities', '')
+        if cities_str:
+            preferences['cities'] = [c.strip() for c in cities_str.split(',') if c.strip()]
+        
+        # 单位类型偏好
+        department_type = request.args.get('department_type', '')
+        if department_type:
+            preferences['department_type'] = department_type
+        
+        # 最少招录人数
+        min_recruit = request.args.get('min_recruit', type=int)
+        if min_recruit:
+            preferences['min_recruit'] = min_recruit
+        
+        # 调用推荐服务
+        result = PositionRecommendService.recommend_for_student(
+            student_id=student_id,
+            year=year,
+            exam_type=exam_type,
+            preferences=preferences if preferences else None,
+            strategy=strategy,
+            limit=limit
+        )
+        
+        return jsonify(result)
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'推荐失败：{str(e)}'
+        }), 500
+
+
+@positions_bp.route('/api/competition-predict/<int:position_id>')
+@login_required
+def api_competition_predict(position_id):
+    """
+    API: 竞争度预测
+    
+    单独返回岗位的竞争度分析
+    
+    Returns:
+        {
+            "success": true,
+            "data": {
+                "score": 65.5,
+                "level": "medium",
+                "level_text": "中等竞争",
+                "details": {...}
+            }
+        }
+    """
+    try:
+        position = Position.query.get(position_id)
+        if not position:
+            return jsonify({
+                'success': False,
+                'error': '岗位不存在'
+            }), 404
+        
+        competition = PositionAnalysisService.calculate_competition_score(position)
+        
+        return jsonify({
+            'success': True,
+            'data': competition
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'预测失败：{str(e)}'
+        }), 500
+
+
+@positions_bp.route('/api/value-evaluate/<int:position_id>')
+@login_required
+def api_value_evaluate(position_id):
+    """
+    API: 性价比评估
+    
+    单独返回岗位的性价比分析
+    
+    Returns:
+        {
+            "success": true,
+            "data": {
+                "score": 72.3,
+                "level": "high",
+                "level_text": "高性价比",
+                "details": {...}
+            }
+        }
+    """
+    try:
+        position = Position.query.get(position_id)
+        if not position:
+            return jsonify({
+                'success': False,
+                'error': '岗位不存在'
+            }), 404
+        
+        value = PositionAnalysisService.calculate_value_score(position)
+        
+        return jsonify({
+            'success': True,
+            'data': value
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'评估失败：{str(e)}'
+        }), 500
+
+
+@positions_bp.route('/api/city-ratings')
+@login_required
+def api_city_ratings():
+    """
+    API: 获取所有城市发展评级
+    
+    Returns:
+        {
+            "success": true,
+            "data": {
+                "省直": 10,
+                "合肥市": 10,
+                "芜湖市": 8,
+                ...
+            }
+        }
+    """
+    try:
+        ratings = PositionAnalysisService.get_all_city_ratings()
+        return jsonify({
+            'success': True,
+            'data': ratings
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'获取失败：{str(e)}'
+        }), 500
