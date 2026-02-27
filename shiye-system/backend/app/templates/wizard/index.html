@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block title %}智能选岗向导 - 安徽事业单位选岗系统{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">智能选岗向导</h1>
+        <p class="text-gray-600">5步找到最适合您的岗位</p>
+    </div>
+    
+    <!-- 步骤指示器 -->
+    <div class="mb-8" x-data="{ step: 1 }">
+        <div class="flex justify-between mb-8">
+            <template x-for="i in 4" :key="i">
+                <div class="flex flex-col items-center flex-1">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold mb-2"
+                         :class="i <= step ? 'bg-blue-600' : 'bg-gray-300'">
+                        <span x-text="i"></span>
+                    </div>
+                    <div class="text-xs text-center" :class="i <= step ? 'text-blue-600 font-medium' : 'text-gray-400'"
+                         x-text="['学历专业', '能力评估', '地域偏好', '确认提交'][i-1]">
+                    </div>
+                </div>
+            </template>
+        </div>
+        
+        <form method="get" action="{{ url_for('wizard.result') }}" id="wizardForm">
+            <!-- 步骤1：学历专业 -->
+            <div x-show="step === 1" class="bg-white rounded-lg shadow-lg p-8">
+                <h2 class="text-xl font-bold mb-6">第一步：学历与专业</h2>
+                
+                <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">您的最高学历 *</label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {% for edu in ['专科', '本科', '硕士研究生', '博士研究生'] %}
+                        <label class="relative flex cursor-pointer rounded-lg border-2 bg-white p-4 shadow-sm hover:border-blue-500 transition education-option" data-education="{{ edu }}">
+                            <input type="radio" name="education" value="{{ edu }}" {% if edu == '本科' %}checked{% endif %} 
+                                   class="hidden" required>
+                            <span class="flex flex-1 items-center justify-center">
+                                <span class="text-sm font-medium text-gray-900">{{ edu }}</span>
+                            </span>
+                            <span class="absolute top-2 right-2 check-icon hidden">
+                                <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                </svg>
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">您的专业 *</label>
+                        <input type="text" name="major" required
+                               placeholder="如：计算机科学与技术、会计学、临床医学"
+                               class="w-full border rounded-lg px-4 py-3">
+                        <p class="mt-1 text-xs text-gray-500">请输入您毕业证上的专业名称</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">毕业状态</label>
+                        <select name="graduation_status" class="w-full border rounded-lg px-4 py-3">
+                            <option value="应届">应届毕业生（2026年毕业）</option>
+                            <option value="往届">往届毕业生</option>
+                            <option value="在职">在职人员</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="mt-8 flex justify-end">
+                    <button type="button" @click="step = 2" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition">
+                        下一步 →
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 步骤2：能力评估 -->
+            <div x-show="step === 2" class="bg-white rounded-lg shadow-lg p-8">
+                <h2 class="text-xl font-bold mb-6">第二步：能力评估</h2>
+                
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">预估笔试分数 *</label>
+                        <input type="number" name="estimated_score" value="130" required min="100" max="180"
+                               placeholder="如：135"
+                               class="w-full border rounded-lg px-4 py-3">
+                        <p class="mt-1 text-xs text-gray-500">根据模拟考试或自我评估（满分200分）</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">政治面貌</label>
+                        <select name="political_status" class="w-full border rounded-lg px-4 py-3">
+                            <option value="">不限</option>
+                            <option value="党员">中共党员（含预备党员）</option>
+                            <option value="团员">共青团员</option>
+                            <option value="群众">群众</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">特殊身份</label>
+                        <select name="special_status" class="w-full border rounded-lg px-4 py-3">
+                            <option value="">无</option>
+                            <option value="三支一扶">三支一扶人员</option>
+                            <option value="大学生村官">大学生村官</option>
+                            <option value="西部计划">西部计划志愿者</option>
+                            <option value="退役军人">退役军人</option>
+                        </select>
+                        <p class="mt-1 text-xs text-gray-500">有定向岗位优势</p>
+                    </div>
+                </div>
+                
+                <div class="mt-8 flex justify-between">
+                    <button type="button" @click="step = 1" class="bg-gray-200 text-gray-700 px-8 py-3 rounded-lg hover:bg-gray-300 transition">
+                        ← 上一步
+                    </button>
+                    <button type="button" @click="step = 3" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition">
+                        下一步 →
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 步骤3：地域偏好 -->
+            <div x-show="step === 3" class="bg-white rounded-lg shadow-lg p-8">
+                <h2 class="text-xl font-bold mb-6">第三步：地域偏好</h2>
+                
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-3">期望工作城市（可多选）</label>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            {% for city in cities %}
+                            <label class="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" name="cities" value="{{ city }}" class="rounded text-blue-600">
+                                <span class="text-sm">{{ city }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" name="base_layer_willing" class="rounded text-blue-600">
+                            <span class="text-sm text-gray-700">我愿意考虑基层（乡镇）岗位</span>
+                        </label>
+                        <p class="mt-1 ml-6 text-xs text-gray-500">基层岗位竞争小，上岸概率高</p>
+                    </div>
+                </div>
+                
+                <div class="mt-8 flex justify-between">
+                    <button type="button" @click="step = 2" class="bg-gray-200 text-gray-700 px-8 py-3 rounded-lg hover:bg-gray-300 transition">
+                        ← 上一步
+                    </button>
+                    <button type="button" @click="step = 4" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition">
+                        下一步 →
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 步骤4：确认并提交 -->
+            <div x-show="step === 4" class="bg-white rounded-lg shadow-lg p-8" x-cloak>
+                <h2 class="text-xl font-bold mb-6">第四步：确认信息并提交</h2>
+                
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                    <h3 class="font-bold mb-4">请确认您的信息：</h3>
+                    <div class="space-y-2 text-sm">
+                        <p><span class="font-medium">学历：</span><span id="confirmEducation"></span></p>
+                        <p><span class="font-medium">专业：</span><span id="confirmMajor"></span></p>
+                        <p><span class="font-medium">预估分数：</span><span id="confirmScore"></span>分</p>
+                        <p><span class="font-medium">期望城市：</span><span id="confirmCities"></span></p>
+                    </div>
+                </div>
+                
+                <div class="bg-green-50 border border-green-200 rounded-lg p-6">
+                    <div class="flex items-start">
+                        <i data-lucide="info" class="w-5 h-5 text-green-600 mt-0.5 mr-3"></i>
+                        <div class="text-sm text-gray-700">
+                            <p class="font-medium mb-2">系统将为您：</p>
+                            <ul class="space-y-1 text-gray-600">
+                                <li>✓ 智能筛选符合条件的岗位</li>
+                                <li>✓ 计算每个岗位的上岸概率</li>
+                                <li>✓ 推荐冲刺型、稳妥型、保底型岗位</li>
+                                <li>✓ 提供详细的选岗建议</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-8 flex justify-between">
+                    <button type="button" @click="step = 3" class="bg-gray-200 text-gray-700 px-8 py-3 rounded-lg hover:bg-gray-300 transition">
+                        ← 上一步
+                    </button>
+                    <button type="submit" class="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition font-bold text-lg">
+                        <i data-lucide="sparkles" class="w-5 h-5 inline mr-2"></i>
+                        生成智能推荐
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* Alpine.js cloak - 防止内容闪烁 */
+    [x-cloak] { 
+        display: none !important; 
+    }
+</style>
+
+<style>
+    /* 学历选择样式 */
+    .education-option {
+        border-color: #e5e7eb;
+        transition: all 0.2s;
+    }
+    
+    .education-option:hover {
+        border-color: #3b82f6;
+        background-color: #eff6ff;
+    }
+    
+    .education-option.selected {
+        border-color: #2563eb;
+        background-color: #dbeafe;
+    }
+    
+    .education-option.selected .check-icon {
+        display: block !important;
+    }
+</style>
+
+<script>
+    // 学历选择交互
+    document.addEventListener('DOMContentLoaded', function() {
+        // 初始化选中状态
+        const checkedRadio = document.querySelector('input[name="education"]:checked');
+        if (checkedRadio) {
+            const label = checkedRadio.closest('.education-option');
+            label.classList.add('selected');
+            label.querySelector('.check-icon').style.display = 'block';
+        }
+        
+        // 学历选项点击事件
+        document.querySelectorAll('.education-option').forEach(label => {
+            label.addEventListener('click', function() {
+                // 移除所有选中状态
+                document.querySelectorAll('.education-option').forEach(l => {
+                    l.classList.remove('selected');
+                    l.querySelector('.check-icon').style.display = 'none';
+                });
+                
+                // 添加当前选中状态
+                this.classList.add('selected');
+                this.querySelector('.check-icon').style.display = 'block';
+                
+                // 选中radio
+                const radio = this.querySelector('input[type="radio"]');
+                radio.checked = true;
+                
+                // 触发change事件
+                updateConfirmInfo();
+            });
+        });
+    });
+    
+    // 更新确认信息
+    function updateConfirmInfo() {
+        const education = document.querySelector('input[name="education"]:checked')?.value || '';
+        const major = document.querySelector('input[name="major"]')?.value || '';
+        const score = document.querySelector('input[name="estimated_score"]')?.value || '';
+        const cities = Array.from(document.querySelectorAll('input[name="cities"]:checked')).map(cb => cb.value);
+        
+        document.getElementById('confirmEducation').textContent = education;
+        document.getElementById('confirmMajor').textContent = major;
+        document.getElementById('confirmScore').textContent = score;
+        document.getElementById('confirmCities').textContent = cities.length > 0 ? cities.join('、') : '全部城市';
+    }
+    
+    // 监听表单变化
+    document.addEventListener('DOMContentLoaded', function() {
+        updateConfirmInfo();
+        
+        const form = document.getElementById('wizardForm');
+        form.addEventListener('change', updateConfirmInfo);
+        form.addEventListener('input', updateConfirmInfo);
+        
+        // 表单提交验证
+        form.addEventListener('submit', function(e) {
+            const major = document.querySelector('input[name="major"]').value.trim();
+            if (!major) {
+                e.preventDefault();
+                alert('请填写您的专业！');
+                return false;
+            }
+            
+            console.log('表单正在提交...');
+            return true;
+        });
+    });
+</script>
+{% endblock %}

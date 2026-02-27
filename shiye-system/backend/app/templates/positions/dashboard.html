@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}数据仪表盘 - 安徽事业单位选岗系统{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">数据仪表盘</h1>
+    
+    <!-- 统计卡片 -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">岗位总数</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-1">{{ stats.total_positions }}</p>
+                </div>
+                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <i data-lucide="briefcase" class="w-6 h-6 text-blue-600"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">招聘总人数</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-1">{{ stats.total_recruit }}</p>
+                </div>
+                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <i data-lucide="users" class="w-6 h-6 text-green-600"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">覆盖城市</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-1">{{ stats.cities_count }}</p>
+                </div>
+                <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                    <i data-lucide="map-pin" class="w-6 h-6 text-yellow-600"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">招聘单位</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-1">{{ stats.departments_count }}</p>
+                </div>
+                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <i data-lucide="building-2" class="w-6 h-6 text-purple-600"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 图表区域 -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- 城市分布 -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-bold mb-4">城市分布</h2>
+            <div id="cityChart" style="height: 400px;"></div>
+        </div>
+        
+        <!-- 学历分布 -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-bold mb-4">学历要求分布</h2>
+            <div id="educationChart" style="height: 400px;"></div>
+        </div>
+        
+        <!-- 考试类别分布 -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-bold mb-4">考试类别分布</h2>
+            <div id="examCategoryChart" style="height: 400px;"></div>
+        </div>
+        
+        <!-- 竞争度分布 -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-bold mb-4">竞争度分布</h2>
+            <div id="competitionChart" style="height: 400px;"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 城市分布图
+    const cityChart = echarts.init(document.getElementById('cityChart'));
+    const cityData = {{ city_stats | tojson }};
+    
+    cityChart.setOption({
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: { type: 'shadow' }
+        },
+        xAxis: {
+            type: 'category',
+            data: cityData.map(d => d.city),
+            axisLabel: { rotate: 45 }
+        },
+        yAxis: { type: 'value', name: '招聘人数' },
+        series: [{
+            name: '招聘人数',
+            type: 'bar',
+            data: cityData.map(d => d.recruit_count),
+            itemStyle: {
+                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                    { offset: 0, color: '#667eea' },
+                    { offset: 1, color: '#764ba2' }
+                ])
+            }
+        }]
+    });
+    
+    // 学历分布图
+    const educationChart = echarts.init(document.getElementById('educationChart'));
+    const educationData = {{ education_stats | tojson }};
+    
+    educationChart.setOption({
+        tooltip: { trigger: 'item' },
+        series: [{
+            name: '学历要求',
+            type: 'pie',
+            radius: '70%',
+            data: educationData.map(d => ({ value: d.count, name: d.education })),
+            emphasis: {
+                itemStyle: {
+                    shadowBlur: 10,
+                    shadowOffsetX: 0,
+                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                }
+            }
+        }]
+    });
+    
+    // 考试类别图
+    const examChart = echarts.init(document.getElementById('examCategoryChart'));
+    const examData = {{ exam_stats | tojson }};
+    
+    examChart.setOption({
+        tooltip: { trigger: 'item' },
+        series: [{
+            name: '考试类别',
+            type: 'pie',
+            radius: ['40%', '70%'],
+            data: examData.map(d => ({ value: d.count, name: d.category + '类' })),
+            label: { position: 'outside' }
+        }]
+    });
+    
+    // 竞争度分布
+    const competitionChart = echarts.init(document.getElementById('competitionChart'));
+    
+    competitionChart.setOption({
+        tooltip: { trigger: 'item' },
+        series: [{
+            name: '竞争度',
+            type: 'pie',
+            radius: '70%',
+            data: [
+                { value: 300, name: '低竞争（<30:1）', itemStyle: { color: '#10b981' } },
+                { value: 1200, name: '中等竞争（30-60:1）', itemStyle: { color: '#f59e0b' } },
+                { value: 800, name: '高竞争（>60:1）', itemStyle: { color: '#ef4444' } }
+            ]
+        }]
+    });
+    
+    // 响应式
+    window.addEventListener('resize', function() {
+        cityChart.resize();
+        educationChart.resize();
+        examChart.resize();
+        competitionChart.resize();
+    });
+</script>
+{% endblock %}
